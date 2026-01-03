@@ -13,7 +13,7 @@
 - **Suppliers:** Management of vendor contact details and procurement history.
 - **Stock In:** Receiving deliveries using an invoice-cart system to verify against supplier invoices with cost-discrepancy alerts.
 - **Stock Count:** Inventory auditing with mandatory adjustment logging.
-- **Point of Sale (POS):** Transaction processing with "Quick Add," customer rewards, and automatic unit breakdown.
+- **Point of Sale (POS):** Transaction processing with "Quick Add," customer rewards, automatic unit breakdown, and transaction suspension.
 - **Stock Out / Item Change:** Handling spoilage, theft, and manual unit conversions.
 - **Customers:** Data tracking for sales history and PHP-based reward points.
 - **Migrate:** Bulk import of item data via JSON files.
@@ -86,6 +86,17 @@
 | `permissions.<module>` | map | `{ read: boolean, write: boolean }` |
 | `is_active` | boolean | Soft delete / Login block |
 
+### Local Store: `suspended_transactions` (Dexie.js)
+| Field | Type | Description |
+| :--- | :--- | :--- |
+| `id` | string | UUID Primary Key |
+| `timestamp` | timestamp | Date of suspension |
+| `items` | array | `[{item_id, qty, price, cost}]` |
+| `customer` | object | `{id, name}` |
+| `user_email` | string | Associated cashier email |
+| `total` | number | Subtotal amount |
+| `sync_status` | number | 0 = Unsynced, 1 = Synced |
+
 ## 4. Key Business Logic
 
 ### A. Automatic Unit Breakdown (De-kitting)
@@ -109,6 +120,11 @@
 - On reconnection: Loop through queue and POST to server.
 - **Inventory Update:** Server script reads `items.json`, updates stock, and saves back.
 - **Concurrency Note:** For this simple file-based system, "Last Write Wins" applies.
+
+### E. Transaction Suspension
+- Cashiers can "Suspend" a current sale to handle another customer.
+- Suspended transactions are stored locally in IndexedDB and synced to `suspended_transactions.json` on the server for persistence across sessions and devices.
+- A modal allows viewing and resuming suspended sales, showing customer name and subtotal.
 
 ### D. User Permissions
 - **Simple Auth:** Login checks against `users.json`.

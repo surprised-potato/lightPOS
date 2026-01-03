@@ -1,0 +1,3 @@
+# Ensure .mjs files are served with the correct javascript MIME type
+AddType application/javascript .mjs
+AddType application/javascript .js

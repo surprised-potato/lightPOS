@@ -1,1 +1,13 @@
-[]
+[
+    {
+        "id": "f0cd876a-c072-4908-ba5b-c3891306d384",
+        "item_id": "00j72Gb7NIcZPz5rB7nD",
+        "item_name": "Big Shot Hotdog Classic King 1K",
+        "old_stock": -1,
+        "new_stock": 10,
+        "difference": 11,
+        "reason": "Routine Audit",
+        "user": "JohnRoss@LP.com",
+        "timestamp": "2026-01-03T12:49:31.583Z"
+    }
+]

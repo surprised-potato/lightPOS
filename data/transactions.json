@@ -41,5 +41,371 @@
         "timestamp": "2026-01-03T08:52:36.038Z",
         "sync_status": 1,
         "id": "98f10bf5-4556-404d-b91d-74245a4d311a"
+    },
+    {
+        "items": [
+            {
+                "id": "00pyyobyPZbSsU00GGHm",
+                "min_stock": 1,
+                "cost_price": 79.5,
+                "stock_level": 0,
+                "barcode": "9556006012086",
+                "timestamp": {
+                    "seconds": 1767410325,
+                    "nanoseconds": 100000000
+                },
+                "category": "PERSONAL HYGIENE",
+                "name": "JJ Baby Bath Mild 100ml",
+                "selling_price": 91,
+                "base_unit": "Unit",
+                "qty": 1
+            },
+            {
+                "id": "02saxS6dA8z2jwEb3YgO",
+                "barcode": "4800086038692",
+                "base_unit": "Unit",
+                "name": "Selecta 2in1 Quezo Buco Salad 1.5L",
+                "stock_level": -1,
+                "timestamp": {
+                    "seconds": 1767410305,
+                    "nanoseconds": 595000000
+                },
+                "selling_price": 250,
+                "min_stock": 2,
+                "cost_price": 222.72,
+                "category": "ICE CREAM",
+                "qty": 1
+            },
+            {
+                "id": "04BV4HPTDrLcTFdsa4lk",
+                "timestamp": {
+                    "seconds": 1767410326,
+                    "nanoseconds": 666000000
+                },
+                "barcode": "4806524422665",
+                "category": "CANNED GOODS",
+                "min_stock": 1,
+                "selling_price": 25,
+                "base_unit": "Unit",
+                "stock_level": 0,
+                "name": "Suy  Chick Loaf 150g",
+                "cost_price": 23,
+                "qty": 1
+            }
+        ],
+        "total_amount": 366,
+        "amount_tendered": 500,
+        "change": 134,
+        "user_email": "admin@lightpos.com",
+        "customer_id": "afed138b-bd44-4613-b963-3bca1c0ef750",
+        "customer_name": "New Customer",
+        "timestamp": "2026-01-03T10:08:48.253Z",
+        "sync_status": 1,
+        "id": "77df5ba8-ed57-4be4-94f0-01f1d480691a"
+    },
+    {
+        "items": [
+            {
+                "id": "00URMnlOhNs7ZXRH5ssL",
+                "parent_id": null,
+                "cost_price": 111.38,
+                "barcode": "4902430759267",
+                "min_stock": 1,
+                "timestamp": {
+                    "seconds": 1767410323,
+                    "nanoseconds": 496000000
+                },
+                "category": "CLEANING SOLUTION",
+                "base_unit": "Unit",
+                "name": "Tide Powder 650g GB PF",
+                "stock_level": 0,
+                "conv_factor": 1,
+                "supplier_id": "",
+                "selling_price": 123,
+                "qty": 1
+            },
+            {
+                "id": "00j72Gb7NIcZPz5rB7nD",
+                "selling_price": 159,
+                "timestamp": {
+                    "seconds": 1767410307,
+                    "nanoseconds": 282000000
+                },
+                "min_stock": 2,
+                "name": "Big Shot Hotdog Classic King 1K",
+                "barcode": "4800088288347",
+                "category": "FROZEN FOODS",
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "cost_price": 146,
+                "qty": 1
+            }
+        ],
+        "total_amount": 282,
+        "amount_tendered": 1000,
+        "change": 718,
+        "user_email": "admin@lightpos.com",
+        "customer_id": "ed377109-9e1f-434c-9342-c5e3a2d3aa7a",
+        "customer_name": "Juan Dela",
+        "timestamp": "2026-01-03T10:17:38.439Z",
+        "sync_status": 1,
+        "id": "2d053917-5b3f-4764-a2f7-738ce200413a"
+    },
+    {
+        "items": [
+            {
+                "id": "Vgg4rZj2DsuCQGRW677A",
+                "min_stock": 1,
+                "stock_level": 0,
+                "selling_price": 29,
+                "cost_price": 21.65,
+                "name": "GILAS PAPER PLATE #9",
+                "barcode": "4806525910543",
+                "timestamp": {
+                    "seconds": 1767410326,
+                    "nanoseconds": 668000000
+                },
+                "category": "PLATE",
+                "base_unit": "Unit",
+                "qty": 1
+            }
+        ],
+        "total_amount": 29,
+        "amount_tendered": 100,
+        "change": 71,
+        "user_email": "admin@lightpos.com",
+        "customer_id": "cfb8b09c-3a1e-4fbd-94f2-881bae9a9204",
+        "customer_name": "Jonas Brate",
+        "timestamp": "2026-01-03T10:34:06.665Z",
+        "sync_status": 1,
+        "id": "b8bba4d7-54b8-44f1-9c81-e17ca6aac24d"
+    },
+    {
+        "items": [
+            {
+                "id": "01x0ecwBktmEyAyO2RYi",
+                "cost_price": 117.7,
+                "barcode": "4800140001082",
+                "min_stock": 2,
+                "name": "Bactidol 60mL",
+                "stock_level": 9,
+                "base_unit": "Unit",
+                "category": "MEDICINE",
+                "timestamp": {
+                    "seconds": 1767410307,
+                    "nanoseconds": 284000000
+                },
+                "selling_price": 131,
+                "qty": 1
+            },
+            {
+                "id": "02saxS6dA8z2jwEb3YgO",
+                "barcode": "4800086038692",
+                "base_unit": "Unit",
+                "name": "Selecta 2in1 Quezo Buco Salad 1.5L",
+                "stock_level": -2,
+                "timestamp": {
+                    "seconds": 1767410305,
+                    "nanoseconds": 595000000
+                },
+                "selling_price": 250,
+                "min_stock": 2,
+                "cost_price": 222.72,
+                "category": "ICE CREAM",
+                "qty": 4
+            }
+        ],
+        "total_amount": 1131,
+        "amount_tendered": 1200,
+        "change": 69,
+        "user_email": "admin@lightpos.com",
+        "customer_id": "afed138b-bd44-4613-b963-3bca1c0ef750",
+        "customer_name": "New Customer",
+        "timestamp": "2026-01-03T10:47:33.702Z",
+        "sync_status": 1,
+        "id": "d917b794-9654-43ce-9844-2a1daecdf0ce"
+    },
+    {
+        "items": [
+            {
+                "id": "0M9K4k4qgQj27wG5vNcP",
+                "stock_level": 0,
+                "min_stock": 2,
+                "cost_price": 105,
+                "barcode": "4808680230979",
+                "category": "SEASONINGS",
+                "base_unit": "Unit",
+                "timestamp": {
+                    "seconds": 1767410315,
+                    "nanoseconds": 253000000
+                },
+                "selling_price": 121,
+                "name": "Knorr Liquid Seasoning 250ml",
+                "qty": 1
+            },
+            {
+                "id": "0XhpK06qySBWU8Yx3yAr",
+                "category": "TBA",
+                "barcode": "6903848358",
+                "name": "ARIELSunrise FResh 48g 1\/2dz",
+                "cost_price": 42.12,
+                "base_unit": "Unit",
+                "min_stock": 2,
+                "stock_level": 0,
+                "selling_price": 51,
+                "timestamp": {
+                    "seconds": 1767410300,
+                    "nanoseconds": 571000000
+                },
+                "qty": 1
+            },
+            {
+                "id": "0iDcgoHcU4jwdqI7VlGR",
+                "base_unit": "Unit",
+                "category": "OIL",
+                "timestamp": {
+                    "seconds": 1767410302,
+                    "nanoseconds": 298000000
+                },
+                "min_stock": 2,
+                "name": "Golden Fiesta Palm Oil1L",
+                "selling_price": 99,
+                "stock_level": 0,
+                "cost_price": 87,
+                "barcode": "14285003410",
+                "qty": 1
+            }
+        ],
+        "total_amount": 271,
+        "amount_tendered": 1000,
+        "change": 729,
+        "user_email": "JohnRoss@LP.com",
+        "customer_id": "Guest",
+        "customer_name": "Guest",
+        "timestamp": "2026-01-03T11:56:15.089Z",
+        "sync_status": 1,
+        "id": "619b570b-cc42-45f3-8bf8-05bc53c231ab"
+    },
+    {
+        "items": [
+            {
+                "id": "1Qvv92oCtDA6gM34WPiV",
+                "timestamp": {
+                    "seconds": 1767410316,
+                    "nanoseconds": 772000000
+                },
+                "min_stock": 2,
+                "name": "Mr Hat Gulaman Buko Pandan 24g",
+                "selling_price": 17,
+                "cost_price": 14.09,
+                "category": "jelly",
+                "stock_level": 0,
+                "barcode": "4809013526271",
+                "base_unit": "Unit",
+                "qty": 1
+            },
+            {
+                "id": "1Rft4o54DEza55jiLE82",
+                "category": "NOODLES",
+                "min_stock": 2,
+                "stock_level": 0,
+                "selling_price": 99,
+                "base_unit": "Unit",
+                "timestamp": {
+                    "seconds": 1767410303,
+                    "nanoseconds": 829000000
+                },
+                "barcode": "4800017910707",
+                "name": "RAM SALAD MACARONI 1Kg",
+                "cost_price": 88.35,
+                "qty": 1
+            },
+            {
+                "id": "1UxVMR3maD16dRuERHDo",
+                "selling_price": 70,
+                "stock_level": 0,
+                "barcode": "4204955216",
+                "min_stock": 2,
+                "base_unit": "Unit",
+                "category": "rice",
+                "timestamp": {
+                    "seconds": 1767410297,
+                    "nanoseconds": 762000000
+                },
+                "cost_price": 55,
+                "name": "Margarine 1kl",
+                "qty": 1
+            },
+            {
+                "id": "vAIwvkivefAicKtEP3zw",
+                "cost_price": 61.8,
+                "timestamp": {
+                    "seconds": 1767410323,
+                    "nanoseconds": 495000000
+                },
+                "barcode": "4800274372331",
+                "stock_level": 0,
+                "min_stock": 1,
+                "base_unit": "Unit",
+                "selling_price": 71,
+                "category": "CEREAL",
+                "name": "Quaker Oats Banana 6x33g",
+                "qty": 1
+            }
+        ],
+        "total_amount": 257,
+        "amount_tendered": 500,
+        "change": 243,
+        "user_email": "JohnRoss@LP.com",
+        "customer_id": "Guest",
+        "customer_name": "Guest",
+        "timestamp": "2026-01-03T11:56:50.849Z",
+        "sync_status": 1,
+        "id": "0399a292-2969-4ed0-8843-02ba88b98ffc"
+    },
+    {
+        "items": [
+            {
+                "id": "L61LBo2l70yW5t9BNmsK",
+                "timestamp": {
+                    "seconds": 1767410320,
+                    "nanoseconds": 81000000
+                },
+                "cost_price": 27.9,
+                "base_unit": "Unit",
+                "stock_level": 0,
+                "barcode": "9555513203017",
+                "name": "Jersey Evaporada 370ml",
+                "category": "CANNED MILK",
+                "selling_price": 32,
+                "min_stock": 2,
+                "qty": 3
+            },
+            {
+                "id": "DnaeZvXVZ9uZwCVh1yBp",
+                "stock_level": 0,
+                "min_stock": 1,
+                "selling_price": 53,
+                "category": "MILK",
+                "cost_price": 47.6,
+                "base_unit": "Unit",
+                "name": "Angel All Purpose Creamer",
+                "timestamp": {
+                    "seconds": 1767410323,
+                    "nanoseconds": 497000000
+                },
+                "barcode": "748485402062",
+                "qty": 1
+            }
+        ],
+        "total_amount": 149,
+        "amount_tendered": 200,
+        "change": 51,
+        "user_email": "JohnRoss@LP.com",
+        "customer_id": "Guest",
+        "customer_name": "Guest",
+        "timestamp": "2026-01-03T12:12:16.613Z",
+        "sync_status": 1,
+        "id": "bfbb565b-674d-41f6-b104-7abd0ecce6df"
     }
 ]

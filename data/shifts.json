@@ -9,5 +9,16 @@
         "expected_cash": 1000,
         "status": "open",
         "adjustments": []
+    },
+    {
+        "id": "748b43f4-3b59-4efb-b2fd-15d8f55f045e",
+        "user_id": "JohnRoss@LP.com",
+        "start_time": "2026-01-03T11:55:50.714Z",
+        "end_time": null,
+        "opening_cash": 1000,
+        "closing_cash": 0,
+        "expected_cash": 1000,
+        "status": "open",
+        "adjustments": []
     }
 ]

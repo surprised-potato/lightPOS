@@ -4,6 +4,37 @@ import { checkActiveShift, requireShift, showCloseShiftModal } from "./shift.js"
 
 const API_URL = 'api/router.php';
 
+// Global shortcut listener for POS
+document.addEventListener("keydown", (e) => {
+    const searchInput = document.getElementById("pos-search");
+    const custInput = document.getElementById("pos-customer-search");
+    
+    // Only run if POS elements are present
+    if (!searchInput || !custInput) return;
+
+    if (e.key === "F1") {
+        e.preventDefault();
+        searchInput.focus();
+    } else if (e.key === "F2") {
+        e.preventDefault();
+        custInput.focus();
+    } else if (e.key === "F3") {
+        e.preventDefault();
+        // Focus on the first quantity input in the cart
+        const firstQtyInput = document.querySelector("#pos-cart-items .cart-qty-input");
+        if (firstQtyInput) {
+            firstQtyInput.focus();
+            firstQtyInput.select();
+        }
+    } else if (e.key === "F4") {
+        e.preventDefault();
+        const btnCheckout = document.getElementById("btn-checkout");
+        if (btnCheckout && !btnCheckout.disabled) {
+            btnCheckout.click();
+        }
+    }
+});
+
 let allItems = [];
 let allCustomers = [];
 let cart = [];
@@ -29,7 +60,7 @@ async function renderPosInterface(content) {
                 <!-- Search Bar -->
                 <div class="p-4 border-b bg-gray-50">
                     <div class="relative">
-                        <input type="text" id="pos-search" placeholder="Search items by name or barcode..." 
+                        <input type="text" id="pos-search" placeholder="Search items (F1)..." 
                             class="w-full pl-10 p-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg"
                             autocomplete="off">
                         <svg class="w-6 h-6 absolute left-3 top-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
@@ -46,10 +77,12 @@ async function renderPosInterface(content) {
             <!-- Right Column: Cart -->
             <div class="w-full md:w-1/3 flex flex-col bg-white rounded-lg shadow-md overflow-hidden border-l h-full">
                 <div class="p-4 bg-blue-700 text-white shadow-md flex justify-between items-center">
-                    <h2 class="text-xl font-bold tracking-wide">Current Sale</h2>
-                    <div class="flex gap-2">
-                        <button id="btn-pos-close-shift" class="text-xs bg-red-500 hover:bg-red-600 px-2 py-1 rounded transition">Close Shift</button>
-                        <button id="btn-clear-cart" class="text-xs bg-blue-800 hover:bg-blue-900 px-2 py-1 rounded transition">Clear</button>
+                    <h2 class="text-xl font-bold tracking-wide">Current Sale <span class="text-xs font-normal opacity-75 ml-1">(F3: Qty)</span></h2>
+                    <div class="grid grid-cols-2 gap-1 shrink-0">
+                        <button id="btn-view-suspended" class="text-[10px] bg-yellow-600 hover:bg-yellow-700 px-2 py-1 rounded transition w-24 h-8 flex items-center justify-center" title="View Suspended Sales">Suspended</button>
+                        <button id="btn-suspend-sale" class="text-[10px] bg-orange-500 hover:bg-orange-600 px-2 py-1 rounded transition w-24 h-8 flex items-center justify-center" title="Suspend Current Sale">Suspend</button>
+                        <button id="btn-pos-close-shift" class="text-[10px] bg-red-500 hover:bg-red-600 px-2 py-1 rounded transition w-24 h-8 flex items-center justify-center">Close Shift</button>
+                        <button id="btn-clear-cart" class="text-[10px] bg-blue-800 hover:bg-blue-900 px-2 py-1 rounded transition w-24 h-8 flex items-center justify-center">Clear</button>
                     </div>
                 </div>
                 
@@ -60,7 +93,7 @@ async function renderPosInterface(content) {
                             <div class="pl-3 text-gray-500">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                             </div>
-                            <input type="text" id="pos-customer-search" placeholder="Customer: Guest" 
+                            <input type="text" id="pos-customer-search" placeholder="Customer (F2)..." 
                                 class="w-full p-2 text-sm focus:outline-none rounded-md" autocomplete="off">
                             <button id="btn-reset-customer" class="p-2 text-gray-400 hover:text-red-500 hidden" title="Reset to Guest">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -104,7 +137,7 @@ async function renderPosInterface(content) {
                         <span id="cart-total" class="font-bold text-blue-600">₱0.00</span>
                     </div>
                     <button id="btn-checkout" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-lg text-xl shadow-lg transition duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2" disabled>
-                        <span>PAY NOW</span>
+                        <span>PAY NOW (F4)</span>
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                     </button>
                 </div>
@@ -136,13 +169,33 @@ async function renderPosInterface(content) {
                 </div>
             </div>
         </div>
+
+        <!-- Suspended Transactions Modal -->
+        <div id="modal-suspended" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center z-50">
+            <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-lg">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-gray-800">Suspended Transactions</h3>
+                    <div class="flex gap-2">
+                        <button id="btn-refresh-suspended" class="text-blue-600 hover:text-blue-800 text-sm font-bold">Refresh</button>
+                        <button id="btn-close-suspended" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+                    </div>
+                </div>
+                <div id="suspended-list-container" class="max-h-96 overflow-y-auto">
+                    <!-- List injected here -->
+                </div>
+                <div class="mt-6 flex justify-end">
+                    <button id="btn-cancel-suspended" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded">Close</button>
+                </div>
+            </div>
+        </div>
     `;
 
     // Load Items from Dexie
-    await Promise.all([fetchItemsFromDexie(), fetchCustomersFromDexie()]);
+    await Promise.all([fetchItemsFromDexie(), fetchCustomersFromDexie(), syncSuspendedFromServer()]);
     
     // Render initial cart state (if persisting between views)
     renderCart();
+    updateSuspendedCount();
     
     // Event Listeners
     const searchInput = document.getElementById("pos-search");
@@ -152,6 +205,12 @@ async function renderPosInterface(content) {
     });
 
     searchInput.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowDown") {
+            e.preventDefault();
+            const firstCard = document.querySelector("#pos-grid > div[tabindex='0']");
+            if (firstCard) firstCard.focus();
+            return;
+        }
         if (e.key === "Enter") {
             e.preventDefault();
             const { qty, term } = parseSearchTerm(e.target.value);
@@ -163,10 +222,13 @@ async function renderPosInterface(content) {
             if (!item) item = allItems.find(i => i.name.toLowerCase() === term.toLowerCase());
             // 3. Single result
             if (!item) {
-                const filtered = allItems.filter(i => 
-                    i.name.toLowerCase().includes(term.toLowerCase()) || 
-                    i.barcode.includes(term)
-                );
+                const lowerTerm = term.toLowerCase();
+                const terms = lowerTerm.split(/\s+/).filter(t => t.length > 0);
+                const filtered = allItems.filter(i => {
+                    const name = i.name.toLowerCase();
+                    const barcode = (i.barcode || "").toLowerCase();
+                    return terms.every(t => name.includes(t) || barcode.includes(t));
+                });
                 if (filtered.length === 1) item = filtered[0];
             }
 
@@ -179,9 +241,18 @@ async function renderPosInterface(content) {
     });
     
     document.getElementById("btn-clear-cart").addEventListener("click", () => {
-        cart = [];
-        renderCart();
+        if (cart.length > 0 && confirm("Are you sure you want to clear the current sale?")) {
+            cart = [];
+            renderCart();
+        }
     });
+
+    // Suspend Logic
+    document.getElementById("btn-suspend-sale").addEventListener("click", suspendCurrentTransaction);
+    document.getElementById("btn-view-suspended").addEventListener("click", openSuspendedModal);
+    document.getElementById("btn-close-suspended").addEventListener("click", closeSuspendedModal);
+    document.getElementById("btn-cancel-suspended").addEventListener("click", closeSuspendedModal);
+    document.getElementById("btn-refresh-suspended").addEventListener("click", openSuspendedModal);
     
     // Customer Search Logic
     const custInput = document.getElementById("pos-customer-search");
@@ -197,9 +268,28 @@ async function renderPosInterface(content) {
             custResults.classList.remove("hidden");
             displayList.forEach(c => {
                 const div = document.createElement("div");
-                div.className = "p-2 hover:bg-blue-50 cursor-pointer text-sm border-b last:border-0";
+                div.className = "p-2 hover:bg-blue-50 cursor-pointer text-sm border-b last:border-0 focus:bg-blue-100 focus:outline-none";
+                div.setAttribute("tabindex", "0");
                 div.innerHTML = `<div class="font-bold text-gray-700">${c.name}</div><div class="text-xs text-gray-500">${c.phone}</div>`;
-                div.addEventListener("click", () => selectCustomer(c));
+                
+                const selectAction = () => selectCustomer(c);
+                div.addEventListener("click", selectAction);
+                div.addEventListener("keydown", (e) => {
+                    if (e.key === "Enter") {
+                        e.preventDefault();
+                        selectAction();
+                    } else if (e.key === "ArrowDown") {
+                        e.preventDefault();
+                        const next = div.nextElementSibling;
+                        if (next && next.getAttribute("tabindex")) next.focus();
+                    } else if (e.key === "ArrowUp") {
+                        e.preventDefault();
+                        const prev = div.previousElementSibling;
+                        if (prev && prev.getAttribute("tabindex")) prev.focus();
+                        else custInput.focus();
+                    }
+                });
+                
                 custResults.appendChild(div);
             });
             if (list.length > limit) {
@@ -223,7 +313,21 @@ async function renderPosInterface(content) {
 
     custInput.addEventListener("blur", () => {
         // Delay hiding to allow click event to register
-        setTimeout(() => custResults.classList.add("hidden"), 200);
+        setTimeout(() => {
+            if (!custResults.contains(document.activeElement)) {
+                custResults.classList.add("hidden");
+            }
+        }, 200);
+    });
+
+    custInput.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowDown") {
+            const first = custResults.querySelector("div[tabindex='0']");
+            if (first) {
+                e.preventDefault();
+                first.focus();
+            }
+        }
     });
 
     custInput.addEventListener("input", (e) => {
@@ -318,6 +422,9 @@ function selectCustomer(customer) {
     } else {
         btnReset.classList.add("hidden");
     }
+
+    // Focus back to item search
+    document.getElementById("pos-search")?.focus();
 }
 
 function renderGrid(items) {
@@ -329,9 +436,10 @@ function renderGrid(items) {
         return;
     }
 
-    items.forEach(item => {
+    items.forEach((item, index) => {
         const card = document.createElement("div");
-        card.className = "bg-white border rounded-lg p-3 shadow-sm hover:shadow-md cursor-pointer transition duration-150 flex flex-col justify-between h-36 hover:border-blue-400 active:bg-blue-50 select-none relative overflow-hidden group";
+        card.className = "bg-white border rounded-lg p-3 shadow-sm hover:shadow-md cursor-pointer transition duration-150 flex flex-col justify-between h-36 hover:border-blue-400 active:bg-blue-50 select-none relative overflow-hidden group focus:outline-none focus:ring-2 focus:ring-blue-500";
+        card.setAttribute("tabindex", "0");
         
         // Stock Indicator Color
         const stockColor = item.stock_level <= (item.min_stock || 10) ? 'text-red-600' : 'text-gray-500';
@@ -353,6 +461,15 @@ function renderGrid(items) {
         card.addEventListener("click", () => {
             addToCart(item, 1);
         });
+
+        card.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                addToCart(item, 1);
+            } else {
+                handleGridNavigation(e, index, items.length);
+            }
+        });
         
         grid.appendChild(card);
     });
@@ -360,11 +477,34 @@ function renderGrid(items) {
 
 function filterItems(term) {
     term = term.toLowerCase();
-    const filtered = allItems.filter(i => 
-        i.name.toLowerCase().includes(term) || 
-        i.barcode.includes(term)
-    );
+    const terms = term.split(/\s+/).filter(t => t.length > 0);
+    const filtered = allItems.filter(i => {
+        const name = i.name.toLowerCase();
+        const barcode = (i.barcode || "").toLowerCase();
+        return terms.every(t => name.includes(t) || barcode.includes(t));
+    });
     renderGrid(filtered);
+}
+
+function handleGridNavigation(e, index, totalItems) {
+    const cols = window.innerWidth >= 1024 ? 4 : (window.innerWidth >= 640 ? 3 : 2);
+    let nextIndex = index;
+
+    if (e.key === "ArrowRight") nextIndex++;
+    else if (e.key === "ArrowLeft") nextIndex--;
+    else if (e.key === "ArrowDown") nextIndex += cols;
+    else if (e.key === "ArrowUp") nextIndex -= cols;
+    else return;
+
+    const cards = document.querySelectorAll("#pos-grid > div[tabindex='0']");
+    
+    if (nextIndex >= 0 && nextIndex < totalItems) {
+        e.preventDefault();
+        cards[nextIndex]?.focus();
+    } else if (e.key === "ArrowUp" && nextIndex < 0) {
+        e.preventDefault();
+        document.getElementById("pos-search").focus();
+    }
 }
 
 function parseSearchTerm(val) {
@@ -460,7 +600,30 @@ function renderCart() {
             </div>
         `;
         
-        row.querySelector(".cart-qty-input").addEventListener("change", (e) => updateQty(index, parseInt(e.target.value)));
+        const qtyInput = row.querySelector(".cart-qty-input");
+        qtyInput.addEventListener("change", (e) => updateQty(index, parseInt(e.target.value)));
+        
+        // Select all text on focus for quick editing
+        qtyInput.addEventListener("focus", e => e.target.select());
+
+        // Add arrow key navigation for cart quantities
+        qtyInput.addEventListener("keydown", e => {
+            const inputs = Array.from(document.querySelectorAll("#pos-cart-items .cart-qty-input"));
+            const currentIndex = inputs.indexOf(e.target);
+
+            if (e.key === "ArrowUp") {
+                e.preventDefault();
+                const prevInput = inputs[currentIndex - 1];
+                if (prevInput) prevInput.focus();
+                else inputs[inputs.length - 1]?.focus(); // Loop to bottom
+            } else if (e.key === "ArrowDown") {
+                e.preventDefault();
+                const nextInput = inputs[currentIndex + 1];
+                if (nextInput) nextInput.focus();
+                else inputs[0]?.focus(); // Loop to top
+            }
+        });
+
         row.querySelector(".btn-remove").addEventListener("click", () => removeFromCart(index));
 
         cartContainer.appendChild(row);
@@ -522,8 +685,30 @@ function closeCheckout() {
 }
 
 async function processTransaction() {
+    const btnConfirm = document.getElementById("btn-confirm-pay");
+    const inputTendered = document.getElementById("input-tendered");
+
+    // Prevent double submission
+    if (btnConfirm.hasAttribute("data-processing")) return;
+    
+    btnConfirm.setAttribute("data-processing", "true");
+    btnConfirm.disabled = true;
+    inputTendered.disabled = true;
+    const originalText = btnConfirm.textContent;
+    btnConfirm.textContent = "Processing...";
+
     const total = parseFloat(document.getElementById("modal-checkout").dataset.total);
-    const tendered = parseFloat(document.getElementById("input-tendered").value);
+    const tendered = parseFloat(inputTendered.value);
+
+    if (isNaN(tendered) || tendered < total) {
+        showToast("Amount tendered must be equal to or greater than the total amount.", true);
+        btnConfirm.removeAttribute("data-processing");
+        btnConfirm.disabled = false;
+        inputTendered.disabled = false;
+        btnConfirm.textContent = originalText;
+        return;
+    }
+
     const user = JSON.parse(localStorage.getItem('pos_user'));
     
     const transaction = {
@@ -616,5 +801,243 @@ async function processTransaction() {
     } catch (error) {
         console.error("Error saving transaction:", error);
         showToast("Failed to save transaction.", true);
+        btnConfirm.disabled = false;
+    } finally {
+        btnConfirm.removeAttribute("data-processing");
+        inputTendered.disabled = false;
+        btnConfirm.textContent = originalText;
     }
 }
+
+async function suspendCurrentTransaction() {
+    if (cart.length === 0) {
+        showToast("Cart is empty.", true);
+        return;
+    }
+
+    const user = JSON.parse(localStorage.getItem('pos_user'));
+    const suspendedTx = {
+        id: (self.crypto?.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).substring(2)),
+        items: JSON.parse(JSON.stringify(cart)),
+        customer: selectedCustomer,
+        user_email: user ? user.email : "Guest",
+        timestamp: new Date(),
+        total: cart.reduce((sum, item) => sum + (item.selling_price * item.qty), 0),
+        sync_status: 0 // 0 = Unsynced
+    };
+
+    try {
+        // 1. Save locally first (Persistence across refreshes)
+        await db.suspended_transactions.add(suspendedTx);
+        
+        // 2. Trigger background sync (Persistence across devices/sessions)
+        syncSuspendedFromServer();
+
+        cart = [];
+        selectedCustomer = { id: "Guest", name: "Guest" };
+        renderCart();
+        selectCustomer(selectedCustomer);
+        showToast(`Transaction for ${suspendedTx.customer.name} suspended.`);
+        updateSuspendedCount();
+    } catch (error) {
+        console.error("Error suspending transaction:", error);
+        showToast("Failed to suspend transaction.", true);
+    }
+}
+
+async function openSuspendedModal() {
+    const container = document.getElementById("suspended-list-container");
+    container.innerHTML = `<div class="text-center p-4">Syncing with server...</div>`;
+    document.getElementById("modal-suspended").classList.remove("hidden");
+
+    // Sync before showing to ensure cross-device persistence
+    await syncSuspendedFromServer();
+    updateSuspendedCount();
+
+    try {
+        const user = JSON.parse(localStorage.getItem('pos_user'));
+        const suspended = await db.suspended_transactions
+            .where('user_email').equals(user ? user.email : "Guest")
+            .filter(tx => tx.sync_status !== 2).toArray();
+        if (suspended.length === 0) {
+            container.innerHTML = `<div class="text-center p-4 text-gray-500">No suspended transactions.</div>`;
+            return;
+        }
+
+        container.innerHTML = `
+            <table class="w-full text-sm">
+                <thead class="bg-gray-50">
+                    <tr class="border-b">
+                        <th class="text-left p-2">Time</th>
+                        <th class="text-left p-2">Customer</th>
+                        <th class="text-right p-2">Total</th>
+                        <th class="text-center p-2">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${suspended.map(tx => `
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="p-2 text-xs">${new Date(tx.timestamp).toLocaleString()}</td>
+                            <td class="p-2 font-medium">${tx.customer?.name || 'Guest'}</td>
+                            <td class="p-2 text-right font-bold">₱${tx.total.toFixed(2)}</td>
+                            <td class="p-2 text-center">
+                                <button class="bg-blue-600 hover:bg-blue-700 text-white text-xs px-2 py-1 rounded btn-resume-suspended" data-id="${tx.id}">Resume</button>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+
+        container.querySelectorAll(".btn-resume-suspended").forEach(btn => {
+            btn.addEventListener("click", () => resumeTransaction(btn.dataset.id));
+        });
+    } catch (error) {
+        console.error("Error loading suspended transactions:", error);
+        container.innerHTML = `<div class="text-center p-4 text-red-500">Error loading data.</div>`;
+    }
+}
+
+function closeSuspendedModal() {
+    document.getElementById("modal-suspended").classList.add("hidden");
+}
+
+async function resumeTransaction(id) {
+    if (cart.length > 0 && !confirm("Current cart is not empty. Overwrite with suspended transaction?")) {
+        return;
+    }
+
+    try {
+        const tx = await db.suspended_transactions.get(id);
+        if (tx) {
+            cart = tx.items;
+            selectedCustomer = tx.customer || { id: "Guest", name: "Guest" };
+            
+            // Mark for deletion locally (status 2) and trigger background sync
+            await db.suspended_transactions.update(id, { sync_status: 2 });
+            
+            renderCart();
+            selectCustomer(selectedCustomer);
+            closeSuspendedModal();
+            showToast("Transaction resumed.");
+            syncSuspendedFromServer().then(() => updateSuspendedCount());
+        }
+    } catch (error) {
+        console.error("Error resuming transaction:", error);
+        showToast("Failed to resume transaction.", true);
+    }
+}
+
+async function updateSuspendedCount() {
+    const user = JSON.parse(localStorage.getItem('pos_user'));
+    const count = await db.suspended_transactions
+        .where('user_email').equals(user ? user.email : "Guest")
+        .and(tx => tx.sync_status !== 2).count();
+    const btn = document.getElementById("btn-view-suspended");
+    if (!btn) return;
+    
+    const existingBadge = btn.querySelector(".suspended-badge");
+    if (existingBadge) existingBadge.remove();
+    
+    if (count > 0) {
+        const badge = document.createElement("span");
+        badge.className = "suspended-badge ml-1 bg-white text-yellow-700 px-1.5 py-0.5 rounded-full font-bold text-[9px]";
+        badge.textContent = count;
+        btn.appendChild(badge);
+    }
+}
+
+async function syncSuspendedFromServer() {
+    const user = JSON.parse(localStorage.getItem('pos_user'));
+    const userEmail = user ? user.email : "Guest";
+
+    if (!navigator.onLine) return;
+
+    // 1. Push local changes (New and Deleted) to server
+    try {
+        const unsynced = await db.suspended_transactions.where('sync_status').equals(0).toArray();
+        const toDelete = await db.suspended_transactions.where('sync_status').equals(2).toArray();
+
+        if (unsynced.length > 0 || toDelete.length > 0) {
+            const res = await fetch(`${API_URL}?file=suspended_transactions`);
+            let serverList = await res.json();
+            if (!Array.isArray(serverList)) serverList = [];
+            
+            let changed = false;
+
+            // Add new ones
+            for (const tx of unsynced) {
+                if (!serverList.find(s => s.id === tx.id)) {
+                    serverList.push(tx);
+                    changed = true;
+                }
+            }
+
+            // Remove deleted ones
+            if (toDelete.length > 0) {
+                const idsToDelete = new Set(toDelete.map(t => t.id));
+                const originalLength = serverList.length;
+                serverList = serverList.filter(s => !idsToDelete.has(s.id));
+                if (serverList.length !== originalLength) changed = true;
+            }
+            
+            if (changed) {
+                await fetch(`${API_URL}?file=suspended_transactions`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(serverList)
+                });
+            }
+            
+            // Update local status
+            for (const tx of unsynced) await db.suspended_transactions.update(tx.id, { sync_status: 1 });
+            for (const tx of toDelete) await db.suspended_transactions.delete(tx.id);
+        }
+    } catch (e) {
+        console.warn("Could not push unsynced suspended transactions:", e);
+    }
+
+    // 2. Pull from server and merge deletions/updates
+    try {
+        const response = await fetch(`${API_URL}?file=suspended_transactions`);
+        if (response.ok) {
+            const serverSuspended = await response.json();
+            if (Array.isArray(serverSuspended)) {
+                const serverIds = new Set(serverSuspended.map(s => s.id));
+                const localPendingDelete = await db.suspended_transactions
+                    .where('sync_status').equals(2)
+                    .toArray();
+                const localPendingDeleteIds = new Set(localPendingDelete.map(t => t.id));
+                
+                // Remove local ones that were resumed/deleted elsewhere (only if they were previously synced)
+                const localSyncedForUser = await db.suspended_transactions
+                    .where('user_email').equals(userEmail)
+                    .filter(tx => tx.sync_status === 1)
+                    .toArray();
+                
+                for (const local of localSyncedForUser) {
+                    if (!serverIds.has(local.id)) {
+                        await db.suspended_transactions.delete(local.id);
+                    }
+                }
+
+                // Add/Update from server
+                const toPut = serverSuspended
+                    .filter(s => !localPendingDeleteIds.has(s.id)) // Don't pull back what we just resumed
+                    .map(s => ({ ...s, sync_status: 1 }));
+                await db.suspended_transactions.bulkPut(toPut);
+            }
+        }
+    } catch (e) {
+        console.warn("Could not sync suspended transactions from server:", e);
+    }
+    
+    updateSuspendedCount();
+}
+
+// Auto-sync when coming back online
+window.addEventListener('online', () => {
+    if (window.location.hash === '#pos') {
+        syncSuspendedFromServer();
+    }
+});

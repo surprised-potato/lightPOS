@@ -9,16 +9,48 @@ export async function loadStockCountView() {
     const content = document.getElementById("main-content");
     
     content.innerHTML = `
-        <div class="max-w-2xl mx-auto">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6">Stock Count (Audit)</h2>
-            
-            <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
-                <!-- Item Search -->
-                <div class="mb-6 relative">
-                    <label class="block text-gray-700 text-sm font-bold mb-2">Search Item to Audit</label>
-                    <input type="text" id="audit-search" placeholder="Scan barcode or type name..." autocomplete="off" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <div id="audit-results" class="hidden absolute z-10 bg-white border border-gray-300 mt-1 w-full rounded shadow-lg max-h-48 overflow-y-auto"></div>
+        <div class="flex flex-col lg:flex-row gap-6 h-full">
+            <!-- Left Side: Recent Adjustments History -->
+            <div class="lg:w-1/3 order-2 lg:order-1">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">Recent Adjustments</h3>
+                <div class="bg-white shadow-md rounded overflow-hidden border border-gray-200">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full table-auto">
+                            <thead>
+                                <tr class="bg-gray-100 text-gray-600 uppercase text-[10px] leading-normal">
+                                    <th class="py-2 px-3 text-left">Item / Date</th>
+                                    <th class="py-2 px-3 text-right">Diff</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adjustment-logs-table-body" class="text-gray-600 text-xs font-light">
+                                <tr><td colspan="2" class="py-3 px-6 text-center">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
+            </div>
+
+            <!-- Right Side: Stock Count (Audit) Form -->
+            <div class="lg:w-2/3 order-1 lg:order-2">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">Stock Count (Audit)</h2>
+                
+                <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4 border border-gray-200">
+                    <!-- Item Search & Sort -->
+                    <div class="mb-6 flex flex-col sm:flex-row gap-4">
+                        <div class="flex-1 relative">
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Search Item to Audit</label>
+                            <input type="text" id="audit-search" placeholder="Scan barcode or type name..." autocomplete="off" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <div id="audit-results" class="hidden absolute z-10 bg-white border border-gray-300 mt-1 w-full rounded shadow-lg max-h-64 overflow-y-auto"></div>
+                        </div>
+                        <div class="sm:w-48">
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Sort Results By</label>
+                            <select id="audit-sort" class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="name">Name (A-Z)</option>
+                                <option value="stock_level">Quantity (Low-High)</option>
+                                <option value="updatedAt">Last Modified</option>
+                            </select>
+                        </div>
+                    </div>
 
                 <!-- Selected Item Details -->
                 <div id="audit-item-container" class="hidden mb-6 p-4 bg-yellow-50 rounded border border-yellow-200">
@@ -53,27 +85,6 @@ export async function loadStockCountView() {
                 </div>
             </div>
         </div>
-
-        <!-- Recent Adjustments History -->
-        <div class="max-w-4xl mx-auto mt-8">
-            <h3 class="text-xl font-bold text-gray-800 mb-4">Recent Adjustments History</h3>
-            <div class="bg-white shadow-md rounded overflow-x-auto">
-                <table class="min-w-full table-auto">
-                    <thead>
-                        <tr class="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
-                            <th class="py-3 px-6 text-left">Date</th>
-                            <th class="py-3 px-6 text-left">Item</th>
-                            <th class="py-3 px-6 text-left">Reason</th>
-                            <th class="py-3 px-6 text-right">Diff</th>
-                            <th class="py-3 px-6 text-left">User</th>
-                        </tr>
-                    </thead>
-                    <tbody id="adjustment-logs-table-body" class="text-gray-600 text-sm font-light">
-                        <tr><td colspan="5" class="py-3 px-6 text-center">Loading...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
     `;
 
     await Promise.all([fetchItems(), fetchAdjustmentLogs()]);
@@ -93,32 +104,61 @@ async function fetchItems() {
 function setupEventListeners() {
     const searchInput = document.getElementById("audit-search");
     const resultsDiv = document.getElementById("audit-results");
+    const sortSelect = document.getElementById("audit-sort");
     const actualInput = document.getElementById("audit-actual");
     const btnAdjust = document.getElementById("btn-adjust");
     const canWrite = checkPermission("stock-count", "write");
 
-    // Search
-    searchInput.addEventListener("input", (e) => {
-        const term = e.target.value.toLowerCase();
+    // Search & Sort Logic
+    const performSearch = () => {
+        const term = searchInput.value.toLowerCase();
+        const sortBy = sortSelect.value;
+        
         resultsDiv.innerHTML = "";
         if (term.length < 1) {
             resultsDiv.classList.add("hidden");
             return;
         }
-        const filtered = itemsData.filter(i => i.name.toLowerCase().includes(term) || i.barcode.includes(term));
+
+        let filtered = itemsData.filter(i => 
+            i.name.toLowerCase().includes(term) || 
+            (i.barcode && i.barcode.includes(term))
+        );
+
+        // Apply Sorting
+        filtered.sort((a, b) => {
+            if (sortBy === 'name') {
+                return a.name.localeCompare(b.name);
+            } else if (sortBy === 'stock_level') {
+                return (a.stock_level || 0) - (b.stock_level || 0);
+            } else if (sortBy === 'updatedAt') {
+                return new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0);
+            }
+            return 0;
+        });
+
         if (filtered.length > 0) {
             resultsDiv.classList.remove("hidden");
             filtered.forEach(item => {
                 const div = document.createElement("div");
-                div.className = "p-2 hover:bg-blue-100 cursor-pointer border-b last:border-b-0 text-sm";
-                div.textContent = `${item.name} (${item.barcode})`;
+                div.className = "p-2 hover:bg-blue-100 cursor-pointer border-b last:border-b-0 text-sm flex justify-between items-center";
+                div.innerHTML = `
+                    <div>
+                        <div class="font-bold">${item.name}</div>
+                        <div class="text-xs text-gray-500">${item.barcode || 'No Barcode'}</div>
+                    </div>
+                    <div class="text-xs font-mono bg-gray-100 px-1 rounded">Qty: ${item.stock_level}</div>
+                `;
                 div.addEventListener("click", () => selectItem(item));
                 resultsDiv.appendChild(div);
             });
         } else {
             resultsDiv.classList.add("hidden");
         }
-    });
+    };
+
+    searchInput.addEventListener("input", performSearch);
+    sortSelect.addEventListener("change", performSearch);
 
     // Calculate Difference Live
     actualInput.addEventListener("input", () => {
@@ -190,6 +230,7 @@ async function processAdjustment(newStock, reason) {
         const itemIndex = currentItems.findIndex(i => i.id === selectedItem.id);
         if (itemIndex !== -1) {
             currentItems[itemIndex].stock_level = newStock;
+            currentItems[itemIndex].updatedAt = new Date().toISOString();
         }
 
         // 3. Save Items
@@ -245,14 +286,14 @@ async function fetchAdjustmentLogs() {
         let logs = await response.json();
         if (!Array.isArray(logs)) logs = [];
 
-        // Sort by timestamp descending and take top 10
+        // Sort by timestamp descending and take top 15 for the sidebar
         logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-        logs = logs.slice(0, 10);
+        logs = logs.slice(0, 15);
         
         tbody.innerHTML = "";
         
         if (logs.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" class="py-3 px-6 text-center">No history found.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="2" class="py-3 px-6 text-center">No history found.</td></tr>`;
             return;
         }
 
@@ -265,18 +306,16 @@ async function fetchAdjustmentLogs() {
             const row = document.createElement("tr");
             row.className = "border-b border-gray-200 hover:bg-gray-100";
             row.innerHTML = `
-                <td class="py-3 px-6 text-left whitespace-nowrap">${dateStr}</td>
-                <td class="py-3 px-6 text-left">
-                    <div class="font-medium">${data.item_name}</div>
+                <td class="py-2 px-3 text-left">
+                    <div class="font-medium text-gray-800">${data.item_name}</div>
+                    <div class="text-[10px] text-gray-400">${dateStr}</div>
                 </td>
-                <td class="py-3 px-6 text-left">${data.reason}</td>
-                <td class="py-3 px-6 text-right font-bold ${diffClass}">${diffSign}${data.difference}</td>
-                <td class="py-3 px-6 text-left text-xs">${data.user}</td>
+                <td class="py-2 px-3 text-right font-bold ${diffClass}">${diffSign}${data.difference}</td>
             `;
             tbody.appendChild(row);
         });
     } catch (error) {
         console.error("Error fetching logs:", error);
-        tbody.innerHTML = `<tr><td colspan="5" class="py-3 px-6 text-center text-red-500">Error loading history.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="2" class="py-3 px-6 text-center text-red-500">Error loading history.</td></tr>`;
     }
 }

@@ -12,5 +12,19 @@
         "phone": "2908340958",
         "email": "sklfjdsd@lightpos.com",
         "loyalty_points": 0
+    },
+    {
+        "id": "cfb8b09c-3a1e-4fbd-94f2-881bae9a9204",
+        "name": "Jonas Brate",
+        "phone": "2u48974",
+        "email": "",
+        "loyalty_points": 0
+    },
+    {
+        "id": "ed377109-9e1f-434c-9342-c5e3a2d3aa7a",
+        "name": "Juan Dela",
+        "phone": "2840932",
+        "email": "",
+        "loyalty_points": 0
     }
 ]

@@ -10,7 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 $dataDir = __DIR__ . '/../data/';
-$allowedFiles = ['items', 'users', 'suppliers', 'customers', 'transactions', 'shifts', 'expenses', 'stock_in_history', 'adjustments'];
+$allowedFiles = ['items', 'users', 'suppliers', 'customers', 'transactions', 'shifts', 'expenses', 'stock_in_history', 'adjustments', 'suspended_transactions'];
 
 $action = $_GET['action'] ?? null;
 $file = $_GET['file'] ?? null;
@@ -121,6 +121,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     } elseif ($action === 'batch_stock_in') {
         $payload = $input['data'] ?? null;
+        $supplierOverride = $payload['supplier_id_override'] ?? null;
         
         if ($payload) {
             $itemsPath = $dataDir . 'items.json';
@@ -139,7 +140,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             foreach ($payload['items'] as $cartItem) {
                 if (isset($itemsMap[$cartItem['item_id']])) {
-                    $itemsMap[$cartItem['item_id']]['stock_level'] = ($itemsMap[$cartItem['item_id']]['stock_level'] ?? 0) + $cartItem['quantity'];
+                    $item = &$itemsMap[$cartItem['item_id']];
+                    $item['stock_level'] = ($item['stock_level'] ?? 0) + $cartItem['quantity'];
+                    
+                    // Update supplier if override provided and item has none
+                    if ($supplierOverride && (empty($item['supplier_id']))) {
+                        $item['supplier_id'] = $supplierOverride;
+                    }
                 }
             }
             

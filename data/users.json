@@ -5,14 +5,78 @@
         "password": "21232f297a57a5a743894a0e4a801fc3",
         "is_active": true,
         "permissions": {
-            "pos": { "read": true, "write": true },
-            "items": { "read": true, "write": true },
-            "stockin": { "read": true, "write": true },
-            "stock-count": { "read": true, "write": true },
-            "reports": { "read": true, "write": true },
-            "expenses": { "read": true, "write": true },
-            "users": { "read": true, "write": true },
-            "shifts": { "read": true, "write": true }
+            "pos": {
+                "read": true,
+                "write": true
+            },
+            "items": {
+                "read": true,
+                "write": true
+            },
+            "stockin": {
+                "read": true,
+                "write": true
+            },
+            "stock-count": {
+                "read": true,
+                "write": true
+            },
+            "reports": {
+                "read": true,
+                "write": true
+            },
+            "expenses": {
+                "read": true,
+                "write": true
+            },
+            "users": {
+                "read": true,
+                "write": true
+            },
+            "shifts": {
+                "read": true,
+                "write": true
+            }
+        }
+    },
+    {
+        "email": "JohnRoss@LP.com",
+        "name": "John",
+        "password": "f2298b93a26088513a4484131da2dffa",
+        "is_active": true,
+        "permissions": {
+            "pos": {
+                "read": true,
+                "write": true
+            },
+            "items": {
+                "read": true,
+                "write": true
+            },
+            "stockin": {
+                "read": true,
+                "write": true
+            },
+            "stock-count": {
+                "read": true,
+                "write": true
+            },
+            "reports": {
+                "read": true,
+                "write": true
+            },
+            "expenses": {
+                "read": true,
+                "write": true
+            },
+            "users": {
+                "read": true,
+                "write": true
+            },
+            "shifts": {
+                "read": true,
+                "write": true
+            }
         }
     }
 ]
