@@ -9,6 +9,7 @@ import { loadShiftsView } from "./modules/shift.js";
 import { loadExpensesView } from "./modules/expenses.js";
 import { loadUsersView } from "./modules/users.js";
 import { loadProfileView } from "./modules/profile.js";
+import { loadMigrateView } from "./modules/migrate.js";
 import { getUserProfile } from "./auth.js";
 
 export function initRouter() {
@@ -56,6 +57,9 @@ function handleRoute() {
             break;
         case "#items":
             loadItemsView();
+            break;
+        case "#migrate":
+            loadMigrateView();
             break;
         case "#stockin":
             loadStockInView();

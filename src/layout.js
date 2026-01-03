@@ -44,6 +44,9 @@ export function renderSidebar() {
                     <li class="${checkPermission('items', 'read') ? '' : 'hidden'}"><a href="#items" class="nav-link flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-md transition-colors duration-150">
                         <span class="text-lg">📦</span> <span class="font-medium">Items</span>
                     </a></li>
+                    <li class="${checkPermission('items', 'write') ? '' : 'hidden'}"><a href="#migrate" class="nav-link flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-md transition-colors duration-150">
+                        <span class="text-lg">📂</span> <span class="font-medium">Migrate</span>
+                    </a></li>
                     <li class="${checkPermission('stockin', 'read') ? '' : 'hidden'}"><a href="#stockin" class="nav-link flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-md transition-colors duration-150">
                         <span class="text-lg">📥</span> <span class="font-medium">Stock In</span>
                     </a></li>
@@ -65,7 +68,7 @@ export function renderSidebar() {
                 </ul>
             </nav>
             <div class="p-4 border-t text-xs text-gray-500 text-center">
-                LightPOS v1.0
+                surprised-potato v1.0
             </div>
         </div>
     `;

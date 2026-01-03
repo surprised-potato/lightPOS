@@ -1,4 +1,4 @@
-# Project Checklist: Light Cloud-Based POS
+# Project Checklist: surprised-potato Cloud-Based POS
 Use this checklist to track your progress through the development phases.
 
 ## Phase 1: Foundation & Authentication
@@ -59,6 +59,13 @@ Use this checklist to track your progress through the development phases.
 - [ ] Read: Fetch and render customers collection (Name, Phone, Points).
 - [ ] Create/Update: Build "Customer Form" Modal.
 - [ ] Search: Implement customer search by name or phone.
+
+### 2.5 Migration Module
+- [ ] Create `src/modules/migrate.js`.
+- [ ] Implement `loadMigrateView()` function.
+- [ ] UI: Add file upload (JSON/CSV) and sample download links.
+- [ ] Logic: Implement JSON and CSV parsing and validation.
+- [ ] Logic: Implement bulk import using Firestore `writeBatch`.
 
 ## Phase 3: Inventory Logic
 ### 3.1 Stock In Module (Invoice Cart)

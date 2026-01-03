@@ -1,4 +1,4 @@
-# Technical Specification: Light Cloud-Based POS & Inventory System
+# Technical Specification: surprised-potato Cloud-Based POS & Inventory System
 
 ## 1. System Architecture
 - **Frontend:** Single Page Application (SPA) hosted on GitHub Pages.
@@ -15,6 +15,7 @@
 - **Point of Sale (POS):** Transaction processing with "Quick Add," customer rewards, and automatic unit breakdown.
 - **Stock Out / Item Change:** Handling spoilage, theft, and manual unit conversions.
 - **Customers:** Data tracking for sales history and PHP-based reward points.
+- **Migrate:** Bulk import of item data via JSON files.
 - **User Management:** Granular permission-based access control. No fixed roles; access is defined per module with specific Read and Write privileges.
 - **Shift Management:** Cash control features including opening petty cash entry and closing cash count reconciliation.
 - **Expense Management:** Recording operational expenses and procurement costs, optionally linked to suppliers.

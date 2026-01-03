@@ -1,5 +1,5 @@
 # Project Implementation Blueprint & Prompt Chain (Vanilla JS Edition)
-This document outlines the step-by-step execution plan for the Light Cloud-Based POS using Vanilla JavaScript (ES6 Modules) and Tailwind CSS. It is designed to be fed into an LLM sequentially.
+This document outlines the step-by-step execution plan for the surprised-potato Cloud-Based POS using Vanilla JavaScript (ES6 Modules) and Tailwind CSS. It is designed to be fed into an LLM sequentially.
 
 ## Phase 1: Foundation & Authentication
 **Goal:** Establish the project structure, secure the app, and set up the global data context without frameworks.
@@ -101,6 +101,15 @@ Build the Customers module.
 3. Fields: Name, Phone (unique ID), Email, and `loyalty_points`.
 4. Create a Form Modal to Add/Edit customers.
 5. Add a search function to find customers by phone or name.
+
+### Prompt 2.5: Data Migration (Bulk Import)
+Build the Migration module.
+1. Create `src/modules/migrate.js` with `loadMigrateView()`.
+2. UI: Create a file upload area for JSON and CSV files.
+3. UI: Add buttons to download sample JSON and CSV templates.
+4. Logic: Parse the JSON or CSV file and validate that it is an array.
+5. Logic: Use Firestore `writeBatch` to import items in chunks of 500.
+6. Logic: Ensure numeric fields (prices, stock) are correctly parsed as numbers.
 
 ## Prompt Set 3: Inventory Transactions
 
