@@ -17,43 +17,50 @@ export function renderSidebar() {
     sidebar.innerHTML = `
         <div class="h-full flex flex-col bg-white">
             <div class="p-4 border-b">
-                <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Menu</div>
+                <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">System Status</div>
                 <div id="sidebar-shift-status" class="text-xs font-bold text-gray-400 mt-1">Loading...</div>
             </div>
             <nav class="flex-1 overflow-y-auto py-4">
+                <div class="px-4 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Front Office</div>
                 <ul class="space-y-1 px-2">
-                    <li><a href="#dashboard" class="nav-link flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-md transition-colors duration-150 group">
-                        <span class="font-medium">Dashboard</span>
+                    <li><a href="#dashboard" class="nav-link flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-md transition-colors duration-150 group">
+                        <span class="text-lg">📊</span> <span class="font-medium">Dashboard</span>
                     </a></li>
-                    <li class="${checkPermission('pos', 'read') ? '' : 'hidden'}"><a href="#pos" class="nav-link flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-md transition-colors duration-150">
-                        <span class="font-medium">Point of Sale</span>
+                    <li class="${checkPermission('pos', 'read') ? '' : 'hidden'}"><a href="#pos" class="nav-link flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-md transition-colors duration-150">
+                        <span class="text-lg">🛒</span> <span class="font-medium">POS</span>
                     </a></li>
-                    <li class="${checkPermission('items', 'read') ? '' : 'hidden'}"><a href="#suppliers" class="nav-link flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-md transition-colors duration-150">
-                        <span class="font-medium">Suppliers</span>
+                    <li class="${checkPermission('shifts', 'read') ? '' : 'hidden'}"><a href="#shifts" class="nav-link flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-md transition-colors duration-150">
+                        <span class="text-lg">🕒</span> <span class="font-medium">Shifts</span>
                     </a></li>
-                    <li class="${checkPermission('items', 'read') ? '' : 'hidden'}"><a href="#items" class="nav-link flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-md transition-colors duration-150">
-                        <span class="font-medium">Items</span>
+                </ul>
+
+                <div class="px-4 my-4"><div class="border-t border-gray-100"></div></div>
+
+                <div class="px-4 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Backroom</div>
+                <ul class="space-y-1 px-2">
+                    <li class="${checkPermission('items', 'read') ? '' : 'hidden'}"><a href="#suppliers" class="nav-link flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-md transition-colors duration-150">
+                        <span class="text-lg">🚚</span> <span class="font-medium">Suppliers</span>
                     </a></li>
-                    <li class="${checkPermission('stockin', 'read') ? '' : 'hidden'}"><a href="#stockin" class="nav-link flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-md transition-colors duration-150">
-                        <span class="font-medium">Stock In</span>
+                    <li class="${checkPermission('items', 'read') ? '' : 'hidden'}"><a href="#items" class="nav-link flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-md transition-colors duration-150">
+                        <span class="text-lg">📦</span> <span class="font-medium">Items</span>
                     </a></li>
-                    <li class="${checkPermission('stock-count', 'read') ? '' : 'hidden'}"><a href="#stock-count" class="nav-link flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-md transition-colors duration-150">
-                        <span class="font-medium">Stock Count</span>
+                    <li class="${checkPermission('stockin', 'read') ? '' : 'hidden'}"><a href="#stockin" class="nav-link flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-md transition-colors duration-150">
+                        <span class="text-lg">📥</span> <span class="font-medium">Stock In</span>
                     </a></li>
-                    <li class="${checkPermission('shifts', 'read') ? '' : 'hidden'}"><a href="#shifts" class="nav-link flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-md transition-colors duration-150">
-                        <span class="font-medium">Shifts</span>
+                    <li class="${checkPermission('stock-count', 'read') ? '' : 'hidden'}"><a href="#stock-count" class="nav-link flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-md transition-colors duration-150">
+                        <span class="text-lg">⚖️</span> <span class="font-medium">Stock Count</span>
                     </a></li>
-                    <li class="${checkPermission('expenses', 'read') ? '' : 'hidden'}"><a href="#expenses" class="nav-link flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-md transition-colors duration-150">
-                        <span class="font-medium">Expenses</span>
+                    <li class="${checkPermission('expenses', 'read') ? '' : 'hidden'}"><a href="#expenses" class="nav-link flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-md transition-colors duration-150">
+                        <span class="text-lg">💸</span> <span class="font-medium">Expenses</span>
                     </a></li>
-                    <li class="${checkPermission('reports', 'read') ? '' : 'hidden'}"><a href="#reports" class="nav-link flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-md transition-colors duration-150">
-                        <span class="font-medium">Reports</span>
+                    <li class="${checkPermission('reports', 'read') ? '' : 'hidden'}"><a href="#reports" class="nav-link flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-md transition-colors duration-150">
+                        <span class="text-lg">📈</span> <span class="font-medium">Reports</span>
                     </a></li>
-                    <li class="${checkPermission('users', 'read') ? '' : 'hidden'}"><a href="#users" class="nav-link flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-md transition-colors duration-150">
-                        <span class="font-medium">Users</span>
+                    <li class="${checkPermission('users', 'read') ? '' : 'hidden'}"><a href="#users" class="nav-link flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-md transition-colors duration-150">
+                        <span class="text-lg">👥</span> <span class="font-medium">Users</span>
                     </a></li>
-                    <li><a href="#profile" class="nav-link flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-md transition-colors duration-150">
-                        <span class="font-medium">Profile</span>
+                    <li><a href="#profile" class="nav-link flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-md transition-colors duration-150">
+                        <span class="text-lg">👤</span> <span class="font-medium">Profile</span>
                     </a></li>
                 </ul>
             </nav>

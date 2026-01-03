@@ -27,7 +27,7 @@ Use this checklist to track your progress through the development phases.
 - [x] Create `src/router.js` handling `window.onhashchange`.
 - [x] Define routes: `#dashboard`, `#pos`, `#items`, `#stockin`, `#reports`.
 - [x] Create `src/layout.js`.
-- [x] Implement `renderSidebar()` with Tailwind styling.
+- [x] Implement `renderSidebar()` with categorized sections, dividers, and Unicode icons.
 - [x] Wire up `main.js` to render the layout and handle routing.
 
 ## Phase 2: Master Data Management (Online First)
@@ -53,17 +53,25 @@ Use this checklist to track your progress through the development phases.
 - [x] Add "Base Unit" text input (e.g., "Can").
 - [x] Validation: Prevent an item from being its own parent.
 
+### 2.4 Customers Module
+- [ ] Create `src/modules/customers.js`.
+- [ ] Implement `loadCustomersView()` function.
+- [ ] Read: Fetch and render customers collection (Name, Phone, Points).
+- [ ] Create/Update: Build "Customer Form" Modal.
+- [ ] Search: Implement customer search by name or phone.
+
 ## Phase 3: Inventory Logic
-### 3.1 Stock In Module
-- [x] Create `src/modules/stockin.js`.
-- [x] UI: Create Search Bar to find items.
-- [x] UI: Add "Quantity" and "Cost Per Unit" inputs.
-- [x] Logic: Implement "Receive Stock" button handler.
-- [x] Logic: Compare Input Cost vs. Firestore Cost.
-- [x] Modal: Trigger "Price Discrepancy" modal if costs differ.
-- [x] Option A: Update Master Cost.
-- [x] Option B: Keep Old Cost.
-- [x] Write: Increment `stock_level` in Firestore.
+### 3.1 Stock In Module (Invoice Cart)
+- [ ] Refactor `src/modules/stockin.js` to use a cart system.
+- [ ] UI: Add "Stock In Cart" table to list multiple items.
+- [ ] UI: Add "Total Invoice Value" display.
+- [ ] Logic: Implement "Add to Stock In Cart" from search.
+- [ ] Logic: Compare Input Cost vs. Firestore Cost for each item in cart.
+- [ ] Modal: Trigger "Price Discrepancy" modal per item.
+- [ ] Option A: Update Master Cost.
+- [ ] Option B: Keep Old Cost.
+- [ ] Write: "Commit Invoice" button to batch update Firestore `stock_level`.
+- [ ] Write: Log to `stock_in_history` collection.
 
 ### 3.2 Stock Count (Audit)
 - [x] Create `src/modules/stock-count.js`.
@@ -91,9 +99,10 @@ Use this checklist to track your progress through the development phases.
 ## Phase 5: Point of Sale (POS)
 ### 5.1 POS UI & Layout
 - [x] Create `src/modules/pos.js`.
-- [x] Create Split Layout: Item Grid (Left) vs. Cart (Right).
+- [ ] Update Split Layout: Item Grid (Left) vs. Cart + Customer Selection (Right).
 - [x] Read: Fetch items from Dexie (not Firestore).
 - [x] Search: Implement local search filtering on Dexie results.
+- [ ] UI: Add Customer Search/Selection in POS.
 
 ### 5.2 Cart Logic
 - [x] Create cart state array.
@@ -114,7 +123,8 @@ Use this checklist to track your progress through the development phases.
 ### 5.4 Checkout & Queuing
 - [x] Implement "Pay" Button.
 - [x] UI: "Amount Tendered" Modal & Change Calculation.
-- [x] Write: Create transaction object `{ synced: false, ... }`.
+- [ ] Write: Create transaction object `{ customerId, pointsEarned, synced: false, ... }`.
+- [ ] Logic: Calculate loyalty points based on total.
 - [x] Write: Save to Dexie `transactions` table.
 - [x] Clear Cart and show success message.
 
@@ -126,6 +136,7 @@ Use this checklist to track your progress through the development phases.
 - [x] Loop: Query Dexie for `synced: false`.
 - [x] Write: Add to Firestore `transactions` collection.
 - [x] Write: Batch update Firestore items (decrement stock).
+- [ ] Write: If `customerId` present, increment `loyalty_points` in Firestore.
 - [x] Update: Set Dexie transaction to `synced: true`.
 
 ### 6.2 Dashboard & Reports

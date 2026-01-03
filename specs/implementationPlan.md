@@ -13,10 +13,11 @@ This document outlines the step-by-step execution plan for the Light Cloud-Based
 - **Suppliers Module:** Functions to render the Supplier table and handle Modal forms.
 - **Items Module - Basic:** Add/Edit Items with basic fields (Barcode, Name, Prices).
 - **Items Module - Advanced:** Add relationships (`parent_id` for breakdown) and Supplier linking.
+- **Customers Module:** CRUD for customer profiles and tracking loyalty points.
 
 ## Phase 3: Inventory Logic (The "Stock" Lifecycle)
 **Goal:** Manage how goods enter and leave the system outside of sales.
-- **Stock In Logic:** Create the delivery receiving form. Implement the "Cost Discrepancy Alert" using a custom JS Modal.
+- **Stock In Logic (Invoice Cart):** Implement a cart-based system for receiving stock. This allows users to add multiple items to a "pending invoice" list to match against the supplier's physical invoice before committing to Firestore.
 - **Stock Count (Audit):** Build the "Adjustment Log" feature.
 - **Stock Out/Conversion:** Manual forms for spoilage or manual de-kitting.
 
@@ -28,7 +29,7 @@ This document outlines the step-by-step execution plan for the Light Cloud-Based
 ## Phase 5: Point of Sale (POS)
 **Goal:** The cashier interface.
 - **POS Layout:** Render the Split screen (Search/Grid vs. Cart).
-- **Cart Logic:** Global cart array and rendering functions (`renderCart()`, `updateTotal()`).
+- **Cart Logic:** Global cart array, rendering functions, and **Customer Selection** for the reward system.
 - **Auto-Breakdown Logic:** If stock is 0, find parent in Dexie, decrement parent, increment child, update Cart.
 - **Checkout & Queue:** "Pay" button saves to Dexie transactions queue.
 
@@ -63,7 +64,7 @@ Output the code for these core files.
 Build the Navigation and Routing system.
 1. Create `src/router.js`. It should listen to `window.onhashchange`.
 2. Define routes: `#dashboard`, `#pos`, `#items`, `#stockin`, `#reports`.
-3. Create `src/layout.js`. Export a function `renderSidebar()` that injects the Sidebar HTML into the DOM.
+3. Create `src/layout.js`. Export a function `renderSidebar()` that injects the Sidebar HTML into the DOM with categorized sections (Front Office vs Backroom) and Unicode icons.
 4. The Sidebar must use Tailwind classes for responsive design.
 5. In `main.js`, wire up the router to clear the `#main-content` div and log which page "would" load (placeholder).
 
@@ -93,16 +94,28 @@ Update the `items.js` module to support Unit Conversion.
 3. Add "Base Unit" text input.
 4. Validation: Ensure an item cannot select itself as a parent.
 
+### Prompt 2.4: Customer Management & Rewards
+Build the Customers module.
+1. Create `src/modules/customers.js` with `loadCustomersView()`.
+2. Render a table of customers from Firestore `customers` collection.
+3. Fields: Name, Phone (unique ID), Email, and `loyalty_points`.
+4. Create a Form Modal to Add/Edit customers.
+5. Add a search function to find customers by phone or name.
+
 ## Prompt Set 3: Inventory Transactions
 
-### Prompt 3.1: Stock In with Price Alerts
-Build the `src/modules/stockin.js` module.
-1. UI: Search bar to find an item, then inputs for "Qty" and "Cost Per Unit".
-2. Logic: "Receive Stock" button click:
+### Prompt 3.1: Stock In with Invoice Cart
+Build the `src/modules/stockin.js` module using a cart-based approach.
+1. UI: Search bar to find items, and a "Stock In Cart" table to list items being received.
+2. For each item added to the cart:
+   - Input "Qty Received" and "New Cost Price".
    - Compare input Cost vs Firestore `cost_price`.
    - If different, trigger a custom Modal: "Price Discrepancy". Buttons: "Update Master" or "Keep Old".
-3. Update Firestore `stock_level` (increment).
-4. If "Update Master" selected, update `cost_price` field.
+3. Footer: Display "Total Invoice Value" (sum of Qty * Cost).
+4. "Commit Invoice" button:
+   - Loop through cart and update Firestore `stock_level` (increment).
+   - If "Update Master" was selected for an item, update its `cost_price`.
+   - Log the transaction in a `stock_in_history` collection.
 
 ### Prompt 3.2: Stock Adjustments (Audit)
 Build `src/modules/stock-count.js` for auditing.
@@ -130,12 +143,13 @@ We need offline capability. Use `dexie` (load via CDN in index.html).
 
 ### Prompt 5.1: POS UI & Cart
 Build `src/modules/pos.js`.
-1. Layout: Left col (Item Grid), Right col (Cart).
+1. Layout: Left col (Item Grid), Right col (Cart + Customer Selection).
 2. **Important**: Fetch items from `db.items` (Dexie), NOT Firestore.
 3. Implement a Search Bar filtering the Dexie results.
-4. Cart State: Maintain a simple array `cart = []`.
-5. Functions: `renderCart()`, `addToCart(item)`, `removeFromCart(index)`.
-6. Display Total Amount.
+4. Customer Selection: Add a small search bar to link a customer to the current sale. Display their current points.
+5. Cart State: Maintain a simple array `cart = []`.
+6. Functions: `renderCart()`, `addToCart(item)`, `removeFromCart(index)`.
+7. Display Total Amount.
 
 ### Prompt 5.2: Auto-Breakdown Logic
 Implement "Auto-De-Kitting" in `addToCart`.
@@ -152,7 +166,8 @@ Implement Checkout in `pos.js`.
 1. "Pay" Button opens "Amount Tendered" Modal.
 2. Calculate Change.
 3. On Confirm:
-   - Create object: `{ items: cart, total, timestamp, synced: false }`.
+   - Create object: `{ items: cart, total, customerId, pointsEarned, timestamp, synced: false }`.
+   - Points Logic: Calculate points (e.g., 1 point per 100 PHP).
    - `db.transactions.add()` (Save to Dexie).
    - Clear Cart.
    - Show "Transaction Saved" message.
@@ -168,6 +183,7 @@ Update `src/services/sync-service.js`.
    - For each:
      - Write to Firestore `transactions`.
      - Batch update Firestore inventory (decrement stock).
+     - If `customerId` is present, increment `loyalty_points` in `customers` collection.
      - Update Dexie transaction `synced: true`.
 
 ## Prompt Set 7: Reporting

@@ -1,8 +1,9 @@
 import { db, auth } from "../firebase-config.js";
 import { checkPermission } from "../auth.js";
-import { collection, addDoc, query, where, getDocs, limit, updateDoc, doc, orderBy, arrayUnion } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { collection, addDoc, query, where, getDocs, getDoc, limit, updateDoc, doc, orderBy, arrayUnion, increment, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 let currentShift = null;
+let shiftsListener = null;
 
 export async function checkActiveShift() {
     if (!auth.currentUser) return null;
@@ -32,13 +33,17 @@ export async function checkActiveShift() {
 export async function startShift(openingCash) {
     if (!auth.currentUser) return;
 
+    // Prevent duplicate creation if a shift is already active
+    const active = await checkActiveShift();
+    if (active) return active;
+
     const shiftData = {
         user_id: auth.currentUser.email,
         start_time: new Date(),
         end_time: null,
         opening_cash: parseFloat(openingCash),
         closing_cash: 0,
-        expected_cash: 0,
+        expected_cash: parseFloat(openingCash),
         status: "open"
     };
 
@@ -144,6 +149,9 @@ async function fetchShifts() {
          return;
     }
 
+    // Unsubscribe from previous listener if it exists to prevent memory leaks
+    if (shiftsListener) shiftsListener();
+
     try {
         const q = query(
             collection(db, "shifts"),
@@ -152,53 +160,64 @@ async function fetchShifts() {
             limit(20)
         );
         
-        const snapshot = await getDocs(q);
-        tbody.innerHTML = "";
+        // Set up real-time listener
+        shiftsListener = onSnapshot(q, (snapshot) => {
+            tbody.innerHTML = "";
 
-        if (snapshot.empty) {
-            tbody.innerHTML = `<tr><td colspan="7" class="py-3 px-6 text-center">No shifts found.</td></tr>`;
-            return;
-        }
+            if (snapshot.empty) {
+                tbody.innerHTML = `<tr><td colspan="7" class="py-3 px-6 text-center">No shifts found.</td></tr>`;
+                return;
+            }
 
-        const canAdjust = checkPermission("shifts", "write");
-        snapshot.forEach(doc => {
-            const data = doc.data();
-            const start = data.start_time ? data.start_time.toDate().toLocaleString() : "-";
-            const end = data.end_time ? data.end_time.toDate().toLocaleString() : "-";
-            const diff = (data.closing_cash || 0) - (data.expected_cash || 0);
-            const diffClass = diff < 0 ? "text-red-600" : (diff > 0 ? "text-green-600" : "");
-            
-            const row = document.createElement("tr");
-            row.className = "border-b border-gray-200 hover:bg-gray-100";
-            row.innerHTML = `
-                <td class="py-3 px-6 text-left whitespace-nowrap">${start}</td>
-                <td class="py-3 px-6 text-left whitespace-nowrap">${end}</td>
-                <td class="py-3 px-6 text-right">₱${(data.opening_cash || 0).toFixed(2)}</td>
-                <td class="py-3 px-6 text-right">₱${(data.closing_cash || 0).toFixed(2)}</td>
-                <td class="py-3 px-6 text-right">₱${(data.expected_cash || 0).toFixed(2)}</td>
-                <td class="py-3 px-6 text-right font-bold ${diffClass}">₱${diff.toFixed(2)}</td>
-                <td class="py-3 px-6 text-center">
-                    <span class="${data.status === 'open' ? 'bg-green-200 text-green-700' : 'bg-gray-200 text-gray-700'} py-1 px-3 rounded-full text-xs uppercase">${data.status}</span>
-                </td>
-                <td class="py-3 px-6 text-center">
-                    ${canAdjust ? `<button class="btn-adjust-shift text-blue-600 hover:text-blue-900 font-medium">Adjust</button>` : '-'}
-                </td>
-            `;
-            tbody.appendChild(row);
-            if (canAdjust) {
-                row.querySelector(".btn-adjust-shift").addEventListener("click", () => {
-                    showAdjustCashModal(doc.id, () => fetchShifts());
+            const canAdjust = checkPermission("shifts", "write");
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                const start = data.start_time ? data.start_time.toDate().toLocaleString() : "-";
+                const end = data.end_time ? data.end_time.toDate().toLocaleString() : "-";
+                
+                const isClosed = data.status === 'closed';
+                const diff = isClosed ? (data.closing_cash || 0) - (data.expected_cash || 0) : 0;
+                const diffClass = isClosed ? (diff < 0 ? "text-red-600" : (diff > 0 ? "text-green-600" : "")) : "";
+                
+                const row = document.createElement("tr");
+                row.className = "border-b border-gray-200 hover:bg-gray-100";
+                row.innerHTML = `
+                    <td class="py-3 px-6 text-left whitespace-nowrap">${start}</td>
+                    <td class="py-3 px-6 text-left whitespace-nowrap">${end}</td>
+                    <td class="py-3 px-6 text-right">₱${(data.opening_cash || 0).toFixed(2)}</td>
+                    <td class="py-3 px-6 text-right">₱${(data.closing_cash || 0).toFixed(2)}</td>
+                    <td class="py-3 px-6 text-right">${isClosed ? `₱${(data.expected_cash || 0).toFixed(2)}` : '-'}</td>
+                    <td class="py-3 px-6 text-right font-bold ${diffClass}">${isClosed ? `₱${diff.toFixed(2)}` : '-'}</td>
+                    <td class="py-3 px-6 text-center">
+                        <span class="${data.status === 'open' ? 'bg-green-200 text-green-700' : 'bg-gray-200 text-gray-700'} py-1 px-3 rounded-full text-xs uppercase">${data.status}</span>
+                    </td>
+                    <td class="py-3 px-6 text-center flex justify-center gap-3">
+                        ${canAdjust ? `<button class="btn-adjust-shift text-blue-600 hover:text-blue-900 font-medium" title="Adjust Cash">Adjust</button>` : ''}
+                        <button class="btn-view-history text-gray-600 hover:text-gray-900 font-medium" title="View History">History</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+                
+                if (canAdjust) {
+                    row.querySelector(".btn-adjust-shift").addEventListener("click", () => {
+                        showAdjustCashModal(doc.id);
+                    });
+                }
+
+                row.querySelector(".btn-view-history").addEventListener("click", () => {
+                    showShiftHistoryModal(data.adjustments || []);
                 });
+            });
+        }, (error) => {
+            console.error("Error fetching shifts:", error);
+            if (error.message.includes("requires an index")) {
+                tbody.innerHTML = `<tr><td colspan="7" class="py-3 px-6 text-center text-red-500">Missing Index. Please check the browser console and click the link to create it.</td></tr>`;
+            } else {
+                tbody.innerHTML = `<tr><td colspan="7" class="py-3 px-6 text-center text-red-500">Error loading shifts.</td></tr>`;
             }
         });
-
     } catch (error) {
-        console.error("Error fetching shifts:", error);
-        if (error.message.includes("requires an index")) {
-            tbody.innerHTML = `<tr><td colspan="7" class="py-3 px-6 text-center text-red-500">Missing Index. Please check the browser console and click the link to create it.</td></tr>`;
-        } else {
-            tbody.innerHTML = `<tr><td colspan="7" class="py-3 px-6 text-center text-red-500">Error loading shifts.</td></tr>`;
-        }
+        console.error("Setup error for shifts listener:", error);
     }
 }
 
@@ -240,6 +259,11 @@ function showOpenShiftModal(onSuccess) {
         
         document.getElementById("form-open-shift").addEventListener("submit", async (e) => {
             e.preventDefault();
+            
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Opening...";
+
             const amount = document.getElementById("shift-opening-cash").value;
             try {
                 await startShift(amount);
@@ -248,6 +272,8 @@ function showOpenShiftModal(onSuccess) {
             } catch (error) {
                 console.error("Error starting shift:", error);
                 alert("Failed to start shift. Please try again.");
+                submitBtn.disabled = false;
+                submitBtn.textContent = "Open Register";
             }
         });
     } else {
@@ -316,7 +342,11 @@ export function showCloseShiftModal(onSuccess) {
                 diffEl.className = `text-2xl font-bold ${summary.difference < 0 ? 'text-red-600' : (summary.difference > 0 ? 'text-green-600' : 'text-gray-800')}`;
             } catch (error) {
                 console.error("Error closing shift:", error);
-                alert("Failed to close shift.");
+                if (error.message.includes("requires an index")) {
+                    alert("Database configuration error: A composite index is required. Please check the browser console for the setup link and create the index.");
+                } else {
+                    alert("Failed to close shift. Please try again.");
+                }
             }
         });
 
@@ -388,12 +418,94 @@ async function adjustCash(shiftId, amount, reason) {
         user: auth.currentUser.email
     };
     
-    await updateDoc(doc(db, "shifts", shiftId), {
+    const shiftRef = doc(db, "shifts", shiftId);
+    const shiftSnap = await getDoc(shiftRef);
+    const isClosed = shiftSnap.exists() && shiftSnap.data().status === 'closed';
+
+    const updateData = {
         adjustments: arrayUnion(adjustment)
-    });
+    };
+
+    // If closed, we adjust the physical count (closing_cash). 
+    // If open, we adjust the target (expected_cash).
+    if (isClosed) {
+        updateData.closing_cash = increment(adjustment.amount);
+    } else {
+        updateData.expected_cash = increment(adjustment.amount);
+    }
+
+    await updateDoc(shiftRef, updateData);
     
     if (currentShift && currentShift.id === shiftId) {
         if (!currentShift.adjustments) currentShift.adjustments = [];
         currentShift.adjustments.push(adjustment);
+        currentShift.expected_cash = (currentShift.expected_cash || 0) + adjustment.amount;
     }
+}
+
+export function showShiftHistoryModal(adjustments) {
+    let modal = document.getElementById("modal-shift-history");
+    if (modal) modal.remove();
+
+    const div = document.createElement("div");
+    div.id = "modal-shift-history";
+    div.className = "fixed inset-0 bg-gray-900 bg-opacity-90 flex items-center justify-center z-50";
+    
+    let rows = "";
+    if (!adjustments || adjustments.length === 0) {
+        rows = `<tr><td colspan="4" class="py-8 text-center text-gray-500 italic">No adjustments recorded for this shift.</td></tr>`;
+    } else {
+        // Sort by timestamp desc
+        const sorted = [...adjustments].sort((a, b) => {
+            const tA = a.timestamp?.toDate ? a.timestamp.toDate() : new Date(a.timestamp);
+            const tB = b.timestamp?.toDate ? b.timestamp.toDate() : new Date(b.timestamp);
+            return tB - tA;
+        });
+
+        rows = sorted.map(adj => {
+            const date = adj.timestamp?.toDate ? adj.timestamp.toDate().toLocaleString() : new Date(adj.timestamp).toLocaleString();
+            const amtClass = adj.amount >= 0 ? 'text-green-600' : 'text-red-600';
+            const sign = adj.amount >= 0 ? '+' : '-';
+            return `
+                <tr class="border-b border-gray-100 hover:bg-gray-50 transition">
+                    <td class="py-3 px-4 text-xs text-gray-500">${date}</td>
+                    <td class="py-3 px-4 text-sm font-medium text-gray-700">${adj.user || 'System'}</td>
+                    <td class="py-3 px-4 text-sm text-gray-600">${adj.reason}</td>
+                    <td class="py-3 px-4 text-right font-bold ${amtClass}">${sign}₱${Math.abs(adj.amount).toFixed(2)}</td>
+                </tr>
+            `;
+        }).join("");
+    }
+
+    div.innerHTML = `
+        <div class="bg-white rounded-lg shadow-2xl p-6 w-full max-w-2xl transform transition-all">
+            <div class="flex justify-between items-center mb-6 border-b pb-4">
+                <h2 class="text-xl font-bold text-gray-800">Shift Adjustment History</h2>
+                <button id="close-history-modal-x" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+            </div>
+            <div class="overflow-x-auto max-h-[60vh] rounded-lg border border-gray-200">
+                <table class="min-w-full table-auto">
+                    <thead class="bg-gray-50">
+                        <tr class="text-xs uppercase text-gray-500 font-bold tracking-wider">
+                            <th class="py-3 px-4 text-left">Date & Time</th>
+                            <th class="py-3 px-4 text-left">User</th>
+                            <th class="py-3 px-4 text-left">Reason</th>
+                            <th class="py-3 px-4 text-right">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        ${rows}
+                    </tbody>
+                </table>
+            </div>
+            <div class="mt-8 flex justify-end">
+                <button id="btn-close-history" class="bg-gray-800 hover:bg-gray-900 text-white px-6 py-2 rounded-lg font-bold transition shadow-md">Close</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(div);
+
+    const closeModal = () => div.remove();
+    document.getElementById("close-history-modal-x").addEventListener("click", closeModal);
+    document.getElementById("btn-close-history").addEventListener("click", closeModal);
 }

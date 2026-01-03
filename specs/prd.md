@@ -10,7 +10,7 @@
 - **Dashboard:** High-level KPIs (Revenue, Profit), Low Stock Alerts, and Sales Trends (Fast/Slow moving).
 - **Items:** Master list of products with barcode/search focus.
 - **Suppliers:** Management of vendor contact details and procurement history.
-- **Stock In:** Receiving deliveries with cost-discrepancy alerts.
+- **Stock In:** Receiving deliveries using an invoice-cart system to verify against supplier invoices with cost-discrepancy alerts.
 - **Stock Count:** Inventory auditing with mandatory adjustment logging.
 - **Point of Sale (POS):** Transaction processing with "Quick Add," customer rewards, and automatic unit breakdown.
 - **Stock Out / Item Change:** Handling spoilage, theft, and manual unit conversions.
@@ -94,10 +94,10 @@
 - **Note:** The child item uses its own pre-defined `cost_price` (accounting for higher handling) rather than the parent's divided cost.
 
 ### B. Stock In Costing Alert
-- During delivery entry:
-    - If `entered_cost != stored_cost`:
-        - Display Modal: "Price Discrepancy Detected."
-        - Options: `[Update Master Cost]` `[Keep Current Cost]`.
+- During delivery entry into the Stock In Cart:
+    - For each item, if `entered_cost != stored_cost`:
+        - Flag the item and display a "Price Discrepancy" alert.
+        - Options per item: `[Update Master Cost]` `[Keep Current Cost]`.
 
 ### C. Offline-to-Online Sync (Dexie.js)
 - Transactions are saved to IndexedDB immediately.
@@ -105,6 +105,7 @@
 - If offline, queue transactions.
 - On reconnection: Loop through queue and push to Firestore.
 - **Inventory Update:** Use Firestore `increment(-qty)` to perform delta-based subtraction, avoiding race conditions.
+- **Loyalty Points:** If a customer is linked, use Firestore `increment(points)` to update their profile during sync.
 
 ### D. User Permissions
 - **No Role-Based Access Control (RBAC):** Access is not determined by roles like "Admin" or "Staff".
