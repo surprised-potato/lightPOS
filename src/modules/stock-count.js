@@ -1,6 +1,7 @@
-import { db, auth } from "../firebase-config.js";
+import { db as firestore, auth } from "../firebase-config.js";
+import { db } from "../db.js";
 import { checkPermission } from "../auth.js";
-import { collection, getDocs, addDoc, updateDoc, doc, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 let itemsData = [];
 let selectedItem = null;
@@ -82,11 +83,7 @@ export async function loadStockCountView() {
 
 async function fetchItems() {
     try {
-        const querySnapshot = await getDocs(collection(db, "items"));
-        itemsData = [];
-        querySnapshot.forEach(doc => {
-            itemsData.push({ id: doc.id, ...doc.data() });
-        });
+        itemsData = await db.items.toArray();
     } catch (error) {
         console.error("Error fetching items:", error);
     }
@@ -183,8 +180,8 @@ async function processAdjustment(newStock, reason) {
         const difference = newStock - oldStock;
         const user = auth.currentUser ? auth.currentUser.email : "unknown";
 
-        // 1. Log to adjustments collection
-        await addDoc(collection(db, "adjustments"), {
+        // 1. Log to adjustments collection locally
+        await db.adjustments.add({
             item_id: selectedItem.id,
             item_name: selectedItem.name,
             old_stock: oldStock,
@@ -192,11 +189,17 @@ async function processAdjustment(newStock, reason) {
             difference: difference,
             reason: reason,
             user: user,
-            timestamp: new Date()
+            timestamp: new Date(),
+            sync_status: 0
         });
 
         // 2. Update item stock
-        await updateDoc(doc(db, "items", selectedItem.id), {
+        await updateDoc(doc(firestore, "items", selectedItem.id), {
+            stock_level: newStock
+        });
+
+        // Update local cache immediately
+        await db.items.update(selectedItem.id, {
             stock_level: newStock
         });
 
@@ -219,19 +222,17 @@ async function processAdjustment(newStock, reason) {
 async function fetchAdjustmentLogs() {
     const tbody = document.getElementById("adjustment-logs-table-body");
     try {
-        const q = query(collection(db, "adjustments"), orderBy("timestamp", "desc"), limit(10));
-        const querySnapshot = await getDocs(q);
+        const logs = await db.adjustments.orderBy("timestamp").reverse().limit(10).toArray();
         
         tbody.innerHTML = "";
         
-        if (querySnapshot.empty) {
+        if (logs.length === 0) {
             tbody.innerHTML = `<tr><td colspan="5" class="py-3 px-6 text-center">No history found.</td></tr>`;
             return;
         }
 
-        querySnapshot.forEach(doc => {
-            const data = doc.data();
-            const dateObj = data.timestamp && data.timestamp.toDate ? data.timestamp.toDate() : new Date(data.timestamp);
+        logs.forEach(data => {
+            const dateObj = new Date(data.timestamp);
             const dateStr = dateObj.toLocaleString();
             const diffClass = data.difference > 0 ? "text-green-600" : (data.difference < 0 ? "text-red-600" : "text-gray-600");
             const diffSign = data.difference > 0 ? "+" : "";

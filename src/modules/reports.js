@@ -1,5 +1,4 @@
-import { db } from "../firebase-config.js";
-import { collection, query, where, getDocs, Timestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { db } from "../db.js";
 
 export async function loadReportsView() {
     const content = document.getElementById("main-content");
@@ -93,28 +92,23 @@ async function generateReport() {
         const [ey, em, ed] = endVal.split('-').map(Number);
         const endDate = new Date(ey, em - 1, ed, 23, 59, 59, 999);
 
-        // Query Firestore
-        const q = query(
-            collection(db, "transactions"),
-            where("timestamp", ">=", Timestamp.fromDate(startDate)),
-            where("timestamp", "<=", Timestamp.fromDate(endDate))
-        );
-
-        const querySnapshot = await getDocs(q);
+        // Query Dexie instead of Firestore
+        const transactions = await db.transactions
+            .where('timestamp')
+            .between(startDate, endDate, true, true)
+            .toArray();
         
         let grossSales = 0;
         let cogs = 0;
         const userStats = {};
 
-        if (querySnapshot.empty) {
+        if (transactions.length === 0) {
             usersBody.innerHTML = `<tr><td colspan="3" class="py-3 px-6 text-center">No transactions found for this period.</td></tr>`;
             updateFinancials(0, 0);
             return;
         }
 
-        querySnapshot.forEach(doc => {
-            const data = doc.data();
-            
+        transactions.forEach(data => {
             // Financials
             grossSales += data.total_amount || 0;
             

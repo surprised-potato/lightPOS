@@ -1,7 +1,8 @@
 import { db } from "../db.js";
-import { auth } from "../firebase-config.js";
+import { auth, db as firestore } from "../firebase-config.js";
 import { checkPermission } from "../auth.js";
 import { checkActiveShift, requireShift, showCloseShiftModal } from "./shift.js";
+import { doc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 let allItems = [];
 let cart = [];
@@ -448,6 +449,19 @@ async function processTransaction() {
 
     try {
         await db.transactions.add(transaction);
+
+        // Update stock levels in Firestore and local Dexie
+        for (const item of transaction.items) {
+            // 1. Update Firestore
+            const itemRef = doc(firestore, "items", item.id);
+            await updateDoc(itemRef, {
+                stock_level: increment(-item.qty)
+            });
+
+            // 2. Update Dexie
+            await db.items.update(item.id, { stock_level: item.stock_level - item.qty });
+        }
+
         cart = [];
         renderCart();
         closeCheckout();

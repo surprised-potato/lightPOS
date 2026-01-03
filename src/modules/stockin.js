@@ -1,6 +1,7 @@
-import { db } from "../firebase-config.js";
+import { db as firestore } from "../firebase-config.js";
+import { db } from "../db.js";
 import { checkPermission } from "../auth.js";
-import { collection, getDocs, updateDoc, doc, increment, addDoc, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { updateDoc, doc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 let itemsData = [];
 let selectedItem = null;
@@ -102,11 +103,7 @@ export async function loadStockInView() {
 
 async function fetchItems() {
     try {
-        const querySnapshot = await getDocs(collection(db, "items"));
-        itemsData = [];
-        querySnapshot.forEach(doc => {
-            itemsData.push({ id: doc.id, ...doc.data() });
-        });
+        itemsData = await db.items.toArray();
     } catch (error) {
         console.error("Error fetching items:", error);
     }
@@ -196,16 +193,23 @@ async function processStockIn(qty, cost, updateMasterCost) {
             updateData.cost_price = cost;
         }
 
-        await updateDoc(doc(db, "items", selectedItem.id), updateData);
+        await updateDoc(doc(firestore, "items", selectedItem.id), updateData);
         
-        // Log the transaction
-        await addDoc(collection(db, "stock_logs"), {
+        // Update local cache immediately to reflect new stock level
+        await db.items.update(selectedItem.id, {
+            stock_level: selectedItem.stock_level + qty,
+            ...(updateMasterCost ? { cost_price: cost } : {})
+        });
+
+        // Log the transaction locally first
+        await db.stock_logs.add({
             item_id: selectedItem.id,
             item_name: selectedItem.name,
             barcode: selectedItem.barcode,
             qty_added: qty,
             cost_price: cost,
-            timestamp: new Date()
+            timestamp: new Date(),
+            sync_status: 0
         });
 
         document.getElementById("modal-price-alert").classList.add("hidden");
@@ -231,20 +235,17 @@ async function processStockIn(qty, cost, updateMasterCost) {
 async function fetchStockLogs() {
     const tbody = document.getElementById("stock-logs-table-body");
     try {
-        const q = query(collection(db, "stock_logs"), orderBy("timestamp", "desc"), limit(10));
-        const querySnapshot = await getDocs(q);
+        const logs = await db.stock_logs.orderBy("timestamp").reverse().limit(10).toArray();
         
         tbody.innerHTML = "";
         
-        if (querySnapshot.empty) {
+        if (logs.length === 0) {
             tbody.innerHTML = `<tr><td colspan="4" class="py-3 px-6 text-center">No history found.</td></tr>`;
             return;
         }
 
-        querySnapshot.forEach(doc => {
-            const data = doc.data();
-            // Handle Firestore Timestamp or JS Date
-            const dateObj = data.timestamp && data.timestamp.toDate ? data.timestamp.toDate() : new Date(data.timestamp);
+        logs.forEach(data => {
+            const dateObj = new Date(data.timestamp);
             const dateStr = dateObj.toLocaleString();
             
             const row = document.createElement("tr");

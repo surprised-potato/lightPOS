@@ -1,4 +1,5 @@
-import { db, auth } from "../firebase-config.js";
+import { db as firestore, auth } from "../firebase-config.js";
+import { db } from "../db.js";
 import { checkPermission } from "../auth.js";
 import { collection, addDoc, query, where, getDocs, getDoc, limit, updateDoc, doc, orderBy, arrayUnion, increment, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
@@ -10,7 +11,7 @@ export async function checkActiveShift() {
 
     try {
         const q = query(
-            collection(db, "shifts"),
+            collection(firestore, "shifts"),
             where("user_id", "==", auth.currentUser.email),
             where("status", "==", "open"),
             limit(1)
@@ -47,7 +48,7 @@ export async function startShift(openingCash) {
         status: "open"
     };
 
-    const docRef = await addDoc(collection(db, "shifts"), shiftData);
+    const docRef = await addDoc(collection(firestore, "shifts"), shiftData);
     currentShift = { id: docRef.id, ...shiftData };
     return currentShift;
 }
@@ -63,17 +64,16 @@ export function requireShift(callback) {
 export async function calculateExpectedCash() {
     if (!currentShift) return 0;
     
-    // Query transactions for this user since shift start
-    const q = query(
-        collection(db, "transactions"),
-        where("user_email", "==", auth.currentUser.email),
-        where("timestamp", ">=", currentShift.start_time)
-    );
-    
-    const querySnapshot = await getDocs(q);
+    // Query local Dexie transactions for this user since shift start
+    const startTime = currentShift.start_time instanceof Date ? currentShift.start_time : currentShift.start_time.toDate();
+    const transactions = await db.transactions
+        .where('timestamp').aboveOrEqual(startTime)
+        .filter(tx => tx.user_email === auth.currentUser.email)
+        .toArray();
+
     let totalSales = 0;
-    querySnapshot.forEach(doc => {
-        totalSales += doc.data().total_amount || 0;
+    transactions.forEach(tx => {
+        totalSales += tx.total_amount || 0;
     });
     
     let totalAdjustments = 0;
@@ -90,7 +90,7 @@ export async function closeShift(closingCash) {
     const expected = await calculateExpectedCash();
     const closing = parseFloat(closingCash);
     
-    await updateDoc(doc(db, "shifts", currentShift.id), {
+    await updateDoc(doc(firestore, "shifts", currentShift.id), {
         end_time: new Date(),
         closing_cash: closing,
         expected_cash: expected,
@@ -154,7 +154,7 @@ async function fetchShifts() {
 
     try {
         const q = query(
-            collection(db, "shifts"),
+            collection(firestore, "shifts"),
             where("user_id", "==", auth.currentUser.email),
             orderBy("start_time", "desc"),
             limit(20)
@@ -418,7 +418,7 @@ async function adjustCash(shiftId, amount, reason) {
         user: auth.currentUser.email
     };
     
-    const shiftRef = doc(db, "shifts", shiftId);
+    const shiftRef = doc(firestore, "shifts", shiftId);
     const shiftSnap = await getDoc(shiftRef);
     const isClosed = shiftSnap.exists() && shiftSnap.data().status === 'closed';
 
