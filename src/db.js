@@ -1,10 +1,14 @@
-// Initialize Dexie
-// Note: Dexie is imported via CDN in index.html and is available globally
-const db = new Dexie("pos_db");
+import Dexie from 'https://unpkg.com/dexie/dist/dexie.mjs';
 
+export const db = new Dexie('lightPOS_DB');
+
+// Define schema: 
+// ++id is auto-incrementing if needed, 
+// but usually, you'll use the 'id' from your cloud DB.
 db.version(1).stores({
-    items: "id, barcode, name, parent_id", // Primary key and indexed props
-    transactions: "++id, timestamp, sync_status"
+    items: 'id, name, category, updatedAt',
+    transactions: '++id, timestamp, sync_status',
+    sync_metadata: 'key, value'
 });
 
-export { db };
+export default db;
