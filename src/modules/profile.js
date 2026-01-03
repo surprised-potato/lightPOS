@@ -1,10 +1,9 @@
-import { auth } from "../firebase-config.js";
 import { getUserProfile } from "../auth.js";
-import { updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+const API_URL = 'api/router.php';
 
 export function loadProfileView() {
     const content = document.getElementById("main-content");
-    const user = auth.currentUser;
     const profile = getUserProfile();
 
     content.innerHTML = `
@@ -24,7 +23,7 @@ export function loadProfileView() {
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-500">Email Address</label>
-                                <div class="mt-1 text-gray-900 font-semibold">${user?.email || 'N/A'}</div>
+                                <div class="mt-1 text-gray-900 font-semibold">${profile?.email || 'N/A'}</div>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-500">Role / Permissions</label>
@@ -98,27 +97,40 @@ async function handleChangePassword(e) {
         btn.disabled = true;
         btn.textContent = "Updating...";
 
-        const user = auth.currentUser;
-        const credential = EmailAuthProvider.credential(user.email, currentPass);
+        const profile = getUserProfile();
+        if (!profile || !profile.email) throw new Error("User session invalid.");
 
-        // 1. Re-authenticate
-        await reauthenticateWithCredential(user, credential);
+        // 1. Fetch users
+        const response = await fetch(`${API_URL}?file=users`);
+        let users = await response.json();
+        if (!Array.isArray(users)) users = [];
 
-        // 2. Update Password
-        await updatePassword(user, newPass);
+        // 2. Find user
+        const userIndex = users.findIndex(u => u.email === profile.email);
+        if (userIndex === -1) throw new Error("User record not found.");
+
+        // 3. Verify Current Password (MD5)
+        // Note: Assuming md5() is available globally as used in users.js
+        if (users[userIndex].password !== md5(currentPass)) {
+            throw new Error("Current password is incorrect.");
+        }
+
+        // 4. Update Password
+        users[userIndex].password = md5(newPass);
+
+        // 5. Save back
+        await fetch(`${API_URL}?file=users`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(users)
+        });
 
         showMessage("Password updated successfully!", false);
         document.getElementById("form-change-password").reset();
 
     } catch (error) {
         console.error("Error updating password:", error);
-        let errorMsg = "Failed to update password.";
-        if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
-            errorMsg = "Current password is incorrect.";
-        } else if (error.code === 'auth/weak-password') {
-            errorMsg = "Password is too weak.";
-        }
-        showMessage(errorMsg, true);
+        showMessage(error.message || "Failed to update password.", true);
     } finally {
         btn.disabled = false;
         btn.textContent = "Update Password";

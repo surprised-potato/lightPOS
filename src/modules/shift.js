@@ -1,26 +1,28 @@
-import { db as firestore, auth } from "../firebase-config.js";
 import { db } from "../db.js";
 import { checkPermission } from "../auth.js";
-import { collection, addDoc, query, where, getDocs, getDoc, limit, updateDoc, doc, orderBy, arrayUnion, increment, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+const API_URL = 'api/router.php';
 
 let currentShift = null;
-let shiftsListener = null;
+
+function getCurrentUser() {
+    return JSON.parse(localStorage.getItem('pos_user'));
+}
 
 export async function checkActiveShift() {
-    if (!auth.currentUser) return null;
+    const user = getCurrentUser();
+    if (!user) return null;
 
     try {
-        const q = query(
-            collection(firestore, "shifts"),
-            where("user_id", "==", auth.currentUser.email),
-            where("status", "==", "open"),
-            limit(1)
-        );
+        const response = await fetch(`${API_URL}?file=shifts`);
+        let shifts = await response.json();
+        if (!Array.isArray(shifts)) shifts = [];
 
-        const snapshot = await getDocs(q);
-        if (!snapshot.empty) {
-            const docSnap = snapshot.docs[0];
-            currentShift = { id: docSnap.id, ...docSnap.data() };
+        // Find open shift for this user
+        const active = shifts.find(s => s.user_id === user.email && s.status === "open");
+
+        if (active) {
+            currentShift = active;
             return currentShift;
         } else {
             currentShift = null;
@@ -32,25 +34,44 @@ export async function checkActiveShift() {
 }
 
 export async function startShift(openingCash) {
-    if (!auth.currentUser) return;
+    const user = getCurrentUser();
+    if (!user) return;
 
     // Prevent duplicate creation if a shift is already active
     const active = await checkActiveShift();
     if (active) return active;
 
     const shiftData = {
-        user_id: auth.currentUser.email,
+        id: crypto.randomUUID(),
+        user_id: user.email,
         start_time: new Date(),
         end_time: null,
         opening_cash: parseFloat(openingCash),
         closing_cash: 0,
         expected_cash: parseFloat(openingCash),
-        status: "open"
+        status: "open",
+        adjustments: []
     };
 
-    const docRef = await addDoc(collection(firestore, "shifts"), shiftData);
-    currentShift = { id: docRef.id, ...shiftData };
-    return currentShift;
+    try {
+        const response = await fetch(`${API_URL}?file=shifts`);
+        let shifts = await response.json();
+        if (!Array.isArray(shifts)) shifts = [];
+        
+        shifts.push(shiftData);
+
+        await fetch(`${API_URL}?file=shifts`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(shifts)
+        });
+
+        currentShift = shiftData;
+        return currentShift;
+    } catch (error) {
+        console.error("Error starting shift:", error);
+        throw error;
+    }
 }
 
 export function requireShift(callback) {
@@ -65,10 +86,12 @@ export async function calculateExpectedCash() {
     if (!currentShift) return 0;
     
     // Query local Dexie transactions for this user since shift start
-    const startTime = currentShift.start_time instanceof Date ? currentShift.start_time : currentShift.start_time.toDate();
+    const startTime = new Date(currentShift.start_time);
+    const user = getCurrentUser();
+
     const transactions = await db.transactions
         .where('timestamp').aboveOrEqual(startTime)
-        .filter(tx => tx.user_email === auth.currentUser.email)
+        .filter(tx => tx.user_email === user.email)
         .toArray();
 
     let totalSales = 0;
@@ -90,12 +113,23 @@ export async function closeShift(closingCash) {
     const expected = await calculateExpectedCash();
     const closing = parseFloat(closingCash);
     
-    await updateDoc(doc(firestore, "shifts", currentShift.id), {
-        end_time: new Date(),
-        closing_cash: closing,
-        expected_cash: expected,
-        status: "closed"
-    });
+    const response = await fetch(`${API_URL}?file=shifts`);
+    let shifts = await response.json();
+    if (!Array.isArray(shifts)) shifts = [];
+
+    const index = shifts.findIndex(s => s.id === currentShift.id);
+    if (index !== -1) {
+        shifts[index].end_time = new Date();
+        shifts[index].closing_cash = closing;
+        shifts[index].expected_cash = expected;
+        shifts[index].status = "closed";
+
+        await fetch(`${API_URL}?file=shifts`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(shifts)
+        });
+    }
     
     const summary = {
         expected: expected,
@@ -144,80 +178,72 @@ export async function loadShiftsView() {
 
 async function fetchShifts() {
     const tbody = document.getElementById("shifts-table-body");
-    if (!auth.currentUser) {
+    const user = getCurrentUser();
+    if (!user) {
          tbody.innerHTML = `<tr><td colspan="7" class="py-3 px-6 text-center">Please login to view shifts.</td></tr>`;
          return;
     }
 
-    // Unsubscribe from previous listener if it exists to prevent memory leaks
-    if (shiftsListener) shiftsListener();
-
     try {
-        const q = query(
-            collection(firestore, "shifts"),
-            where("user_id", "==", auth.currentUser.email),
-            orderBy("start_time", "desc"),
-            limit(20)
-        );
+        const response = await fetch(`${API_URL}?file=shifts`);
+        let shifts = await response.json();
+        if (!Array.isArray(shifts)) shifts = [];
+
+        // Filter by user and sort desc
+        const userShifts = shifts
+            .filter(s => s.user_id === user.email)
+            .sort((a, b) => new Date(b.start_time) - new Date(a.start_time))
+            .slice(0, 20);
+
+        tbody.innerHTML = "";
+
+        if (userShifts.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" class="py-3 px-6 text-center">No shifts found.</td></tr>`;
+            return;
+        }
+
+        const canAdjust = checkPermission("shifts", "write");
         
-        // Set up real-time listener
-        shiftsListener = onSnapshot(q, (snapshot) => {
-            tbody.innerHTML = "";
-
-            if (snapshot.empty) {
-                tbody.innerHTML = `<tr><td colspan="7" class="py-3 px-6 text-center">No shifts found.</td></tr>`;
-                return;
-            }
-
-            const canAdjust = checkPermission("shifts", "write");
-            snapshot.forEach(doc => {
-                const data = doc.data();
-                const start = data.start_time ? data.start_time.toDate().toLocaleString() : "-";
-                const end = data.end_time ? data.end_time.toDate().toLocaleString() : "-";
-                
-                const isClosed = data.status === 'closed';
-                const diff = isClosed ? (data.closing_cash || 0) - (data.expected_cash || 0) : 0;
-                const diffClass = isClosed ? (diff < 0 ? "text-red-600" : (diff > 0 ? "text-green-600" : "")) : "";
-                
-                const row = document.createElement("tr");
-                row.className = "border-b border-gray-200 hover:bg-gray-100";
-                row.innerHTML = `
-                    <td class="py-3 px-6 text-left whitespace-nowrap">${start}</td>
-                    <td class="py-3 px-6 text-left whitespace-nowrap">${end}</td>
-                    <td class="py-3 px-6 text-right">₱${(data.opening_cash || 0).toFixed(2)}</td>
-                    <td class="py-3 px-6 text-right">₱${(data.closing_cash || 0).toFixed(2)}</td>
-                    <td class="py-3 px-6 text-right">${isClosed ? `₱${(data.expected_cash || 0).toFixed(2)}` : '-'}</td>
-                    <td class="py-3 px-6 text-right font-bold ${diffClass}">${isClosed ? `₱${diff.toFixed(2)}` : '-'}</td>
-                    <td class="py-3 px-6 text-center">
-                        <span class="${data.status === 'open' ? 'bg-green-200 text-green-700' : 'bg-gray-200 text-gray-700'} py-1 px-3 rounded-full text-xs uppercase">${data.status}</span>
-                    </td>
-                    <td class="py-3 px-6 text-center flex justify-center gap-3">
-                        ${canAdjust ? `<button class="btn-adjust-shift text-blue-600 hover:text-blue-900 font-medium" title="Adjust Cash">Adjust</button>` : ''}
-                        <button class="btn-view-history text-gray-600 hover:text-gray-900 font-medium" title="View History">History</button>
-                    </td>
-                `;
-                tbody.appendChild(row);
-                
-                if (canAdjust) {
-                    row.querySelector(".btn-adjust-shift").addEventListener("click", () => {
-                        showAdjustCashModal(doc.id);
-                    });
-                }
-
-                row.querySelector(".btn-view-history").addEventListener("click", () => {
-                    showShiftHistoryModal(data.adjustments || []);
+        userShifts.forEach(data => {
+            const start = data.start_time ? new Date(data.start_time).toLocaleString() : "-";
+            const end = data.end_time ? new Date(data.end_time).toLocaleString() : "-";
+            
+            const isClosed = data.status === 'closed';
+            const diff = isClosed ? (data.closing_cash || 0) - (data.expected_cash || 0) : 0;
+            const diffClass = isClosed ? (diff < 0 ? "text-red-600" : (diff > 0 ? "text-green-600" : "")) : "";
+            
+            const row = document.createElement("tr");
+            row.className = "border-b border-gray-200 hover:bg-gray-100";
+            row.innerHTML = `
+                <td class="py-3 px-6 text-left whitespace-nowrap">${start}</td>
+                <td class="py-3 px-6 text-left whitespace-nowrap">${end}</td>
+                <td class="py-3 px-6 text-right">₱${(data.opening_cash || 0).toFixed(2)}</td>
+                <td class="py-3 px-6 text-right">₱${(data.closing_cash || 0).toFixed(2)}</td>
+                <td class="py-3 px-6 text-right">${isClosed ? `₱${(data.expected_cash || 0).toFixed(2)}` : '-'}</td>
+                <td class="py-3 px-6 text-right font-bold ${diffClass}">${isClosed ? `₱${diff.toFixed(2)}` : '-'}</td>
+                <td class="py-3 px-6 text-center">
+                    <span class="${data.status === 'open' ? 'bg-green-200 text-green-700' : 'bg-gray-200 text-gray-700'} py-1 px-3 rounded-full text-xs uppercase">${data.status}</span>
+                </td>
+                <td class="py-3 px-6 text-center flex justify-center gap-3">
+                    ${canAdjust ? `<button class="btn-adjust-shift text-blue-600 hover:text-blue-900 font-medium" title="Adjust Cash">Adjust</button>` : ''}
+                    <button class="btn-view-history text-gray-600 hover:text-gray-900 font-medium" title="View History">History</button>
+                </td>
+            `;
+            tbody.appendChild(row);
+            
+            if (canAdjust) {
+                row.querySelector(".btn-adjust-shift").addEventListener("click", () => {
+                    showAdjustCashModal(data.id);
                 });
-            });
-        }, (error) => {
-            console.error("Error fetching shifts:", error);
-            if (error.message.includes("requires an index")) {
-                tbody.innerHTML = `<tr><td colspan="7" class="py-3 px-6 text-center text-red-500">Missing Index. Please check the browser console and click the link to create it.</td></tr>`;
-            } else {
-                tbody.innerHTML = `<tr><td colspan="7" class="py-3 px-6 text-center text-red-500">Error loading shifts.</td></tr>`;
             }
+
+            row.querySelector(".btn-view-history").addEventListener("click", () => {
+                showShiftHistoryModal(data.adjustments || []);
+            });
         });
     } catch (error) {
-        console.error("Setup error for shifts listener:", error);
+        console.error("Error fetching shifts:", error);
+        tbody.innerHTML = `<tr><td colspan="7" class="py-3 px-6 text-center text-red-500">Error loading shifts.</td></tr>`;
     }
 }
 
@@ -342,11 +368,7 @@ export function showCloseShiftModal(onSuccess) {
                 diffEl.className = `text-2xl font-bold ${summary.difference < 0 ? 'text-red-600' : (summary.difference > 0 ? 'text-green-600' : 'text-gray-800')}`;
             } catch (error) {
                 console.error("Error closing shift:", error);
-                if (error.message.includes("requires an index")) {
-                    alert("Database configuration error: A composite index is required. Please check the browser console for the setup link and create the index.");
-                } else {
-                    alert("Failed to close shift. Please try again.");
-                }
+                alert("Failed to close shift. Please try again.");
             }
         });
 
@@ -410,31 +432,39 @@ async function adjustCash(shiftId, amount, reason) {
         alert("You do not have permission to adjust shift cash.");
         return;
     }
+
+    const user = getCurrentUser();
     
     const adjustment = {
         amount: parseFloat(amount),
         reason: reason,
         timestamp: new Date(),
-        user: auth.currentUser.email
+        user: user ? user.email : 'unknown'
     };
     
-    const shiftRef = doc(firestore, "shifts", shiftId);
-    const shiftSnap = await getDoc(shiftRef);
-    const isClosed = shiftSnap.exists() && shiftSnap.data().status === 'closed';
+    const response = await fetch(`${API_URL}?file=shifts`);
+    let shifts = await response.json();
+    if (!Array.isArray(shifts)) shifts = [];
 
-    const updateData = {
-        adjustments: arrayUnion(adjustment)
-    };
+    const index = shifts.findIndex(s => s.id === shiftId);
+    if (index !== -1) {
+        const shift = shifts[index];
+        if (!shift.adjustments) shift.adjustments = [];
+        shift.adjustments.push(adjustment);
 
-    // If closed, we adjust the physical count (closing_cash). 
-    // If open, we adjust the target (expected_cash).
-    if (isClosed) {
-        updateData.closing_cash = increment(adjustment.amount);
-    } else {
-        updateData.expected_cash = increment(adjustment.amount);
+        const isClosed = shift.status === 'closed';
+        if (isClosed) {
+            shift.closing_cash = (shift.closing_cash || 0) + adjustment.amount;
+        } else {
+            shift.expected_cash = (shift.expected_cash || 0) + adjustment.amount;
+        }
+
+        await fetch(`${API_URL}?file=shifts`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(shifts)
+        });
     }
-
-    await updateDoc(shiftRef, updateData);
     
     if (currentShift && currentShift.id === shiftId) {
         if (!currentShift.adjustments) currentShift.adjustments = [];
@@ -457,13 +487,13 @@ export function showShiftHistoryModal(adjustments) {
     } else {
         // Sort by timestamp desc
         const sorted = [...adjustments].sort((a, b) => {
-            const tA = a.timestamp?.toDate ? a.timestamp.toDate() : new Date(a.timestamp);
-            const tB = b.timestamp?.toDate ? b.timestamp.toDate() : new Date(b.timestamp);
+            const tA = new Date(a.timestamp);
+            const tB = new Date(b.timestamp);
             return tB - tA;
         });
 
         rows = sorted.map(adj => {
-            const date = adj.timestamp?.toDate ? adj.timestamp.toDate().toLocaleString() : new Date(adj.timestamp).toLocaleString();
+            const date = new Date(adj.timestamp).toLocaleString();
             const amtClass = adj.amount >= 0 ? 'text-green-600' : 'text-red-600';
             const sign = adj.amount >= 0 ? '+' : '-';
             return `

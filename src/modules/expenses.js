@@ -1,6 +1,6 @@
-import { db, auth } from "../firebase-config.js";
 import { checkPermission } from "../auth.js";
-import { collection, addDoc, getDocs, deleteDoc, doc, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+const API_URL = 'api/router.php';
 
 let suppliersList = [];
 
@@ -108,17 +108,17 @@ export async function loadExpensesView() {
 
 async function fetchSuppliers() {
     try {
-        const querySnapshot = await getDocs(collection(db, "suppliers"));
-        suppliersList = [];
+        const response = await fetch(`${API_URL}?file=suppliers`);
+        const data = await response.json();
+        suppliersList = Array.isArray(data) ? data : [];
+
         const select = document.getElementById("exp-supplier");
         select.innerHTML = '<option value="">None</option>';
         
-        querySnapshot.forEach(doc => {
-            const data = doc.data();
-            suppliersList.push({ id: doc.id, name: data.name });
+        suppliersList.forEach(sup => {
             const option = document.createElement("option");
-            option.value = doc.id;
-            option.textContent = data.name;
+            option.value = sup.id;
+            option.textContent = sup.name;
             select.appendChild(option);
         });
     } catch (error) {
@@ -134,10 +134,15 @@ async function saveExpense() {
     const dateVal = document.getElementById("exp-date").value;
     
     const supplierName = supplierId ? suppliersList.find(s => s.id === supplierId)?.name : null;
-    const user = auth.currentUser ? auth.currentUser.email : "Unknown";
+    const user = JSON.parse(localStorage.getItem('pos_user'))?.email || "Unknown";
 
     try {
-        await addDoc(collection(db, "expenses"), {
+        const response = await fetch(`${API_URL}?file=expenses`);
+        let expenses = await response.json();
+        if (!Array.isArray(expenses)) expenses = [];
+
+        expenses.push({
+            id: crypto.randomUUID(),
             description: desc,
             amount: amount,
             category: category,
@@ -146,6 +151,12 @@ async function saveExpense() {
             date: new Date(dateVal),
             user_id: user,
             created_at: new Date()
+        });
+
+        await fetch(`${API_URL}?file=expenses`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(expenses)
         });
         
         document.getElementById("modal-add-expense").classList.add("hidden");
@@ -171,20 +182,23 @@ async function fetchExpenses() {
     tbody.innerHTML = `<tr><td colspan="7" class="py-3 px-6 text-center">Loading...</td></tr>`;
 
     try {
-        const q = query(collection(db, "expenses"), orderBy("date", "desc"), limit(50));
-        const querySnapshot = await getDocs(q);
+        const response = await fetch(`${API_URL}?file=expenses`);
+        let expenses = await response.json();
+        if (!Array.isArray(expenses)) expenses = [];
+
+        // Sort by date desc and limit to 50
+        expenses.sort((a, b) => new Date(b.date) - new Date(a.date));
+        expenses = expenses.slice(0, 50);
         
         tbody.innerHTML = "";
 
-        if (querySnapshot.empty) {
+        if (expenses.length === 0) {
             tbody.innerHTML = `<tr><td colspan="7" class="py-3 px-6 text-center">No expenses recorded.</td></tr>`;
             return;
         }
 
-        querySnapshot.forEach(doc => {
-            const data = doc.data();
-            const dateObj = data.date && data.date.toDate ? data.date.toDate() : new Date(data.date);
-            const dateStr = dateObj.toLocaleDateString();
+        expenses.forEach(data => {
+            const dateStr = new Date(data.date).toLocaleDateString();
             
             const row = document.createElement("tr");
             row.className = "border-b border-gray-200 hover:bg-gray-100";
@@ -196,7 +210,7 @@ async function fetchExpenses() {
                 <td class="py-3 px-6 text-right font-bold text-red-600">₱${data.amount.toFixed(2)}</td>
                 <td class="py-3 px-6 text-left text-xs text-gray-500">${data.user_id}</td>
                 <td class="py-3 px-6 text-center">
-                    <button class="text-red-500 hover:text-red-700 delete-btn ${canWrite ? '' : 'hidden'}" data-id="${doc.id}">
+                    <button class="text-red-500 hover:text-red-700 delete-btn ${canWrite ? '' : 'hidden'}" data-id="${data.id}">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                     </button>
                 </td>
@@ -205,7 +219,17 @@ async function fetchExpenses() {
             row.querySelector(".delete-btn").addEventListener("click", async (e) => {
                 if (confirm("Delete this expense record?")) {
                     const id = e.currentTarget.getAttribute("data-id");
-                    await deleteDoc(doc(db, "expenses", id));
+                    
+                    const res = await fetch(`${API_URL}?file=expenses`);
+                    let current = await res.json();
+                    const updated = current.filter(ex => ex.id !== id);
+                    
+                    await fetch(`${API_URL}?file=expenses`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(updated)
+                    });
+
                     fetchExpenses();
                 }
             });

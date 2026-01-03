@@ -1,10 +1,10 @@
 # LightPOS
 
-A lightweight, cloud-based Point of Sale (POS) & Inventory system built with Vanilla JavaScript, Tailwind CSS, and Firebase.
+A lightweight, self-hosted Point of Sale (POS) & Inventory system built with Vanilla JavaScript, Tailwind CSS, and PHP/JSON storage.
 
 ## Features
 - **Offline-First:** Works without internet using Dexie.js (IndexedDB).
-- **Realtime Sync:** Syncs data to Firestore when online.
+- **Simple Sync:** Syncs data to server JSON files when online.
 - **Inventory Management:** Items, Suppliers, Stock In/Out, Stock Counts.
 - **POS:** Cart, Checkout, Auto-Breakdown of units.
 - **Reporting:** Dashboard, Sales Reports, Expense Tracking.
@@ -12,15 +12,13 @@ A lightweight, cloud-based Point of Sale (POS) & Inventory system built with Van
 
 ## Setup
 1. Clone the repository.
-2. Update `src/firebase-config.js` with your Firebase project credentials.
-3. Open `index.html` in a browser (or serve with a local server like Live Server).
+2. Ensure you have a web server (Apache/Nginx) with PHP enabled.
+3. Place the files in your web root.
+4. Ensure the `data/` directory is writable by the web server.
 
-## Deployment (GitHub Pages)
-1. Push the code to a GitHub repository.
-2. Go to **Settings > Pages**.
-3. Select the `main` branch as the source.
-4. Click **Save**.
-5. Your POS will be live at `https://<username>.github.io/<repo-name>/`.
+## Deployment
+1. Copy files to your server.
+2. Secure the `data/` directory so it cannot be accessed directly via browser (use `.htaccess`).
 
 ## Testing Offline Mode
 1. Open the app and let it sync initial data.

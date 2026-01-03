@@ -1,0 +1,16 @@
+[
+    {
+        "id": "f4e3c458-34c1-4490-afd5-7a12b399545c",
+        "name": "normal customer",
+        "phone": "8298543",
+        "email": "jslfdjkls@kjosf.cop",
+        "loyalty_points": 0
+    },
+    {
+        "id": "afed138b-bd44-4613-b963-3bca1c0ef750",
+        "name": "New Customer",
+        "phone": "2908340958",
+        "email": "sklfjdsd@lightpos.com",
+        "loyalty_points": 0
+    }
+]

@@ -1,39 +1,57 @@
-import { db as localDb } from "../db.js";
-import { db as remoteDb } from "../firebase-config.js";
-import { collection, onSnapshot, addDoc, writeBatch, doc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { db } from "../db.js";
+
+const API_URL = 'api/router.php';
+const SYNC_INTERVAL = 30000; // 30 seconds
 
 export function startRealtimeSync() {
-    console.log("Starting realtime sync service...");
+    console.log("Starting sync service...");
     
-    // Uplink: Listen for online status and try syncing immediately
+    // 1. Downlink: Poll for item updates
+    syncItemsDown();
+    setInterval(syncItemsDown, SYNC_INTERVAL);
+
+    syncCustomersDown();
+    setInterval(syncCustomersDown, SYNC_INTERVAL);
+
+    // 2. Uplink: Listen for online status
     window.addEventListener('online', processQueue);
-    // Try processing queue on startup
-    processQueue();
-
-    // Sync Items: Firestore -> Dexie
-    // This listener stays active as long as the app is running
-    const unsubscribe = onSnapshot(collection(remoteDb, "items"), (snapshot) => {
-        const items = [];
-        snapshot.forEach((doc) => {
-            items.push({ id: doc.id, ...doc.data() });
-        });
-
-        // Bulk update local DB
-        // bulkPut will add new items and update existing ones by primary key (id)
-        localDb.items.bulkPut(items).then(() => {
-            console.log(`Synced ${items.length} items from Cloud to Local DB.`);
-            // Verification: Log current Dexie state
-            return localDb.items.toArray();
-        }).then((dexieItems) => {
-            console.log("Current Dexie Items:", dexieItems);
-        }).catch((err) => {
-            console.error("Error syncing items to local DB:", err);
-        });
-    }, (error) => {
-        console.error("Firestore sync error:", error);
-    });
     
-    return unsubscribe;
+    // 3. Try processing queue on startup
+    processQueue();
+}
+
+async function syncItemsDown() {
+    if (!navigator.onLine) return;
+    
+    try {
+        const response = await fetch(`${API_URL}?file=items`);
+        if (!response.ok) return;
+        
+        let items = await response.json();
+        if (!Array.isArray(items)) items = [];
+
+        // Bulk put updates existing items by ID and adds new ones
+        await db.items.bulkPut(items);
+        console.log(`Synced ${items.length} items from Server.`);
+    } catch (error) {
+        console.error("Error syncing items down:", error);
+    }
+}
+
+async function syncCustomersDown() {
+    if (!navigator.onLine) return;
+    
+    try {
+        const response = await fetch(`${API_URL}?file=customers`);
+        if (!response.ok) return;
+        
+        let customers = await response.json();
+        if (!Array.isArray(customers)) customers = [];
+
+        await db.customers.bulkPut(customers);
+    } catch (error) {
+        console.error("Error syncing customers down:", error);
+    }
 }
 
 export async function processQueue() {
@@ -43,33 +61,92 @@ export async function processQueue() {
     }
 
     try {
-        // Query Dexie for unsynced transactions (sync_status === 0)
-        const unsyncedTxs = await localDb.transactions.where("sync_status").equals(0).toArray();
-
+        // 1. Get unsynced local transactions
+        const unsyncedTxs = await db.transactions.where("sync_status").equals(0).toArray();
         if (unsyncedTxs.length === 0) return;
 
-        console.log(`Syncing ${unsyncedTxs.length} transactions to Cloud...`);
+        console.log(`Syncing ${unsyncedTxs.length} transactions to Server...`);
 
+        // 2. Fetch Server State (Items & Transactions)
+        const [itemsRes, txRes] = await Promise.all([
+            fetch(`${API_URL}?file=items`),
+            fetch(`${API_URL}?file=transactions`)
+        ]);
+
+        let serverItems = await itemsRes.json();
+        if (!Array.isArray(serverItems)) serverItems = [];
+
+        let serverTxs = await txRes.json();
+        if (!Array.isArray(serverTxs)) serverTxs = [];
+
+        // 3. Process each unsynced transaction
         for (const tx of unsyncedTxs) {
-            // 1. Write to Firestore transactions collection
-            // Exclude the local Dexie ID
-            const { id, ...txData } = tx;
-            await addDoc(collection(remoteDb, "transactions"), txData);
+            // a. Prepare server transaction object
+            // Generate a UUID for the server record, keep local ID for reference if needed
+            const serverTx = { 
+                ...tx, 
+                id: crypto.randomUUID(), 
+                sync_status: 1,
+                local_id: tx.id 
+            };
+            serverTxs.push(serverTx);
 
-            // 2. Batch update Firestore items (decrement stock)
-            const batch = writeBatch(remoteDb);
-            tx.items.forEach(item => {
-                const itemRef = doc(remoteDb, "items", item.id);
-                batch.update(itemRef, { 
-                    stock_level: increment(-item.qty) 
+            // b. Update Server Stock
+            if (tx.items && Array.isArray(tx.items)) {
+                tx.items.forEach(cartItem => {
+                    const itemIndex = serverItems.findIndex(i => i.id === cartItem.id);
+                    if (itemIndex !== -1) {
+                        serverItems[itemIndex].stock_level -= cartItem.qty;
+                    }
                 });
-            });
-            await batch.commit();
-
-            // 3. Update Dexie transaction synced status
-            await localDb.transactions.update(id, { sync_status: 1 });
-            console.log(`Transaction ${id} synced successfully.`);
+            }
         }
+
+        // 4. Save back to Server
+        await Promise.all([
+            fetch(`${API_URL}?file=items`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(serverItems)
+            }),
+            fetch(`${API_URL}?file=transactions`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(serverTxs)
+            })
+        ]);
+
+        // 5. Mark local transactions as synced
+        await db.transaction('rw', db.transactions, async () => {
+            for (const tx of unsyncedTxs) {
+                await db.transactions.update(tx.id, { sync_status: 1 });
+            }
+        });
+
+        // 6. Process Generic Sync Queue (e.g., Stock In)
+        const syncQueueItems = await db.syncQueue.toArray();
+        if (syncQueueItems.length > 0) {
+            console.log(`Processing ${syncQueueItems.length} queued actions...`);
+            
+            for (const item of syncQueueItems) {
+                try {
+                    const res = await fetch(`${API_URL}?action=${item.action}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ data: item.data })
+                    });
+                    
+                    if (res.ok) {
+                        await db.syncQueue.delete(item.id);
+                    }
+                } catch (e) {
+                    console.error(`Failed to sync action ${item.action}`, e);
+                }
+            }
+        }
+
+        console.log("Sync complete.");
+
     } catch (error) {
         console.error("Error processing sync queue:", error);
     }

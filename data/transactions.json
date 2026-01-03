@@ -1,0 +1,45 @@
+[
+    {
+        "items": [
+            {
+                "id": "01x0ecwBktmEyAyO2RYi",
+                "cost_price": 117.7,
+                "barcode": "4800140001082",
+                "min_stock": 2,
+                "name": "Bactidol 60mL",
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "category": "MEDICINE",
+                "timestamp": {
+                    "seconds": 1767410307,
+                    "nanoseconds": 284000000
+                },
+                "selling_price": 131,
+                "qty": 1
+            },
+            {
+                "id": "02saxS6dA8z2jwEb3YgO",
+                "barcode": "4800086038692",
+                "base_unit": "Unit",
+                "name": "Selecta 2in1 Quezo Buco Salad 1.5L",
+                "stock_level": 0,
+                "timestamp": {
+                    "seconds": 1767410305,
+                    "nanoseconds": 595000000
+                },
+                "selling_price": 250,
+                "min_stock": 2,
+                "cost_price": 222.72,
+                "category": "ICE CREAM",
+                "qty": 1
+            }
+        ],
+        "total_amount": 381,
+        "amount_tendered": 1000,
+        "change": 619,
+        "user_email": "admin@lightpos.com",
+        "timestamp": "2026-01-03T08:52:36.038Z",
+        "sync_status": 1,
+        "id": "98f10bf5-4556-404d-b91d-74245a4d311a"
+    }
+]

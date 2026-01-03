@@ -1,7 +1,6 @@
-import { db } from "../firebase-config.js";
 import { checkPermission } from "../auth.js";
-import { collection, getDocs, addDoc, deleteDoc, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+const API_URL = 'api/router.php';
 let itemsData = [];
 let suppliersList = [];
 
@@ -155,7 +154,7 @@ export async function loadItemsView() {
     if (canWrite) {
         document.getElementById("btn-add-item").addEventListener("click", () => {
         document.getElementById("form-add-item").reset();
-        document.getElementById("item-id").value = "";
+        document.getElementById("item-id").value = ""; // Empty ID means new item
         document.getElementById("item-parent-id").value = "";
         modal.classList.remove("hidden");
         populateSupplierDropdown();
@@ -178,6 +177,7 @@ export async function loadItemsView() {
         e.preventDefault();
         
         const itemId = document.getElementById("item-id").value;
+        
         const itemData = {
             name: document.getElementById("item-name").value,
             barcode: document.getElementById("item-barcode").value,
@@ -192,11 +192,29 @@ export async function loadItemsView() {
         };
 
         try {
+            // Fetch latest data to ensure we don't overwrite concurrent updates
+            const response = await fetch(`${API_URL}?file=items`);
+            let items = await response.json();
+            if (!Array.isArray(items)) items = [];
+
             if (itemId) {
-                await updateDoc(doc(db, "items", itemId), itemData);
+                // Update existing
+                const index = items.findIndex(i => i.id === itemId);
+                if (index !== -1) {
+                    items[index] = { ...items[index], ...itemData };
+                }
             } else {
-                await addDoc(collection(db, "items"), itemData);
+                // Create new
+                itemData.id = crypto.randomUUID();
+                items.push(itemData);
             }
+
+            await fetch(`${API_URL}?file=items`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(items)
+            });
+
             modal.classList.add("hidden");
             e.target.reset();
             document.getElementById("item-id").value = "";
@@ -213,13 +231,12 @@ export async function loadItemsView() {
 
 async function fetchSuppliers() {
     try {
-        const querySnapshot = await getDocs(collection(db, "suppliers"));
-        suppliersList = [];
-        querySnapshot.forEach(doc => {
-            suppliersList.push({ id: doc.id, name: doc.data().name });
-        });
+        const response = await fetch(`${API_URL}?file=suppliers`);
+        const data = await response.json();
+        suppliersList = Array.isArray(data) ? data : [];
     } catch (error) {
         console.error("Error loading suppliers:", error);
+        suppliersList = [];
     }
 }
 
@@ -239,11 +256,9 @@ async function fetchItems() {
     tbody.innerHTML = `<tr><td colspan="7" class="py-3 px-6 text-center">Loading...</td></tr>`;
 
     try {
-        const querySnapshot = await getDocs(collection(db, "items"));
-        itemsData = [];
-        querySnapshot.forEach(doc => {
-            itemsData.push({ id: doc.id, ...doc.data() });
-        });
+        const response = await fetch(`${API_URL}?file=items`);
+        const data = await response.json();
+        itemsData = Array.isArray(data) ? data : [];
         renderItems(itemsData);
     } catch (error) {
         console.error("Error fetching items:", error);
@@ -311,8 +326,21 @@ function renderItems(items) {
         row.querySelector(".delete-btn").addEventListener("click", async (e) => {
             if (confirm(`Delete item "${item.name}"?`)) {
                 const id = e.currentTarget.getAttribute("data-id");
-                await deleteDoc(doc(db, "items", id));
-                fetchItems();
+                try {
+                    const response = await fetch(`${API_URL}?file=items`);
+                    let currentItems = await response.json();
+                    const updatedItems = currentItems.filter(i => i.id !== id);
+                    
+                    await fetch(`${API_URL}?file=items`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(updatedItems)
+                    });
+                    fetchItems();
+                } catch (error) {
+                    console.error("Error deleting item:", error);
+                    alert("Failed to delete item.");
+                }
             }
         });
 

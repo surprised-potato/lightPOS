@@ -1,6 +1,7 @@
-import { db } from "../firebase-config.js";
 import { checkPermission } from "../auth.js";
-import { collection, writeBatch, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { db } from "../db.js";
+
+const API_URL = 'api/router.php';
 
 export function loadMigrateView() {
     const content = document.getElementById("main-content");
@@ -10,10 +11,11 @@ export function loadMigrateView() {
     }
 
     content.innerHTML = `
-        <div class="max-w-2xl mx-auto">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6">Data Migration</h2>
+        <div class="max-w-4xl mx-auto">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">Data Migration & Sync</h2>
             
-            <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+            <!-- Bulk Import Section -->
+            <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-6">
                 <div class="mb-6">
                     <h3 class="text-lg font-semibold text-gray-700 mb-2">Bulk Import Items</h3>
                     <p class="text-sm text-gray-600 mb-4">Upload a JSON or CSV file containing your item master list. This will add new items to your inventory.</p>
@@ -50,6 +52,46 @@ export function loadMigrateView() {
                     <p id="progress-text" class="text-xs text-gray-600 text-center">Processing...</p>
                 </div>
             </div>
+
+            <!-- Sync Diagnostics Section -->
+            <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+                <h3 class="text-lg font-semibold text-gray-700 mb-4">Database Synchronization</h3>
+                <p class="text-sm text-gray-600 mb-4">Compare your local offline database (IndexedDB) with the server database (JSON) to identify discrepancies.</p>
+                
+                <div class="flex gap-4 mb-6">
+                    <button id="btn-analyze-sync" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded focus:outline-none shadow">
+                        Analyze Differences
+                    </button>
+                </div>
+
+                <div id="sync-results" class="hidden">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div class="p-4 bg-gray-50 rounded border border-gray-200">
+                            <div class="text-xs text-gray-500 uppercase font-bold">Server Items</div>
+                            <div id="count-server" class="text-2xl font-bold text-gray-800">-</div>
+                        </div>
+                        <div class="p-4 bg-gray-50 rounded border border-gray-200">
+                            <div class="text-xs text-gray-500 uppercase font-bold">Local Items</div>
+                            <div id="count-local" class="text-2xl font-bold text-gray-800">-</div>
+                        </div>
+                        <div class="p-4 bg-gray-50 rounded border border-gray-200">
+                            <div class="text-xs text-gray-500 uppercase font-bold">Status</div>
+                            <div id="sync-status-text" class="text-lg font-bold text-gray-800">-</div>
+                        </div>
+                    </div>
+
+                    <table class="min-w-full border mb-4">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="p-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Discrepancy Type</th>
+                                <th class="p-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Count</th>
+                                <th class="p-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sync-diff-body" class="bg-white divide-y divide-gray-200"></tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     `;
 
@@ -75,6 +117,8 @@ function setupEventListeners() {
 
     btnSampleJson.addEventListener("click", () => downloadSample("json"));
     btnSampleCsv.addEventListener("click", () => downloadSample("csv"));
+
+    document.getElementById("btn-analyze-sync").addEventListener("click", analyzeSync);
 
     btnImport.addEventListener("click", async () => {
         const file = fileInput.files[0];
@@ -149,32 +193,166 @@ function parseCSV(text) {
 async function processImport(items) {
     const progressBar = document.getElementById("progress-bar");
     const progressText = document.getElementById("progress-text");
+
+    progressBar.style.width = "10%";
+    progressText.textContent = "Fetching current inventory...";
+
+    // 1. Fetch current items
+    const response = await fetch(`${API_URL}?file=items`);
+    let currentItems = [];
+    try {
+        currentItems = await response.json();
+        if (!Array.isArray(currentItems)) currentItems = [];
+    } catch (e) {
+        currentItems = [];
+    }
+
+    progressBar.style.width = "40%";
+    progressText.textContent = "Processing data...";
+
+    // 2. Prepare new items
+    const newItems = items.map(item => ({
+        id: crypto.randomUUID(),
+        ...item,
+        cost_price: parseFloat(item.cost_price) || 0,
+        selling_price: parseFloat(item.selling_price) || 0,
+        stock_level: parseFloat(item.stock_level) || 0,
+        min_stock: parseFloat(item.min_stock) || 0,
+        supplier_id: item.supplier_id || ""
+    }));
+
+    // 3. Merge (Append)
+    const updatedInventory = [...currentItems, ...newItems];
+
+    progressBar.style.width = "70%";
+    progressText.textContent = "Saving to server...";
+
+    // 4. Save
+    await fetch(`${API_URL}?file=items`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedInventory)
+    });
+
+    progressBar.style.width = "100%";
+    progressText.textContent = "Import Complete!";
+}
+
+async function analyzeSync() {
+    const resultsDiv = document.getElementById("sync-results");
+    const tbody = document.getElementById("sync-diff-body");
+    const btnAnalyze = document.getElementById("btn-analyze-sync");
     
-    const batchSize = 500;
-    const total = items.length;
-    
-    for (let i = 0; i < total; i += batchSize) {
-        const batch = writeBatch(db);
-        const chunk = items.slice(i, i + batchSize);
+    resultsDiv.classList.remove("hidden");
+    tbody.innerHTML = `<tr><td colspan="3" class="p-4 text-center text-gray-500">Analyzing databases...</td></tr>`;
+    btnAnalyze.disabled = true;
+    btnAnalyze.classList.add("opacity-50");
+
+    try {
+        // 1. Fetch Data
+        const [serverRes, localData] = await Promise.all([
+            fetch(`${API_URL}?file=items`),
+            db.items.toArray()
+        ]);
         
-        chunk.forEach(item => {
-            const itemRef = doc(collection(db, "items"));
-            const sanitizedItem = {
-                ...item,
-                cost_price: parseFloat(item.cost_price) || 0,
-                selling_price: parseFloat(item.selling_price) || 0,
-                stock_level: parseFloat(item.stock_level) || 0,
-                min_stock: parseFloat(item.min_stock) || 0,
-                timestamp: new Date()
-            };
-            batch.set(itemRef, sanitizedItem);
+        let serverData = await serverRes.json();
+        if (!Array.isArray(serverData)) serverData = [];
+
+        // 2. Update Counts
+        document.getElementById("count-server").textContent = serverData.length;
+        document.getElementById("count-local").textContent = localData.length;
+
+        // 3. Compare
+        const serverMap = new Map(serverData.map(i => [i.id, i]));
+        const localMap = new Map(localData.map(i => [i.id, i]));
+
+        const onlyInServer = serverData.filter(i => !localMap.has(i.id));
+        const onlyInLocal = localData.filter(i => !serverMap.has(i.id));
+        
+        // Conflict: Exists in both but content differs
+        const conflicts = serverData.filter(s => {
+            const l = localMap.get(s.id);
+            if (!l) return false;
+            // Simple JSON comparison (ignoring order of keys if possible, but strict for now)
+            // Ideally, we compare specific fields like stock_level, price, name
+            return JSON.stringify(s) !== JSON.stringify(l);
         });
+
+        // 4. Render Rows
+        tbody.innerHTML = "";
         
-        await batch.commit();
-        
-        const progress = Math.min(100, Math.round(((i + chunk.length) / total) * 100));
-        progressBar.style.width = `${progress}%`;
-        progressText.textContent = `Imported ${i + chunk.length} of ${total} items...`;
+        const renderRow = (label, count, btnText, btnClass, actionFn) => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td class="p-3 text-sm font-medium text-gray-900">${label}</td>
+                <td class="p-3 text-center text-sm text-gray-500">${count}</td>
+                <td class="p-3 text-right">
+                    <button class="text-xs px-3 py-1 rounded text-white font-bold ${btnClass} hover:opacity-90 transition">
+                        ${btnText}
+                    </button>
+                </td>
+            `;
+            tr.querySelector("button").addEventListener("click", async (e) => {
+                e.target.disabled = true;
+                e.target.textContent = "Processing...";
+                await actionFn();
+                analyzeSync(); // Refresh after action
+            });
+            tbody.appendChild(tr);
+        };
+
+        if (onlyInServer.length > 0) {
+            renderRow("Missing in Local DB", onlyInServer.length, "Download to Local", "bg-blue-500", async () => {
+                await db.items.bulkPut(onlyInServer);
+            });
+        }
+
+        if (onlyInLocal.length > 0) {
+            renderRow("Missing in Server DB", onlyInLocal.length, "Upload to Server", "bg-green-500", async () => {
+                // Merge local new items into server list
+                const newServerList = [...serverData, ...onlyInLocal];
+                await saveToServer(newServerList);
+            });
+        }
+
+        if (conflicts.length > 0) {
+            renderRow("Data Mismatch / Conflicts", conflicts.length, "Overwrite Local (Trust Server)", "bg-orange-500", async () => {
+                await db.items.bulkPut(conflicts);
+            });
+            // Optional: Add "Trust Local" button logic if needed
+        }
+
+        // 5. Status Update
+        const statusEl = document.getElementById("sync-status-text");
+        if (onlyInServer.length === 0 && onlyInLocal.length === 0 && conflicts.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="3" class="p-4 text-center text-green-600 font-bold bg-green-50">All databases are in sync!</td></tr>`;
+            statusEl.textContent = "Synced";
+            statusEl.className = "text-lg font-bold text-green-600";
+        } else {
+            statusEl.textContent = "Not Synced";
+            statusEl.className = "text-lg font-bold text-red-600";
+        }
+
+    } catch (e) {
+        console.error(e);
+        tbody.innerHTML = `<tr><td colspan="3" class="p-4 text-center text-red-600">Error analyzing data. Check console.</td></tr>`;
+    } finally {
+        btnAnalyze.disabled = false;
+        btnAnalyze.classList.remove("opacity-50");
+    }
+}
+
+async function saveToServer(items) {
+    try {
+        await fetch(`${API_URL}?file=items`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(items)
+        });
+        alert("Server updated successfully.");
+    } catch (error) {
+        console.error("Save error:", error);
+        alert("Failed to update server.");
     }
 }
 

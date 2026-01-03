@@ -1,14 +1,6 @@
-import { db, firebaseConfig } from "../firebase-config.js";
 import { checkPermission } from "../auth.js";
-import { 
-    collection, 
-    getDocs, 
-    doc, 
-    setDoc
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { initializeApp, deleteApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
+const API_URL = 'api/router.php';
 const MODULES = ['pos', 'items', 'stockin', 'stock-count', 'reports', 'expenses', 'users', 'shifts'];
 
 export async function loadUsersView() {
@@ -112,29 +104,29 @@ async function fetchAndRenderUsers() {
     const tbody = document.getElementById("users-table-body");
     const canWrite = checkPermission("users", "write");
     try {
-        const querySnapshot = await getDocs(collection(db, "users"));
+        const response = await fetch(`${API_URL}?file=users`);
+        const users = await response.json();
+        
         tbody.innerHTML = "";
         
-        if (querySnapshot.empty) {
+        if (!Array.isArray(users) || users.length === 0) {
             tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-gray-500">No users found.</td></tr>`;
             return;
         }
 
-        querySnapshot.forEach((docSnap) => {
-            const user = docSnap.data();
-            const email = docSnap.id; 
+        users.forEach((user) => {
             const tr = document.createElement("tr");
             
             let permCount = 0;
             if (user.permissions) {
                 Object.values(user.permissions).forEach(p => {
-                    if (p.read || p.write) permCount++;
+                    if (p.read) permCount++;
                 });
             }
             
             tr.innerHTML = `
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${user.name || 'N/A'}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${email}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${user.email}</td>
                 <td class="px-6 py-4 whitespace-nowrap">
                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
                         ${user.is_active ? 'Active' : 'Inactive'}
@@ -144,11 +136,11 @@ async function fetchAndRenderUsers() {
                     ${permCount} Modules Configured
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button class="text-indigo-600 hover:text-indigo-900 btn-edit ${canWrite ? '' : 'hidden'}" data-email="${email}">Edit</button>
+                    <button class="text-indigo-600 hover:text-indigo-900 btn-edit ${canWrite ? '' : 'hidden'}">Edit</button>
                 </td>
             `;
             
-            tr.querySelector(".btn-edit").addEventListener("click", () => openUserModal({ ...user, email }));
+            tr.querySelector(".btn-edit").addEventListener("click", () => openUserModal(user));
             tbody.appendChild(tr);
         });
     } catch (error) {
@@ -215,29 +207,9 @@ async function handleUserSubmit(e) {
     const isActive = document.getElementById("user-active").checked;
     const isEdit = document.getElementById("user-email").disabled;
 
-    // Create Auth User if new
-    if (!isEdit) {
-        if (!password || password.length < 6) {
-            alert("Password is required and must be at least 6 characters.");
-            return;
-        }
-
-        try {
-            // Initialize secondary app to avoid logging out the admin
-            const secondaryApp = initializeApp(firebaseConfig, "SecondaryApp");
-            const secondaryAuth = getAuth(secondaryApp);
-            
-            await createUserWithEmailAndPassword(secondaryAuth, email, password);
-            
-            // Cleanup
-            await signOut(secondaryAuth);
-            await deleteApp(secondaryApp);
-        } catch (error) {
-            if (error.code !== 'auth/email-already-in-use') {
-                alert("Failed to create user authentication: " + error.message);
-                return;
-            }
-        }
+    if (!isEdit && (!password || password.length < 6)) {
+        alert("Password is required and must be at least 6 characters.");
+        return;
     }
     
     // Harvest permissions
@@ -250,15 +222,42 @@ async function handleUserSubmit(e) {
     });
 
     try {
-        await setDoc(doc(db, "users", email), {
-            email,
-            name,
-            is_active: isActive,
-            permissions
-        }, { merge: true });
+        const response = await fetch(`${API_URL}?file=users`);
+        let users = await response.json();
+        if (!Array.isArray(users)) users = [];
+
+        if (isEdit) {
+            // Update existing
+            const index = users.findIndex(u => u.email === email);
+            if (index !== -1) {
+                users[index].name = name;
+                users[index].is_active = isActive;
+                users[index].permissions = permissions;
+                if (password) users[index].password = md5(password);
+            }
+        } else {
+            // Create new
+            if (users.find(u => u.email === email)) {
+                alert("User already exists.");
+                return;
+            }
+            users.push({
+                email,
+                name,
+                password: md5(password),
+                is_active: isActive,
+                permissions
+            });
+        }
+
+        await fetch(`${API_URL}?file=users`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(users)
+        });
         
         closeUserModal();
-        window.location.reload();
+        fetchAndRenderUsers();
     } catch (error) {
         console.error("Error saving user:", error);
         alert("Failed to save user: " + error.message);

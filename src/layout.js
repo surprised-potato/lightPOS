@@ -1,94 +1,117 @@
-import { checkActiveShift, showCloseShiftModal } from "./modules/shift.js";
-import { getUserProfile, checkPermission } from "./auth.js";
+import { checkPermission } from "./auth.js";
+import { checkActiveShift } from "./modules/shift.js";
 
 export function renderSidebar() {
-    const profile = getUserProfile();
+    console.log("renderSidebar: Function called.");
     const sidebar = document.getElementById("sidebar-container");
-
-    // 1. Check for Zero Access / Pending Approval
-    const hasPermissions = profile && profile.permissions && Object.keys(profile.permissions).length > 0;
     
-    if (!hasPermissions) {
-        sidebar.innerHTML = ""; 
+    if (!sidebar) {
+        console.error("renderSidebar: #sidebar-container not found in DOM.");
         return;
     }
 
-    // 2. Render Sidebar with Permission Filtering
-    sidebar.innerHTML = `
-        <div class="h-full flex flex-col bg-white">
-            <div class="p-4 border-b">
-                <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">System Status</div>
-                <div id="sidebar-shift-status" class="text-xs font-bold text-gray-400 mt-1">Loading...</div>
-            </div>
-            <nav class="flex-1 overflow-y-auto py-4">
-                <div class="px-4 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Front Office</div>
-                <ul class="space-y-1 px-2">
-                    <li><a href="#dashboard" class="nav-link flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-md transition-colors duration-150 group">
-                        <span class="text-lg">📊</span> <span class="font-medium">Dashboard</span>
-                    </a></li>
-                    <li class="${checkPermission('pos', 'read') ? '' : 'hidden'}"><a href="#pos" class="nav-link flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-md transition-colors duration-150">
-                        <span class="text-lg">🛒</span> <span class="font-medium">POS</span>
-                    </a></li>
-                    <li class="${checkPermission('shifts', 'read') ? '' : 'hidden'}"><a href="#shifts" class="nav-link flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-md transition-colors duration-150">
-                        <span class="text-lg">🕒</span> <span class="font-medium">Shifts</span>
-                    </a></li>
-                </ul>
+    const currentHash = window.location.hash || "#dashboard";
 
-                <div class="px-4 my-4"><div class="border-t border-gray-100"></div></div>
+    const menuItems = [
+        { section: "Front Office" },
+        { label: "Dashboard", icon: "📊", hash: "#dashboard", permission: "reports", type: "read" },
+        { label: "POS", icon: "🛒", hash: "#pos", permission: "pos", type: "read" },
+        { label: "Customers", icon: "👥", hash: "#customers", permission: "pos", type: "read" },
+        { label: "Shifts", icon: "⏱️", hash: "#shifts", permission: "shifts", type: "read" },
+        
+        { section: "Inventory" },
+        { label: "Items", icon: "📦", hash: "#items", permission: "items", type: "read" },
+        { label: "Suppliers", icon: "🏭", hash: "#suppliers", permission: "items", type: "read" },
+        { label: "Stock In", icon: "🚛", hash: "#stockin", permission: "stockin", type: "read" },
+        { label: "Stock Count", icon: "📋", hash: "#stock-count", permission: "stock-count", type: "read" },
+        
+        { section: "Back Office" },
+        { label: "Expenses", icon: "💸", hash: "#expenses", permission: "expenses", type: "read" },
+        { label: "Reports", icon: "📈", hash: "#reports", permission: "reports", type: "read" },
+        { label: "Users", icon: "👤", hash: "#users", permission: "users", type: "read" },
+        { label: "Migrate", icon: "🔄", hash: "#migrate", permission: "items", type: "write" },
+    ];
 
-                <div class="px-4 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Backroom</div>
-                <ul class="space-y-1 px-2">
-                    <li class="${checkPermission('items', 'read') ? '' : 'hidden'}"><a href="#suppliers" class="nav-link flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-md transition-colors duration-150">
-                        <span class="text-lg">🚚</span> <span class="font-medium">Suppliers</span>
-                    </a></li>
-                    <li class="${checkPermission('items', 'read') ? '' : 'hidden'}"><a href="#items" class="nav-link flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-md transition-colors duration-150">
-                        <span class="text-lg">📦</span> <span class="font-medium">Items</span>
-                    </a></li>
-                    <li class="${checkPermission('items', 'write') ? '' : 'hidden'}"><a href="#migrate" class="nav-link flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-md transition-colors duration-150">
-                        <span class="text-lg">📂</span> <span class="font-medium">Migrate</span>
-                    </a></li>
-                    <li class="${checkPermission('stockin', 'read') ? '' : 'hidden'}"><a href="#stockin" class="nav-link flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-md transition-colors duration-150">
-                        <span class="text-lg">📥</span> <span class="font-medium">Stock In</span>
-                    </a></li>
-                    <li class="${checkPermission('stock-count', 'read') ? '' : 'hidden'}"><a href="#stock-count" class="nav-link flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-md transition-colors duration-150">
-                        <span class="text-lg">⚖️</span> <span class="font-medium">Stock Count</span>
-                    </a></li>
-                    <li class="${checkPermission('expenses', 'read') ? '' : 'hidden'}"><a href="#expenses" class="nav-link flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-md transition-colors duration-150">
-                        <span class="text-lg">💸</span> <span class="font-medium">Expenses</span>
-                    </a></li>
-                    <li class="${checkPermission('reports', 'read') ? '' : 'hidden'}"><a href="#reports" class="nav-link flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-md transition-colors duration-150">
-                        <span class="text-lg">📈</span> <span class="font-medium">Reports</span>
-                    </a></li>
-                    <li class="${checkPermission('users', 'read') ? '' : 'hidden'}"><a href="#users" class="nav-link flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-md transition-colors duration-150">
-                        <span class="text-lg">👥</span> <span class="font-medium">Users</span>
-                    </a></li>
-                    <li><a href="#profile" class="nav-link flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-md transition-colors duration-150">
-                        <span class="text-lg">👤</span> <span class="font-medium">Profile</span>
-                    </a></li>
-                </ul>
-            </nav>
-            <div class="p-4 border-t text-xs text-gray-500 text-center">
-                surprised-potato v1.0
+    let html = `<div class="py-4">`;
+
+    html += `
+        <style>
+            @keyframes breathe-green {
+                0%, 100% { box-shadow: 0 0 4px rgba(34, 197, 94, 0.5); transform: scale(1); }
+                50% { box-shadow: 0 0 12px rgba(34, 197, 94, 1); transform: scale(1.15); }
+            }
+            .animate-breathe-green {
+                animation: breathe-green 2s infinite ease-in-out;
+            }
+        </style>
+    `;
+
+    html += `
+        <div class="px-4 mb-4">
+            <div id="shift-status-card" class="flex items-center justify-between bg-white p-3 rounded-lg border-2 border-gray-200 shadow-sm cursor-pointer hover:border-blue-300 transition-colors" onclick="window.location.hash='#shifts'">
+                <div class="flex flex-col">
+                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Shift Status</span>
+                    <span id="sidebar-shift-text" class="text-sm font-bold text-gray-500">Checking...</span>
+                </div>
+                <div class="relative flex items-center justify-center">
+                    <div id="sidebar-shift-dot" class="w-4 h-4 rounded-full bg-gray-300 border-2 border-white shadow-sm transition-all duration-500"></div>
+                </div>
             </div>
         </div>
     `;
-    updateShiftStatus();
+
+    menuItems.forEach(item => {
+        if (item.section) {
+            html += `<div class="px-4 py-2 mt-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">${item.section}</div>`;
+        } else {
+            if (checkPermission(item.permission, item.type)) {
+                const activeClass = currentHash === item.hash ? "bg-blue-100 text-blue-700 border-r-4 border-blue-700" : "text-gray-600 hover:bg-gray-100 hover:text-gray-900";
+                html += `<a href="${item.hash}" class="flex items-center px-4 py-2 text-sm font-medium transition-colors duration-150 ${activeClass}"><span class="mr-3 text-lg">${item.icon}</span>${item.label}</a>`;
+            }
+        }
+    });
+
+    html += `</div>`;
+    sidebar.innerHTML = html;
+    sidebar.classList.remove("hidden");
+
+    // Delay slightly to ensure DOM update is processed
+    setTimeout(() => updateSidebarShiftStatus(0), 50);
 }
 
-async function updateShiftStatus() {
-    const statusEl = document.getElementById("sidebar-shift-status");
-    const shift = await checkActiveShift();
-    if (shift) {
-        statusEl.innerHTML = `
-            <div class="flex flex-col gap-1">
-                <span class="text-green-600">● Shift Open</span>
-                <button id="btn-close-shift" class="text-xs bg-red-100 text-red-600 hover:bg-red-200 px-2 py-1 rounded text-center w-full">Close Shift</button>
-            </div>
-        `;
-        document.getElementById("btn-close-shift").addEventListener("click", () => {
-            showCloseShiftModal(() => updateShiftStatus());
-        });
-    } else {
-        statusEl.innerHTML = `<span class="text-red-500">● Shift Closed</span>`;
+async function updateSidebarShiftStatus(retryCount = 0) {
+    const dot = document.getElementById("sidebar-shift-dot");
+    const text = document.getElementById("sidebar-shift-text");
+    
+    console.log(`updateSidebarShiftStatus: Checking status (Attempt ${retryCount + 1})...`);
+
+    if (!dot || !text) {
+        console.warn("Sidebar shift status elements not found. Retrying...");
+        if (retryCount < 5) {
+            setTimeout(() => updateSidebarShiftStatus(retryCount + 1), 500);
+        }
+        return;
+    }
+
+    try {
+        const shift = await checkActiveShift();
+        console.log("updateSidebarShiftStatus: Result:", shift);
+
+        if (shift) {
+            console.log("updateSidebarShiftStatus: Shift OPEN -> Green");
+            dot.className = "w-4 h-4 rounded-full bg-green-500 border-2 border-white shadow-[0_0_10px_rgba(34,197,94,0.6)] animate-breathe-green";
+            text.textContent = "OPEN";
+            text.className = "text-sm font-bold text-green-600";
+        } else {
+            console.log("updateSidebarShiftStatus: Shift CLOSED -> Red");
+            dot.className = "w-4 h-4 rounded-full bg-red-500 border-2 border-white shadow-sm";
+            text.textContent = "CLOSED";
+            text.className = "text-sm font-bold text-red-600";
+        }
+    } catch (error) {
+        console.error("updateSidebarShiftStatus: Error:", error);
+        dot.className = "w-4 h-4 rounded-full bg-gray-400 border-2 border-white";
+        text.textContent = "OFFLINE";
+        text.className = "text-sm font-bold text-gray-500";
     }
 }

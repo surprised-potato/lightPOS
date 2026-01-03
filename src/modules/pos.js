@@ -1,11 +1,13 @@
 import { db } from "../db.js";
-import { auth, db as firestore } from "../firebase-config.js";
 import { checkPermission } from "../auth.js";
 import { checkActiveShift, requireShift, showCloseShiftModal } from "./shift.js";
-import { doc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+const API_URL = 'api/router.php';
 
 let allItems = [];
+let allCustomers = [];
 let cart = [];
+let selectedCustomer = { id: "Guest", name: "Guest" };
 
 export async function loadPosView() {
     const content = document.getElementById("main-content");
@@ -48,6 +50,26 @@ async function renderPosInterface(content) {
                     <div class="flex gap-2">
                         <button id="btn-pos-close-shift" class="text-xs bg-red-500 hover:bg-red-600 px-2 py-1 rounded transition">Close Shift</button>
                         <button id="btn-clear-cart" class="text-xs bg-blue-800 hover:bg-blue-900 px-2 py-1 rounded transition">Clear</button>
+                    </div>
+                </div>
+                
+                <!-- Customer Selection -->
+                <div class="p-3 bg-blue-50 border-b border-blue-100 relative">
+                    <div class="relative">
+                        <div class="flex items-center bg-white border rounded-md shadow-sm">
+                            <div class="pl-3 text-gray-500">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                            </div>
+                            <input type="text" id="pos-customer-search" placeholder="Customer: Guest" 
+                                class="w-full p-2 text-sm focus:outline-none rounded-md" autocomplete="off">
+                            <button id="btn-reset-customer" class="p-2 text-gray-400 hover:text-red-500 hidden" title="Reset to Guest">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            </button>
+                        </div>
+                        <div id="pos-customer-results" class="hidden absolute z-20 w-full bg-white shadow-lg border rounded-b-md max-h-48 overflow-y-auto mt-1"></div>
+                    </div>
+                    <div id="selected-customer-display" class="text-xs text-blue-800 mt-1 font-semibold px-1">
+                        Customer: Guest
                     </div>
                 </div>
                 
@@ -117,7 +139,7 @@ async function renderPosInterface(content) {
     `;
 
     // Load Items from Dexie
-    await fetchItemsFromDexie();
+    await Promise.all([fetchItemsFromDexie(), fetchCustomersFromDexie()]);
     
     // Render initial cart state (if persisting between views)
     renderCart();
@@ -159,6 +181,61 @@ async function renderPosInterface(content) {
     document.getElementById("btn-clear-cart").addEventListener("click", () => {
         cart = [];
         renderCart();
+    });
+    
+    // Customer Search Logic
+    const custInput = document.getElementById("pos-customer-search");
+    const custResults = document.getElementById("pos-customer-results");
+    const btnResetCust = document.getElementById("btn-reset-customer");
+
+    const renderCustomerDropdown = (list) => {
+        custResults.innerHTML = "";
+        const limit = 50; // Limit results for performance
+        const displayList = list.slice(0, limit);
+        
+        if (displayList.length > 0) {
+            custResults.classList.remove("hidden");
+            displayList.forEach(c => {
+                const div = document.createElement("div");
+                div.className = "p-2 hover:bg-blue-50 cursor-pointer text-sm border-b last:border-0";
+                div.innerHTML = `<div class="font-bold text-gray-700">${c.name}</div><div class="text-xs text-gray-500">${c.phone}</div>`;
+                div.addEventListener("click", () => selectCustomer(c));
+                custResults.appendChild(div);
+            });
+            if (list.length > limit) {
+                const moreDiv = document.createElement("div");
+                moreDiv.className = "p-2 text-xs text-gray-500 text-center italic";
+                moreDiv.textContent = `Showing ${limit} of ${list.length} customers...`;
+                custResults.appendChild(moreDiv);
+            }
+        } else {
+            custResults.innerHTML = `<div class="p-2 text-sm text-gray-500 text-center">No customers found</div>`;
+            custResults.classList.remove("hidden");
+        }
+    };
+    
+    custInput.addEventListener("focus", async () => {
+        await fetchCustomersFromDexie();
+        const term = custInput.value.toLowerCase();
+        const filtered = term ? allCustomers.filter(c => c.name.toLowerCase().includes(term) || c.phone.includes(term)) : allCustomers;
+        renderCustomerDropdown(filtered);
+    });
+
+    custInput.addEventListener("blur", () => {
+        // Delay hiding to allow click event to register
+        setTimeout(() => custResults.classList.add("hidden"), 200);
+    });
+
+    custInput.addEventListener("input", (e) => {
+        const term = e.target.value.toLowerCase();
+        const filtered = allCustomers.filter(c => c.name.toLowerCase().includes(term) || c.phone.includes(term));
+        renderCustomerDropdown(filtered);
+    });
+
+    btnResetCust.addEventListener("click", () => {
+        selectCustomer({ id: "Guest", name: "Guest" });
+        custInput.value = "";
+        custResults.classList.add("hidden");
     });
 
     document.getElementById("btn-pos-close-shift").addEventListener("click", () => {
@@ -215,6 +292,31 @@ async function fetchItemsFromDexie() {
     } catch (error) {
         console.error("Error loading items from Dexie:", error);
         document.getElementById("pos-grid").innerHTML = `<div class="col-span-full text-center text-red-500">Error loading local database. Please ensure sync is active.</div>`;
+    }
+}
+
+async function fetchCustomersFromDexie() {
+    try {
+        allCustomers = await db.customers.toArray();
+    } catch (error) {
+        console.error("Error loading customers:", error);
+    }
+}
+
+function selectCustomer(customer) {
+    selectedCustomer = customer;
+    const display = document.getElementById("selected-customer-display");
+    const btnReset = document.getElementById("btn-reset-customer");
+    const input = document.getElementById("pos-customer-search");
+    
+    display.textContent = `Customer: ${customer.name}`;
+    document.getElementById("pos-customer-results").classList.add("hidden");
+    
+    if (customer.id !== "Guest") {
+        input.value = customer.name;
+        btnReset.classList.remove("hidden");
+    } else {
+        btnReset.classList.add("hidden");
     }
 }
 
@@ -422,35 +524,84 @@ function closeCheckout() {
 async function processTransaction() {
     const total = parseFloat(document.getElementById("modal-checkout").dataset.total);
     const tendered = parseFloat(document.getElementById("input-tendered").value);
+    const user = JSON.parse(localStorage.getItem('pos_user'));
     
     const transaction = {
         items: JSON.parse(JSON.stringify(cart)), // Deep copy
         total_amount: total,
         amount_tendered: tendered,
         change: tendered - total,
-        user_email: auth.currentUser ? auth.currentUser.email : "Guest",
+        user_email: user ? user.email : "Guest",
+        customer_id: selectedCustomer.id,
+        customer_name: selectedCustomer.name,
         timestamp: new Date(),
         sync_status: 0 // 0 = Unsynced
     };
 
     try {
-        await db.transactions.add(transaction);
+        // 1. Save to Dexie (Offline First)
+        const txId = await db.transactions.add(transaction);
 
-        // Update stock levels in Firestore and local Dexie
+        // 2. Update Local Dexie Items
         for (const item of transaction.items) {
-            // 1. Update Firestore
-            const itemRef = doc(firestore, "items", item.id);
-            await updateDoc(itemRef, {
-                stock_level: increment(-item.qty)
+            const current = await db.items.get(item.id);
+            if (current) {
+                await db.items.update(item.id, { stock_level: current.stock_level - item.qty });
+            }
+        }
+
+        // 3. Try Online Sync (Best Effort)
+        try {
+            // Fetch Items
+            const itemsRes = await fetch(`${API_URL}?file=items`);
+            let serverItems = await itemsRes.json();
+            if (!Array.isArray(serverItems)) serverItems = [];
+
+            // Update Server Items
+            transaction.items.forEach(txItem => {
+                const idx = serverItems.findIndex(i => i.id === txItem.id);
+                if (idx !== -1) {
+                    serverItems[idx].stock_level -= txItem.qty;
+                }
             });
 
-            // 2. Update Dexie
-            await db.items.update(item.id, { stock_level: item.stock_level - item.qty });
+            // Save Items
+            await fetch(`${API_URL}?file=items`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(serverItems)
+            });
+
+            // Fetch & Update Transactions
+            const txRes = await fetch(`${API_URL}?file=transactions`);
+            let serverTxs = await txRes.json();
+            if (!Array.isArray(serverTxs)) serverTxs = [];
+            
+            // Add to server transactions
+            serverTxs.push({ ...transaction, id: crypto.randomUUID(), sync_status: 1 });
+
+            await fetch(`${API_URL}?file=transactions`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(serverTxs)
+            });
+
+            // Mark Local as Synced
+            await db.transactions.update(txId, { sync_status: 1 });
+
+        } catch (serverError) {
+            console.warn("Server sync failed (Offline mode active):", serverError);
+            // Do not alert user, just log. Transaction is safe in Dexie with sync_status=0.
         }
 
         cart = [];
         renderCart();
         closeCheckout();
+        
+        // Reset Customer to Guest
+        selectCustomer({ id: "Guest", name: "Guest" });
+        document.getElementById("pos-customer-search").value = "";
+        
         showToast("Transaction saved successfully!");
         
         // Show Last Transaction Summary

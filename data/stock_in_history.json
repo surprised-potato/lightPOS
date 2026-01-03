@@ -1,0 +1,26 @@
+[
+    {
+        "id": "01b77b7a-e139-4330-9f53-9dea64a023ec",
+        "timestamp": "2026-01-03T08:55:22.053Z",
+        "items": [
+            {
+                "id": "01x0ecwBktmEyAyO2RYi",
+                "name": "Bactidol 60mL",
+                "qty": 10,
+                "old_cost": 117.7,
+                "new_cost": 117.7,
+                "updated_master": false
+            },
+            {
+                "id": "0oMGU4EiqMsuiHevEDOT",
+                "name": "Angelina Egg Cracker 85g",
+                "qty": 100,
+                "old_cost": 34.5,
+                "new_cost": 34.5,
+                "updated_master": false
+            }
+        ],
+        "total_value": 4627,
+        "user": "admin@lightpos.com"
+    }
+]

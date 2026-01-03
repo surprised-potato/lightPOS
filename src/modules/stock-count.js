@@ -1,7 +1,6 @@
-import { db as firestore, auth } from "../firebase-config.js";
-import { db } from "../db.js";
 import { checkPermission } from "../auth.js";
-import { updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+const API_URL = 'api/router.php';
 
 let itemsData = [];
 let selectedItem = null;
@@ -83,7 +82,9 @@ export async function loadStockCountView() {
 
 async function fetchItems() {
     try {
-        itemsData = await db.items.toArray();
+        const response = await fetch(`${API_URL}?file=items`);
+        itemsData = await response.json();
+        if (!Array.isArray(itemsData)) itemsData = [];
     } catch (error) {
         console.error("Error fetching items:", error);
     }
@@ -178,10 +179,33 @@ async function processAdjustment(newStock, reason) {
     try {
         const oldStock = selectedItem.stock_level;
         const difference = newStock - oldStock;
-        const user = auth.currentUser ? auth.currentUser.email : "unknown";
+        const user = JSON.parse(localStorage.getItem('pos_user'))?.email || 'unknown';
 
-        // 1. Log to adjustments collection locally
-        await db.adjustments.add({
+        // 1. Fetch current items to ensure we have latest state
+        const itemsResponse = await fetch(`${API_URL}?file=items`);
+        let currentItems = await itemsResponse.json();
+        if (!Array.isArray(currentItems)) currentItems = [];
+
+        // 2. Update item stock
+        const itemIndex = currentItems.findIndex(i => i.id === selectedItem.id);
+        if (itemIndex !== -1) {
+            currentItems[itemIndex].stock_level = newStock;
+        }
+
+        // 3. Save Items
+        await fetch(`${API_URL}?file=items`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(currentItems)
+        });
+
+        // 4. Log to adjustments
+        const adjResponse = await fetch(`${API_URL}?file=adjustments`);
+        let adjustments = await adjResponse.json();
+        if (!Array.isArray(adjustments)) adjustments = [];
+
+        adjustments.push({
+            id: crypto.randomUUID(),
             item_id: selectedItem.id,
             item_name: selectedItem.name,
             old_stock: oldStock,
@@ -189,18 +213,13 @@ async function processAdjustment(newStock, reason) {
             difference: difference,
             reason: reason,
             user: user,
-            timestamp: new Date(),
-            sync_status: 0
+            timestamp: new Date()
         });
 
-        // 2. Update item stock
-        await updateDoc(doc(firestore, "items", selectedItem.id), {
-            stock_level: newStock
-        });
-
-        // Update local cache immediately
-        await db.items.update(selectedItem.id, {
-            stock_level: newStock
+        await fetch(`${API_URL}?file=adjustments`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(adjustments)
         });
 
         alert("Stock adjusted successfully.");
@@ -210,8 +229,8 @@ async function processAdjustment(newStock, reason) {
         document.getElementById("audit-item-container").classList.add("hidden");
         document.getElementById("audit-form").classList.add("hidden");
         selectedItem = null;
-        fetchItems(); // Refresh local data
-        fetchAdjustmentLogs();
+        
+        await Promise.all([fetchItems(), fetchAdjustmentLogs()]);
 
     } catch (error) {
         console.error("Error adjusting stock:", error);
@@ -222,7 +241,13 @@ async function processAdjustment(newStock, reason) {
 async function fetchAdjustmentLogs() {
     const tbody = document.getElementById("adjustment-logs-table-body");
     try {
-        const logs = await db.adjustments.orderBy("timestamp").reverse().limit(10).toArray();
+        const response = await fetch(`${API_URL}?file=adjustments`);
+        let logs = await response.json();
+        if (!Array.isArray(logs)) logs = [];
+
+        // Sort by timestamp descending and take top 10
+        logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        logs = logs.slice(0, 10);
         
         tbody.innerHTML = "";
         

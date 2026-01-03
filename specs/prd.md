@@ -1,8 +1,9 @@
 # Technical Specification: surprised-potato Cloud-Based POS & Inventory System
 
 ## 1. System Architecture
-- **Frontend:** Single Page Application (SPA) hosted on GitHub Pages.
-- **Backend/Auth:** Firebase Authentication and Firestore.
+- **Frontend:** Single Page Application (SPA) hosted on Apache Web Server.
+- **Backend:** Minimal PHP 8+ script for file I/O (Read/Write JSON).
+- **Database:** JSON files stored in a protected `/data` directory on the server.
 - **Local Persistence (Offline):** Dexie.js (IndexedDB) for local caching of items and queuing transactions.
 - **Sync Strategy:** Delta-based synchronization (Subtract quantities) to handle multi-terminal offline sales.
 
@@ -24,9 +25,9 @@
     - **Inventory:** Stock Valuation, Low Stock, and Movement Logs.
     - **User Performance:** Sales breakdown by cashier/user for specific date ranges.
 
-## 3. Data Schema (Firestore)
+## 3. Data Schema (JSON Files)
 
-### Collection: `items`
+### File: `data/items.json` (Array of Objects)
 | Field | Type | Description |
 | :--- | :--- | :--- |
 | `id` | string | UUID |
@@ -41,7 +42,7 @@
 | `min_stock` | number | Threshold for low stock alerts |
 | `supplier_id` | string | Ref to suppliers collection |
 
-### Collection: `transactions`
+### File: `data/transactions.json` (Array of Objects)
 | Field | Type | Description |
 | :--- | :--- | :--- |
 | `id` | string | UUID |
@@ -52,7 +53,7 @@
 | `points_earned` | number | Calculated total points |
 | `is_synced` | boolean | For Dexie.js tracking |
 
-### Collection: `shifts`
+### File: `data/shifts.json` (Array of Objects)
 | Field | Type | Description |
 | :--- | :--- | :--- |
 | `id` | string | UUID |
@@ -64,7 +65,7 @@
 | `expected_cash` | number | Calculated (Opening + Cash Sales) |
 | `status` | string | "open" or "closed" |
 
-### Collection: `expenses`
+### File: `data/expenses.json` (Array of Objects)
 | Field | Type | Description |
 | :--- | :--- | :--- |
 | `id` | string | UUID |
@@ -75,12 +76,13 @@
 | `date` | timestamp | When expense occurred |
 | `user_id` | string | Who recorded it |
 
-### Collection: `users`
+### File: `data/users.json` (Array of Objects)
 | Field | Type | Description |
 | :--- | :--- | :--- |
 | `email` | string | Primary Key (matches Auth email) |
 | `name` | string | Display Name |
-| `permissions` | map | Object keyed by module (e.g., `items`, `pos`) |
+| `password` | string | Hashed password (simple md5/sha for MVP) |
+| `permissions` | object | Object keyed by module (e.g., `items`, `pos`) |
 | `permissions.<module>` | map | `{ read: boolean, write: boolean }` |
 | `is_active` | boolean | Soft delete / Login block |
 
@@ -102,14 +104,14 @@
 
 ### C. Offline-to-Online Sync (Dexie.js)
 - Transactions are saved to IndexedDB immediately.
-- If navigator is online, push to Firestore.
+- If navigator is online, POST to `api.php`.
 - If offline, queue transactions.
-- On reconnection: Loop through queue and push to Firestore.
-- **Inventory Update:** Use Firestore `increment(-qty)` to perform delta-based subtraction, avoiding race conditions.
-- **Loyalty Points:** If a customer is linked, use Firestore `increment(points)` to update their profile during sync.
+- On reconnection: Loop through queue and POST to server.
+- **Inventory Update:** Server script reads `items.json`, updates stock, and saves back.
+- **Concurrency Note:** For this simple file-based system, "Last Write Wins" applies.
 
 ### D. User Permissions
-- **No Role-Based Access Control (RBAC):** Access is not determined by roles like "Admin" or "Staff".
+- **Simple Auth:** Login checks against `users.json`.
 - **Module-Level Granularity:** Each user has a permission map for every core module (POS, Items, Stock In, Reports, etc.).
     - **Read:** Can view the module and data.
     - **Write:** Can create, update, or delete data within that module.
@@ -119,7 +121,7 @@
     - **Admins:** Initial setup assumes at least one user has full access to configure others.
 - **Enforcement:**
     - UI: Hide navigation links if `read` is false. Disable buttons/forms if `write` is false.
-    - Firestore Rules: Validate `request.auth.token.email` against the `users` collection permissions.
+    - API: `api.php` checks session/token before writing.
 
 ## 5. UI/UX Requirements
 - **Search Bar:** The POS must focus the search/barcode input by default on load.
@@ -128,15 +130,14 @@
 - **Mobile Responsive:** The UI must remain functional on tablets for floor-walking staff.
 
 ## 6. Error Handling Strategy
-- **Firestore Connectivity:** Use `onSnapshot` with error callbacks. Implement exponential backoff for retries.
+- **Connectivity:** Handle `fetch` errors.
 - **Conflict Resolution:** If a transaction fails to sync due to a deleted item, flag for Admin review in a "Sync Error" log.
-- **Data Integrity:** Wrap "Stock In" and "Stock Out" actions in Firestore Transactions to ensure atomic updates.
+- **Data Integrity:** PHP script uses `flock` (file locking) to prevent corrupting JSON files during concurrent writes.
 
 ## 7. Testing Plan
 
 | Feature | Test Case | Expected Result |
-| :--- | :--- | :--- |
-| **Offline Sale** | Turn off Wi-Fi, process sale, turn on Wi-Fi. | Transaction appears in Firestore; stock is reduced. |
+| **Offline Sale** | Turn off Wi-Fi, process sale, turn on Wi-Fi. | Transaction is sent to `api.php`; stock is reduced in `items.json`. |
 | **Auto-Breakdown** | Sell 1 can when can stock is 0 but case stock is 1. | Case stock becomes 0; can stock becomes 11. |
 | **Permissions** | Login as user without `view_cost`. | Cost prices are hidden or masked across all views. |
 | **Sync Conflict** | Two terminals sell the same item offline. | Final stock reflects total sum of both subtractions. |

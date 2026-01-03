@@ -1,11 +1,11 @@
 # Project Implementation Blueprint & Prompt Chain (Vanilla JS Edition)
-This document outlines the step-by-step execution plan for the surprised-potato Cloud-Based POS using Vanilla JavaScript (ES6 Modules) and Tailwind CSS. It is designed to be fed into an LLM sequentially.
+This document outlines the step-by-step execution plan for the surprised-potato Self-Hosted POS using Vanilla JavaScript (ES6 Modules), Tailwind CSS, and a minimal PHP 8 backend for JSON storage.
 
 ## Phase 1: Foundation & Authentication
-**Goal:** Establish the project structure, secure the app, and set up the global data context without frameworks.
+**Goal:** Establish the project structure, secure the app, and set up the local data context.
 - **Project Scaffold:** Setup standard HTML5 + Tailwind (via CDN for simplicity or CLI) + ES6 Modules.
-- **Firebase Init:** Connect to Firestore and Auth using modular SDK.
-- **Auth Module:** Create an `auth.js` module to handle "Guest" vs. "Authenticated User" states and UI toggling.
+- **Backend Init:** Create `api/router.php` to handle JSON file reading/writing.
+- **Auth Module:** Create an `auth.js` module to handle login against `users.json`.
 - **Router & Layout:** Create a lightweight hash-based router (`#pos`, `#items`) and a persistent Sidebar/Top bar renderer.
 
 ## Phase 2: Master Data Management (Online First)
@@ -24,7 +24,7 @@ This document outlines the step-by-step execution plan for the surprised-potato 
 ## Phase 4: The Offline Layer (Dexie.js)
 **Goal:** Make the app independent of the internet for core sales functions.
 - **Dexie Setup:** Initialize IndexedDB in a `db.js` module.
-- **Item Sync:** Create a `sync-service.js` that listens to Firestore `onSnapshot` and updates Dexie.
+- **Item Sync:** Create a `sync-service.js` that polls `items.json` and updates Dexie.
 
 ## Phase 5: Point of Sale (POS)
 **Goal:** The cashier interface.
@@ -35,8 +35,17 @@ This document outlines the step-by-step execution plan for the surprised-potato 
 
 ## Phase 6: Synchronization & Reporting
 **Goal:** Reconcile offline data and visualize results.
-- **Sync Service:** The "Back Online" logic. Loop through Dexie queue -> Send to Firestore -> Update Stock.
+- **Sync Service:** The "Back Online" logic. Loop through Dexie queue -> POST to API -> Update Stock.
 - **Dashboard & Reports:** Read-only views using Chart.js or simple HTML tables.
+
+## Phase 7: Shift Management
+**Goal:** Cash control and session tracking.
+- **Shift Logic:** Open/Close shift with cash reconciliation.
+- **Enforcement:** Block POS access if no shift is open.
+
+## Phase 8: Expense Management
+**Goal:** Track operational costs.
+- **Expense Module:** CRUD for expenses, optionally linked to suppliers.
 
 ## Phase 9: User Management & Access Control
 **Goal:** Administer users and enforce granular permissions.
@@ -52,10 +61,10 @@ Use the following prompts in order. They assume a standard HTML5 + ES6 structure
 ## Prompt Set 1: Foundation
 
 ### Prompt 1.1: Project Skeleton & Auth
-Act as a Senior Web Developer. We are building a Cloud-Based POS using Vanilla JS and Tailwind CSS.
-1. Create a standard project structure: `index.html`, `style.css` (Tailwind via CDN), `src/main.js`, `src/firebase-config.js`.
-2. In `firebase-config.js`, initialize Firebase Auth and Firestore.
-3. Create `src/auth.js`. Export functions `login()`, `logout()`, and `monitorAuthState()`.
+Act as a Senior Web Developer. We are building a Self-Hosted POS using Vanilla JS, Tailwind CSS, and PHP 8/JSON for storage.
+1. Create a standard project structure: `index.html`, `style.css` (Tailwind via CDN), `src/main.js`, `api/router.php`, `data/`.
+2. Create `api/router.php`: A simple PHP script that accepts GET (read JSON) and POST (write JSON) requests. It should read/write files from the `data/` directory.
+3. Create `src/auth.js`. Export functions `login(email, password)`, `logout()`, and `monitorAuthState()`. Login should `fetch` `data/users.json` and verify credentials (simple check for now).
 4. In `index.html`, create a simple Login Form (hidden by default) and a "App Container" (hidden by default).
 5. Logic: If `monitorAuthState` detects a user, show App Container; otherwise, show Login Form.
 Output the code for these core files.
@@ -74,17 +83,17 @@ Build the Navigation and Routing system.
 We need to manage Suppliers.
 1. Create `src/modules/suppliers.js`.
 2. Export a function `loadSuppliersView()` that renders a Table and an "Add Supplier" button into `#main-content`.
-3. Use Firebase SDK to fetch `suppliers` collection.
+3. Use `fetch('api/router.php?file=suppliers')` to get data.
 4. Implement a custom Modal (HTML dialog or hidden div) to "Add Supplier" (Fields: Name, Contact, Email).
-5. Implement the Delete function (DOM removal + Firestore delete).
+5. Implement the Delete function (DOM removal + POST to API to update JSON).
 
 ### Prompt 2.2: Items Management (Master List)
 Build the Items Management module.
 1. Create `src/modules/items.js` with `loadItemsView()`.
-2. Render a table of items from Firestore `items` collection.
+2. Render a table of items from `items.json`.
 3. Columns: Barcode, Name, Cost Price, Selling Price, Current Stock.
 4. Create a Form Modal to Add/Edit items.
-5. The Form must allow selecting a `Supplier` (fetch from Firestore).
+5. The Form must allow selecting a `Supplier` (fetch from `suppliers.json`).
 6. Include `min_stock` field.
 
 ### Prompt 2.3: Item Relationships (Units)
@@ -97,7 +106,7 @@ Update the `items.js` module to support Unit Conversion.
 ### Prompt 2.4: Customer Management & Rewards
 Build the Customers module.
 1. Create `src/modules/customers.js` with `loadCustomersView()`.
-2. Render a table of customers from Firestore `customers` collection.
+2. Render a table of customers from `customers.json`.
 3. Fields: Name, Phone (unique ID), Email, and `loyalty_points`.
 4. Create a Form Modal to Add/Edit customers.
 5. Add a search function to find customers by phone or name.
@@ -108,7 +117,7 @@ Build the Migration module.
 2. UI: Create a file upload area for JSON and CSV files.
 3. UI: Add buttons to download sample JSON and CSV templates.
 4. Logic: Parse the JSON or CSV file and validate that it is an array.
-5. Logic: Use Firestore `writeBatch` to import items in chunks of 500.
+5. Logic: Send the array to `api/router.php` to overwrite/append `items.json`.
 6. Logic: Ensure numeric fields (prices, stock) are correctly parsed as numbers.
 
 ## Prompt Set 3: Inventory Transactions
@@ -118,22 +127,22 @@ Build the `src/modules/stockin.js` module using a cart-based approach.
 1. UI: Search bar to find items, and a "Stock In Cart" table to list items being received.
 2. For each item added to the cart:
    - Input "Qty Received" and "New Cost Price".
-   - Compare input Cost vs Firestore `cost_price`.
+   - Compare input Cost vs stored `cost_price`.
    - If different, trigger a custom Modal: "Price Discrepancy". Buttons: "Update Master" or "Keep Old".
 3. Footer: Display "Total Invoice Value" (sum of Qty * Cost).
 4. "Commit Invoice" button:
-   - Loop through cart and update Firestore `stock_level` (increment).
-   - If "Update Master" was selected for an item, update its `cost_price`.
-   - Log the transaction in a `stock_in_history` collection.
+   - Send payload to API to update `items.json` (increment stock).
+   - If "Update Master" was selected for an item, update its `cost_price` in the payload.
+   - Log the transaction in `stock_in_history.json`.
 
 ### Prompt 3.2: Stock Adjustments (Audit)
 Build `src/modules/stock-count.js` for auditing.
 1. UI: Search item, display current system stock.
 2. Input: "Actual Count".
 3. Logic: Calculate difference.
-4. Create a `adjustments` collection in Firestore.
+4. Create/Append to `adjustments.json`.
 5. Log: `{itemId, oldStock, newStock, difference, reason, userId, timestamp}`.
-6. Only AFTER logging, update the stock level in Firestore.
+6. Only AFTER logging, update the stock level in `items.json` via API.
 
 ## Prompt Set 4: The Offline Layer
 
@@ -144,7 +153,7 @@ We need offline capability. Use `dexie` (load via CDN in index.html).
    - `transactions`: `++id, timestamp, sync_status`
 2. Create `src/services/sync-service.js`.
 3. Add a function `startRealtimeSync()`:
-   - Listen to Firestore `items` (onSnapshot).
+   - Poll `api/router.php?file=items` every 30 seconds.
    - `db.items.bulkPut()` the data to keep IndexedDB updated.
    - Call this function in `main.js` upon login.
 
@@ -153,7 +162,7 @@ We need offline capability. Use `dexie` (load via CDN in index.html).
 ### Prompt 5.1: POS UI & Cart
 Build `src/modules/pos.js`.
 1. Layout: Left col (Item Grid), Right col (Cart + Customer Selection).
-2. **Important**: Fetch items from `db.items` (Dexie), NOT Firestore.
+2. **Important**: Fetch items from `db.items` (Dexie), NOT Server.
 3. Implement a Search Bar filtering the Dexie results.
 4. Customer Selection: Add a small search bar to link a customer to the current sale. Display their current points.
 5. Cart State: Maintain a simple array `cart = []`.
@@ -190,35 +199,61 @@ Update `src/services/sync-service.js`.
 3. Logic:
    - Query Dexie `transactions` where `synced: false`.
    - For each:
-     - Write to Firestore `transactions`.
-     - Batch update Firestore inventory (decrement stock).
-     - If `customerId` is present, increment `loyalty_points` in `customers` collection.
+     - POST to `api/router.php` (action=sync).
+     - Backend updates `transactions.json` and decrements stock in `items.json`.
+     - If `customerId` is present, update `customers.json`.
      - Update Dexie transaction `synced: true`.
 
 ## Prompt Set 7: Reporting
 
 ### Prompt 7.1: Dashboard
 Build `src/modules/dashboard.js`.
-1. Fetch `transactions` from Firestore (last 30 days).
+1. Fetch `transactions.json` from API.
 2. Compute: Total Sales, Total Profit.
 3. Fetch `items` where `stock_level` < `min_stock` for "Low Stock" table.
 4. Render a simple HTML table or use a lightweight chart lib (like Chart.js via CDN) for "Sales Trend".
 
-## Prompt Set 8: User Management
+### Prompt 7.2: Advanced Reporting
+Build `src/modules/reports.js`.
+1. UI: Date Range Picker (Start/End).
+2. Report: Sales by User (Table: User, Total Sales, Transaction Count).
+3. Report: Financial Summary (Gross Sales, Cost of Goods, Gross Profit).
 
-### Prompt 8.1: User Administration
+## Prompt Set 8: Shift Management
+
+### Prompt 8.1: Shift Logic
+Build `src/modules/shift.js`.
+1. UI: "Open Shift" Modal (Input: Opening Petty Cash).
+2. UI: "Close Shift" Modal (Input: Closing Cash Count).
+3. Logic: `checkShiftStatus()` - if no open shift, block POS view.
+4. Logic: On Close, calculate Expected Cash (Opening + Cash Sales from `transactions` in current shift window).
+5. UI: Show Overage/Shortage summary upon closing.
+6. Write: Save shift records to `shifts.json` via API.
+
+## Prompt Set 9: Expense Management
+
+### Prompt 9.1: Expenses CRUD
+Build `src/modules/expenses.js`.
+1. UI: Render a table of expenses from `expenses.json`.
+2. UI: "Add Expense" Modal.
+   - Fields: Amount, Category (Dropdown: Utilities, Salary, Procurement, Other), Description, Date.
+   - Supplier Link: Optional dropdown (reuse `suppliers` data).
+3. Write: Save to `expenses.json`.
+
+## Prompt Set 10: User Management
+
+### Prompt 10.1: User Administration
 Build `src/modules/users.js`.
-1. UI: Render a table of users from Firestore `users` collection.
+1. UI: Render a table of users from `users.json`.
 2. UI: "Add/Edit User" Modal.
    - Fields: Email, Display Name, Is Active (Toggle).
    - Permissions Matrix: List modules (POS, Items, Stock In, Stock Count, Reports, Expenses, Users).
    - For each module, show "Read" and "Write" checkboxes.
-3. Write: Save the `permissions` map to Firestore.
+3. Write: Save the `permissions` map to `users.json` via API.
 
-### Prompt 8.2: Access Control Enforcement
+### Prompt 10.2: Access Control Enforcement
 Enforce permissions in the app.
-1. Update `src/auth.js`: On login, fetch the user's document from `users` collection. Store permissions in memory.
-   - **New User Logic:** If user is authenticated but has no Firestore document, create one with `permissions: {}` (Zero Access).
+1. Update `src/auth.js`: On login, fetch the user's profile from `users.json`. Store permissions in memory.
 2. Create helper `checkPermission(module, type)` (type = 'read'|'write').
 3. Update `src/layout.js`: 
    - If user has no permissions, render a "Pending Approval" screen instead of the Sidebar/App.

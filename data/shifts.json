@@ -1,0 +1,13 @@
+[
+    {
+        "id": "08a8d431-fdec-4337-9160-16fa1fed4020",
+        "user_id": "admin@lightpos.com",
+        "start_time": "2026-01-03T08:52:25.453Z",
+        "end_time": null,
+        "opening_cash": 1000,
+        "closing_cash": 0,
+        "expected_cash": 1000,
+        "status": "open",
+        "adjustments": []
+    }
+]

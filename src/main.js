@@ -1,4 +1,4 @@
-import { login, logout, monitorAuthState, loginWithGoogle, fetchUserProfile } from "./auth.js";
+import { login, logout, monitorAuthState } from "./auth.js";
 import { renderSidebar } from "./layout.js";
 import { initRouter } from "./router.js";
 import { startRealtimeSync } from "./services/sync-service.js";
@@ -12,25 +12,29 @@ const loginError = document.getElementById("login-error");
 const mainContent = document.getElementById("main-content");
 const btnGoogleLogin = document.getElementById("btn-google-login");
 
-// 1. Monitor Auth State
-monitorAuthState(async (user) => {
-    if (user) {
-        // User is logged in
-        console.log("User authenticated:", user.email);
-        loginView.classList.add("hidden");
-        appContainer.classList.remove("hidden");
-        
-        await fetchUserProfile(user);
+function showApp(user) {
+    console.log("User authenticated:", user.email);
+    loginView.classList.add("hidden");
+    appContainer.classList.remove("hidden");
+    
+    // Initialize App Shell
+    renderSidebar();
+    initRouter();
+    startRealtimeSync();
+}
 
-        // Initialize App Shell
-        renderSidebar();
-        initRouter();
-        startRealtimeSync();
+function showLogin() {
+    console.log("User signed out");
+    appContainer.classList.add("hidden");
+    loginView.classList.remove("hidden");
+}
+
+// 1. Monitor Auth State on initial load
+monitorAuthState((user) => {
+    if (user) {
+        showApp(user);
     } else {
-        // User is logged out
-        console.log("User signed out");
-        appContainer.classList.add("hidden");
-        loginView.classList.remove("hidden");
+        showLogin();
     }
 });
 
@@ -41,23 +45,23 @@ formLogin.addEventListener("submit", async (e) => {
     const password = document.getElementById("password").value;
     
     loginError.classList.add("hidden");
+    console.log("Attempting login for:", email);
     
     const result = await login(email, password);
+    console.log("Login Result:", result);
+
     if (!result.success) {
-        loginError.textContent = "Invalid email or password.";
+        loginError.textContent = result.error || "Invalid email or password.";
         loginError.classList.remove("hidden");
+    } else {
+        showApp(result.user);
     }
 });
 
 // 3. Handle Google Login
 btnGoogleLogin.addEventListener("click", async () => {
     loginError.classList.add("hidden");
-    
-    const result = await loginWithGoogle();
-    if (!result.success) {
-        loginError.textContent = result.error;
-        loginError.classList.remove("hidden");
-    }
+    alert("Google Login is not supported in this version.");
 });
 
 // 4. Handle Logout

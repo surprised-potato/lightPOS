@@ -1,268 +1,330 @@
-import { db as firestore } from "../firebase-config.js";
+import { checkPermission, getUserProfile } from "../auth.js";
 import { db } from "../db.js";
-import { checkPermission } from "../auth.js";
-import { updateDoc, doc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { syncManager } from "../sync-manager.js";
 
-let itemsData = [];
-let selectedItem = null;
+const API_URL = 'api/router.php';
+
+// Module-level state for the cart
+let stockInCart = [];
+let allItems = []; // Cache for item search
 
 export async function loadStockInView() {
-    const content = document.getElementById("main-content");
-    
+    if (!checkPermission('stockin', 'read')) {
+        document.getElementById('main-content').innerHTML = '<div class="p-4">Access Denied</div>';
+        return;
+    }
+    await render();
+    await loadAllItems();
+    attachEventListeners();
+    await loadStockInHistory();
+}
+
+async function loadAllItems() {
+    allItems = await db.items.toArray();
+}
+
+function render() {
+    const content = document.getElementById('main-content');
     content.innerHTML = `
-        <div class="max-w-2xl mx-auto">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6">Stock In (Receive Inventory)</h2>
+        <div class="p-4 md:p-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">Stock In</h2>
             
-            <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
-                <!-- Item Search -->
-                <div class="mb-6 relative">
-                    <label class="block text-gray-700 text-sm font-bold mb-2">Search Item</label>
-                    <input type="text" id="stockin-search" placeholder="Scan barcode or type name..." autocomplete="off" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <div id="stockin-results" class="hidden absolute z-10 bg-white border border-gray-300 mt-1 w-full rounded shadow-lg max-h-48 overflow-y-auto"></div>
-                </div>
-
-                <!-- Selected Item Details -->
-                <div id="selected-item-container" class="hidden mb-6 p-4 bg-blue-50 rounded border border-blue-200">
-                    <h3 id="display-name" class="font-bold text-lg text-blue-800"></h3>
-                    <p class="text-sm text-gray-600">Barcode: <span id="display-barcode"></span></p>
-                    <p class="text-sm text-gray-600">Current Stock: <span id="display-stock" class="font-bold"></span></p>
-                    <p class="text-sm text-gray-600">Current Cost: <span id="display-cost"></span></p>
-                </div>
-
-                <!-- Entry Fields -->
-                <div class="flex flex-wrap -mx-3 mb-6">
-                    <div class="w-full md:w-1/2 px-3 mb-6 md:mb-0">
-                        <label class="block text-gray-700 text-sm font-bold mb-2">Quantity to Add</label>
-                        <input type="number" id="input-qty" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500" min="1">
+            <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+                <!-- Left side: Item selection and cart -->
+                <div class="lg:col-span-3">
+                    <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+                        <h3 class="text-lg font-semibold text-gray-700 mb-4">Add Item to Stock</h3>
+                        <form id="stockin-form" class="flex flex-col sm:flex-row items-start sm:items-end gap-4">
+                            <div class="flex-grow w-full relative">
+                                <label for="item-search" class="block text-sm font-medium text-gray-700">Search Item (Name or Barcode)</label>
+                                <input type="text" id="item-search" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="e.g., 'Coffee' or '123456789'" autocomplete="off">
+                                <div id="search-results" class="absolute z-10 w-full bg-white border border-gray-300 mt-1 rounded-md shadow-lg max-h-60 overflow-y-auto hidden"></div>
+                                <input type="hidden" id="selected-item-id">
+                            </div>
+                            <div class="w-full sm:w-auto">
+                                <label for="item-quantity" class="block text-sm font-medium text-gray-700">Quantity</label>
+                                <input type="number" id="item-quantity" min="1" value="1" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            </div>
+                            <button type="submit" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md shadow-sm">
+                                Add to Cart
+                            </button>
+                        </form>
                     </div>
-                    <div class="w-full md:w-1/2 px-3">
-                        <label class="block text-gray-700 text-sm font-bold mb-2">Cost Per Unit</label>
-                        <input type="number" id="input-cost" step="0.01" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    </div>
-                </div>
 
-                <div class="flex items-center justify-end">
-                    <button id="btn-receive" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-                        Receive Stock
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Price Discrepancy Modal -->
-        <div id="modal-price-alert" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50 flex items-center justify-center">
-            <div class="relative mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-                <div class="mt-3 text-center">
-                    <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100">
-                        <svg class="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                    </div>
-                    <h3 class="text-lg leading-6 font-medium text-gray-900 mt-2">Price Discrepancy</h3>
-                    <div class="mt-2 px-7 py-3">
-                        <p class="text-sm text-gray-500">
-                            The entered cost (<span id="alert-new-cost" class="font-bold"></span>) differs from the master cost (<span id="alert-old-cost" class="font-bold"></span>).
-                        </p>
-                        <p class="text-sm text-gray-500 mt-2">Do you want to update the master cost price?</p>
-                    </div>
-                    <div class="flex flex-col gap-2 mt-4">
-                        <button id="btn-update-cost" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none w-full">
-                            Yes, Update Master Cost
-                        </button>
-                        <button id="btn-keep-cost" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded focus:outline-none w-full">
-                            No, Keep Old Cost
-                        </button>
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h3 class="text-lg font-semibold text-gray-700 mb-4">Stock In Cart</h3>
+                        <div id="stock-in-cart-container">
+                            <!-- Cart items will be rendered here -->
+                        </div>
+                        <div id="cart-actions" class="mt-4 flex justify-end gap-2 hidden">
+                             <button id="clear-cart-btn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-md shadow-sm">
+                                Clear Cart
+                            </button>
+                            <button id="save-stock-in-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md shadow-sm">
+                                Save Stock In
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- Recent Stock In History -->
-        <div class="max-w-4xl mx-auto mt-8">
-            <h3 class="text-xl font-bold text-gray-800 mb-4">Recent Stock In History</h3>
-            <div class="bg-white shadow-md rounded overflow-x-auto">
-                <table class="min-w-full table-auto">
-                    <thead>
-                        <tr class="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
-                            <th class="py-3 px-6 text-left">Date</th>
-                            <th class="py-3 px-6 text-left">Item</th>
-                            <th class="py-3 px-6 text-right">Qty</th>
-                            <th class="py-3 px-6 text-right">Cost</th>
-                        </tr>
-                    </thead>
-                    <tbody id="stock-logs-table-body" class="text-gray-600 text-sm font-light">
-                        <tr><td colspan="4" class="py-3 px-6 text-center">Loading...</td></tr>
-                    </tbody>
-                </table>
+                <!-- Right side: Recent history -->
+                <div class="lg:col-span-2">
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h3 class="text-lg font-semibold text-gray-700 mb-4">Recent Stock-In History</h3>
+                        <div id="stockin-history-container" class="max-h-[28rem] overflow-y-auto">
+                            <p class="text-gray-500">Loading history...</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     `;
-
-    // Initialize
-    await Promise.all([fetchItems(), fetchStockLogs()]);
-    setupEventListeners();
+    renderStockInCart();
 }
 
-async function fetchItems() {
-    try {
-        itemsData = await db.items.toArray();
-    } catch (error) {
-        console.error("Error fetching items:", error);
+function attachEventListeners() {
+    const searchInput = document.getElementById('item-search');
+    const searchResults = document.getElementById('search-results');
+    const stockinForm = document.getElementById('stockin-form');
+    const cartContainer = document.getElementById('stock-in-cart-container');
+
+    searchInput.addEventListener('keyup', handleSearch);
+    searchInput.addEventListener('blur', () => setTimeout(() => searchResults.classList.add('hidden'), 200));
+    stockinForm.addEventListener('submit', handleAddItemToCart);
+    
+    document.getElementById('save-stock-in-btn')?.addEventListener('click', saveStockIn);
+    document.getElementById('clear-cart-btn')?.addEventListener('click', clearCart);
+
+    cartContainer.addEventListener('click', (e) => {
+        if (e.target.closest('.remove-item-btn')) {
+            const button = e.target.closest('.remove-item-btn');
+            const itemId = button.dataset.itemId;
+            removeFromCart(itemId);
+        }
+    });
+
+    searchResults.addEventListener('click', (e) => {
+        if (e.target.classList.contains('search-result-item')) {
+            const itemId = e.target.dataset.id;
+            const itemName = e.target.textContent;
+            document.getElementById('selected-item-id').value = itemId;
+            searchInput.value = itemName;
+            searchResults.classList.add('hidden');
+        }
+    });
+}
+
+function handleSearch(e) {
+    const query = e.target.value.toLowerCase();
+    const searchResults = document.getElementById('search-results');
+    if (query.length < 2) {
+        searchResults.classList.add('hidden');
+        return;
+    }
+
+    const results = allItems.filter(item => 
+        item.name.toLowerCase().includes(query) || 
+        (item.barcode && item.barcode.includes(query))
+    ).slice(0, 10);
+
+    searchResults.innerHTML = results.map(item => 
+        `<div class="p-2 hover:bg-gray-100 cursor-pointer search-result-item" data-id="${item.id}">${item.name}</div>`
+    ).join('');
+    searchResults.classList.remove('hidden');
+}
+
+async function handleAddItemToCart(e) {
+    e.preventDefault();
+    const itemId = document.getElementById('selected-item-id').value;
+    const quantityInput = document.getElementById('item-quantity');
+    const quantity = parseInt(quantityInput.value, 10);
+
+    if (!itemId || !quantity || quantity <= 0) {
+        alert('Please select an item and enter a valid quantity.');
+        return;
+    }
+
+    const item = allItems.find(i => i.id === itemId);
+    if (!item) {
+        alert('Item not found.');
+        return;
+    }
+
+    const existingCartItem = stockInCart.find(cartItem => cartItem.id === itemId);
+
+    if (existingCartItem) {
+        existingCartItem.quantity += quantity;
+    } else {
+        stockInCart.push({
+            id: item.id,
+            name: item.name,
+            quantity: quantity
+        });
+    }
+
+    renderStockInCart();
+
+    // Reset form
+    document.getElementById('stockin-form').reset();
+    document.getElementById('selected-item-id').value = '';
+    quantityInput.value = 1;
+}
+
+function renderStockInCart() {
+    const cartContainer = document.getElementById('stock-in-cart-container');
+    const cartActions = document.getElementById('cart-actions');
+    if (!cartContainer) return;
+
+    if (stockInCart.length === 0) {
+        cartContainer.innerHTML = '<p class="text-gray-500">Cart is empty.</p>';
+        cartActions.classList.add('hidden');
+        return;
+    }
+
+    cartActions.classList.remove('hidden');
+    const tableRows = stockInCart.map(item => `
+        <tr class="border-b">
+            <td class="p-2">${item.name}</td>
+            <td class="p-2 text-center">${item.quantity}</td>
+            <td class="p-2 text-right">
+                <button class="text-red-500 hover:text-red-700 remove-item-btn" data-item-id="${item.id}" title="Remove Item">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 pointer-events-none" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" /></svg>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+
+    cartContainer.innerHTML = `
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="border-b">
+                    <th class="text-left p-2 font-semibold">Item</th>
+                    <th class="text-center p-2 font-semibold">Quantity</th>
+                    <th class="text-right p-2 font-semibold">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${tableRows}
+            </tbody>
+        </table>
+    `;
+}
+
+function removeFromCart(itemId) {
+    stockInCart = stockInCart.filter(item => item.id !== itemId);
+    renderStockInCart();
+}
+
+function clearCart() {
+    if (confirm('Are you sure you want to clear the cart?')) {
+        stockInCart = [];
+        renderStockInCart();
     }
 }
 
-function setupEventListeners() {
-    const searchInput = document.getElementById("stockin-search");
-    const resultsDiv = document.getElementById("stockin-results");
-    const btnReceive = document.getElementById("btn-receive");
-    const modal = document.getElementById("modal-price-alert");
-    const canWrite = checkPermission("stockin", "write");
+async function saveStockIn() {
+    if (stockInCart.length === 0) {
+        alert('Cart is empty. Add items before saving.');
+        return;
+    }
 
-    // Search Logic
-    searchInput.addEventListener("input", (e) => {
-        const term = e.target.value.toLowerCase();
-        resultsDiv.innerHTML = "";
-        
-        if (term.length < 1) {
-            resultsDiv.classList.add("hidden");
-            return;
-        }
+    const saveBtn = document.getElementById('save-stock-in-btn');
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving...';
 
-        const filtered = itemsData.filter(i => i.name.toLowerCase().includes(term) || i.barcode.includes(term));
-        
-        if (filtered.length > 0) {
-            resultsDiv.classList.remove("hidden");
-            filtered.forEach(item => {
-                const div = document.createElement("div");
-                div.className = "p-2 hover:bg-blue-100 cursor-pointer border-b last:border-b-0 text-sm";
-                div.textContent = `${item.name} (${item.barcode})`;
-                div.addEventListener("click", () => selectItem(item));
-                resultsDiv.appendChild(div);
-            });
-        } else {
-            resultsDiv.classList.add("hidden");
-        }
-    });
+    const user = getUserProfile();
+    const stockInData = {
+        user_id: user.email,
+        username: user.name,
+        items: stockInCart.map(item => ({ item_id: item.id, quantity: item.quantity, name: item.name }))
+    };
 
-    // Receive Button Logic
-    btnReceive.addEventListener("click", () => {
-        if (!canWrite) {
-            alert("You do not have permission to perform Stock In.");
-            return;
-        }
-
-        const qty = parseInt(document.getElementById("input-qty").value);
-        const newCost = parseFloat(document.getElementById("input-cost").value);
-
-        if (!qty || qty <= 0 || isNaN(newCost)) {
-            alert("Please enter valid quantity and cost.");
-            return;
-        }
-
-        if (newCost !== selectedItem.cost_price) {
-            document.getElementById("alert-new-cost").textContent = newCost.toFixed(2);
-            document.getElementById("alert-old-cost").textContent = selectedItem.cost_price.toFixed(2);
-            modal.classList.remove("hidden");
-        } else {
-            processStockIn(qty, newCost, false);
-        }
-    });
-
-    document.getElementById("btn-update-cost").addEventListener("click", () => processStockIn(parseInt(document.getElementById("input-qty").value), parseFloat(document.getElementById("input-cost").value), true));
-    document.getElementById("btn-keep-cost").addEventListener("click", () => processStockIn(parseInt(document.getElementById("input-qty").value), parseFloat(document.getElementById("input-cost").value), false));
-}
-
-function selectItem(item) {
-    selectedItem = item;
-    document.getElementById("stockin-search").value = item.name;
-    document.getElementById("stockin-results").classList.add("hidden");
-    document.getElementById("selected-item-container").classList.remove("hidden");
-    document.getElementById("display-name").textContent = item.name;
-    document.getElementById("display-barcode").textContent = item.barcode;
-    document.getElementById("display-stock").textContent = item.stock_level;
-    document.getElementById("display-cost").textContent = item.cost_price.toFixed(2);
-    document.getElementById("input-cost").value = item.cost_price;
-    document.getElementById("btn-receive").disabled = false;
-    if (!checkPermission("stockin", "write")) document.getElementById("btn-receive").disabled = true;
-}
-
-async function processStockIn(qty, cost, updateMasterCost) {
     try {
-        const updateData = {
-            stock_level: increment(qty)
+        // Optimistically update local database
+        const itemIds = stockInCart.map(item => item.id);
+        const itemsToUpdate = await db.items.bulkGet(itemIds);
+
+        itemsToUpdate.forEach(item => {
+            const cartItem = stockInCart.find(ci => ci.id === item.id);
+            if (cartItem) {
+                item.stock_level = (item.stock_level || 0) + cartItem.quantity;
+            }
+        });
+
+        await db.items.bulkPut(itemsToUpdate);
+
+        // Add to local history immediately
+        const historyRecord = {
+            id: `local_${Date.now()}`,
+            user_id: user.email,
+            username: user.name,
+            items: stockInCart,
+            timestamp: new Date().toISOString(),
+            item_count: stockInCart.reduce((sum, item) => sum + item.quantity, 0)
         };
-        if (updateMasterCost) {
-            updateData.cost_price = cost;
-        }
+        await db.stockins.add(historyRecord);
 
-        await updateDoc(doc(firestore, "items", selectedItem.id), updateData);
-        
-        // Update local cache immediately to reflect new stock level
-        await db.items.update(selectedItem.id, {
-            stock_level: selectedItem.stock_level + qty,
-            ...(updateMasterCost ? { cost_price: cost } : {})
+        // Queue the stock-in operation for server sync
+        await syncManager.enqueue({
+            action: 'batch_stock_in',
+            data: historyRecord, // Send the whole record
+            timestamp: historyRecord.timestamp
         });
 
-        // Log the transaction locally first
-        await db.stock_logs.add({
-            item_id: selectedItem.id,
-            item_name: selectedItem.name,
-            barcode: selectedItem.barcode,
-            qty_added: qty,
-            cost_price: cost,
-            timestamp: new Date(),
-            sync_status: 0
-        });
+        alert('Stock-in successful! Data is saved locally and will sync with the server.');
+        
+        stockInCart = [];
+        renderStockInCart();
+        await loadStockInHistory(); // Refresh history view
 
-        document.getElementById("modal-price-alert").classList.add("hidden");
-        alert(`Successfully added ${qty} units to ${selectedItem.name}.`);
-        
-        // Reset Form
-        document.getElementById("stockin-search").value = "";
-        document.getElementById("selected-item-container").classList.add("hidden");
-        document.getElementById("input-qty").value = "";
-        document.getElementById("input-cost").value = "";
-        document.getElementById("btn-receive").disabled = true;
-        selectedItem = null;
-        
-        // Refresh local data
-        fetchItems();
-        fetchStockLogs();
     } catch (error) {
-        console.error("Error updating stock:", error);
-        alert("Failed to update stock.");
+        console.error('Failed to save stock-in:', error);
+        alert('An error occurred while saving the stock-in. Please try again.');
+    } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save Stock In';
     }
 }
 
-async function fetchStockLogs() {
-    const tbody = document.getElementById("stock-logs-table-body");
+async function loadStockInHistory() {
+    const historyContainer = document.getElementById('stockin-history-container');
+    historyContainer.innerHTML = '<p class="text-gray-500">Loading history...</p>';
+
     try {
-        const logs = await db.stock_logs.orderBy("timestamp").reverse().limit(10).toArray();
+        // Fetch from Server for complete history
+        const response = await fetch(`${API_URL}?file=stock_in_history`);
+        let history = [];
         
-        tbody.innerHTML = "";
+        if (response.ok) {
+            history = await response.json();
+        }
         
-        if (logs.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="4" class="py-3 px-6 text-center">No history found.</td></tr>`;
+        if (!Array.isArray(history)) history = [];
+
+        // Sort by timestamp desc and limit
+        history.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        const recentHistory = history.slice(0, 20);
+
+        if (recentHistory.length === 0) {
+            historyContainer.innerHTML = '<p class="text-gray-500">No recent stock-in history.</p>';
             return;
         }
 
-        logs.forEach(data => {
-            const dateObj = new Date(data.timestamp);
-            const dateStr = dateObj.toLocaleString();
-            
-            const row = document.createElement("tr");
-            row.className = "border-b border-gray-200 hover:bg-gray-100";
-            row.innerHTML = `
-                <td class="py-3 px-6 text-left whitespace-nowrap">${dateStr}</td>
-                <td class="py-3 px-6 text-left">
-                    <div class="font-medium">${data.item_name}</div>
-                    <div class="text-xs text-gray-500">${data.barcode}</div>
-                </td>
-                <td class="py-3 px-6 text-right font-bold text-green-600">+${data.qty_added}</td>
-                <td class="py-3 px-6 text-right">${parseFloat(data.cost_price).toFixed(2)}</td>
-            `;
-            tbody.appendChild(row);
-        });
+        historyContainer.innerHTML = `
+            <div class="divide-y divide-gray-200">
+                ${recentHistory.map(entry => `
+                    <div class="p-3">
+                        <div class="flex justify-between items-center">
+                            <p class="text-sm font-medium text-gray-800">${entry.username || 'N/A'}</p>
+                            <p class="text-xs text-gray-500">${new Date(entry.timestamp).toLocaleString()}</p>
+                        </div>
+                        <p class="text-sm text-gray-600">Items: ${entry.item_count}</p>
+                    </div>
+                `).join('')}
+            </div>
+        `;
     } catch (error) {
-        console.error("Error fetching logs:", error);
-        tbody.innerHTML = `<tr><td colspan="4" class="py-3 px-6 text-center text-red-500">Error loading history.</td></tr>`;
+        console.error('Failed to load stock-in history:', error);
+        historyContainer.innerHTML = '<p class="text-red-500">Failed to load history.</p>';
     }
 }

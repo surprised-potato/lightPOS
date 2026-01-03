@@ -7,18 +7,19 @@ Use this checklist to track your progress through the development phases.
 - [x] Create `index.html` (Main entry point).
 - [x] Create `style.css` (Import Tailwind via CDN).
 - [x] Create `src/main.js` (App entry point).
-- [x] Create `src/firebase-config.js`.
+- [x] Create `api/router.php` (Simple backend handler).
+- [x] Create `data/` directory with empty JSON files (`items.json`, `users.json`, etc.).
 
-### 1.2 Firebase Setup
-- [x] Initialize Firebase App in `src/firebase-config.js`.
-- [x] Initialize Firestore service.
-- [x] Initialize Authentication service.
+### 1.2 Backend Setup (Apache/PHP 8)
+- [x] Implement `GET` logic in `router.php` to read JSON files.
+- [x] Implement `POST` logic in `router.php` to write to JSON files.
+- [x] Implement file locking (`flock`) to ensure data integrity.
 
 ### 1.3 Authentication Logic
 - [x] Create `src/auth.js`.
-- [x] Implement `login(email, password)` function.
+- [x] Implement `login(email, password)` using `fetch` to backend.
 - [x] Implement `logout()` function.
-- [x] Implement `monitorAuthState(callback)` observer.
+- [x] Implement `monitorAuthState(callback)` using LocalStorage/Session.
 - [x] UI: Add Login Form to `index.html` (hidden by default).
 - [x] UI: Add Main App Container to `index.html` (hidden by default).
 - [x] Logic: Wire up `monitorAuthState` to toggle between Login Form and App Container.
@@ -34,14 +35,14 @@ Use this checklist to track your progress through the development phases.
 ### 2.1 Suppliers Module
 - [x] Create `src/modules/suppliers.js`.
 - [x] Implement `loadSuppliersView()` function.
-- [x] Read: Fetch and render suppliers collection in a table.
+- [x] Read: Fetch `suppliers.json` and render table.
 - [x] Create: Build "Add Supplier" Modal (Name, Contact, Email).
 - [x] Delete: Implement delete functionality for suppliers.
 
 ### 2.2 Items Module (Basic)
 - [x] Create `src/modules/items.js`.
 - [x] Implement `loadItemsView()` function.
-- [x] Read: Fetch and render items collection (Barcode, Name, Cost, Price, Stock).
+- [x] Read: Fetch `items.json` and render table.
 - [x] Create/Update: Build "Item Form" Modal.
 - [x] Link: Populate "Supplier" dropdown in the form.
 - [x] Add `min_stock` field for low stock alerts.
@@ -54,39 +55,39 @@ Use this checklist to track your progress through the development phases.
 - [x] Validation: Prevent an item from being its own parent.
 
 ### 2.4 Customers Module
-- [ ] Create `src/modules/customers.js`.
-- [ ] Implement `loadCustomersView()` function.
-- [ ] Read: Fetch and render customers collection (Name, Phone, Points).
-- [ ] Create/Update: Build "Customer Form" Modal.
-- [ ] Search: Implement customer search by name or phone.
+- [x] Create `src/modules/customers.js`.
+- [x] Implement `loadCustomersView()` function.
+- [x] Read: Fetch `customers.json`.
+- [x] Create/Update: Build "Customer Form" Modal.
+- [x] Search: Implement customer search by name or phone.
 
 ### 2.5 Migration Module
-- [ ] Create `src/modules/migrate.js`.
-- [ ] Implement `loadMigrateView()` function.
-- [ ] UI: Add file upload (JSON/CSV) and sample download links.
-- [ ] Logic: Implement JSON and CSV parsing and validation.
-- [ ] Logic: Implement bulk import using Firestore `writeBatch`.
+- [x] Create `src/modules/migrate.js`.
+- [x] Implement `loadMigrateView()` function.
+- [x] UI: Add file upload (JSON/CSV) and sample download links.
+- [x] Logic: Implement JSON and CSV parsing and validation.
+- [x] Logic: Implement bulk import by sending large JSON payload to backend.
 
 ## Phase 3: Inventory Logic
 ### 3.1 Stock In Module (Invoice Cart)
-- [ ] Refactor `src/modules/stockin.js` to use a cart system.
-- [ ] UI: Add "Stock In Cart" table to list multiple items.
-- [ ] UI: Add "Total Invoice Value" display.
-- [ ] Logic: Implement "Add to Stock In Cart" from search.
-- [ ] Logic: Compare Input Cost vs. Firestore Cost for each item in cart.
-- [ ] Modal: Trigger "Price Discrepancy" modal per item.
-- [ ] Option A: Update Master Cost.
-- [ ] Option B: Keep Old Cost.
-- [ ] Write: "Commit Invoice" button to batch update Firestore `stock_level`.
-- [ ] Write: Log to `stock_in_history` collection.
+ - [x] Refactor `src/modules/stockin.js` to use a cart system.
+ - [x] UI: Add "Stock In Cart" table to list multiple items.
+ - [x] UI: Add "Total Invoice Value" display.
+ - [x] Logic: Implement "Add to Stock In Cart" from search.
+ - [x] Logic: Compare Input Cost vs. Stored Cost for each item in cart.
+ - [x] Modal: Trigger "Price Discrepancy" modal per item.
+ - [x] Option A: Update Master Cost.
+ - [x] Option B: Keep Old Cost.
+ - [x] Write: "Commit Invoice" button to update `items.json` via API.
+ - [x] Write: Log to `stock_in_history.json`.
 
 ### 3.2 Stock Count (Audit)
 - [x] Create `src/modules/stock-count.js`.
 - [x] UI: Display Item + Current System Stock.
 - [x] UI: Input field for "Actual Count".
 - [x] Logic: Calculate difference (Actual - System).
-- [x] Write: Create document in `adjustments` collection (log reason/user).
-- [x] Write: Update `stock_level` in Firestore only after logging.
+ - [x] Write: Append to `adjustments.json`.
+ - [x] Write: Update `stock_level` in `items.json`.
 
 ## Phase 4: The Offline Layer (Dexie.js)
 ### 4.1 Dexie Setup
@@ -99,7 +100,7 @@ Use this checklist to track your progress through the development phases.
 ### 4.2 Realtime Sync (Downlink)
 - [x] Create `src/services/sync-service.js`.
 - [x] Implement `startRealtimeSync()`.
-- [x] Logic: Listen to Firestore items (`onSnapshot`).
+- [ ] Logic: Poll `items.json` every X seconds (or manual refresh).
 - [x] Logic: On change, run `db.items.bulkPut()` to update IndexedDB.
 - [x] Initialize this service in `main.js`.
 
@@ -107,7 +108,7 @@ Use this checklist to track your progress through the development phases.
 ### 5.1 POS UI & Layout
 - [x] Create `src/modules/pos.js`.
 - [ ] Update Split Layout: Item Grid (Left) vs. Cart + Customer Selection (Right).
-- [x] Read: Fetch items from Dexie (not Firestore).
+- [x] Read: Fetch items from Dexie (not Server).
 - [x] Search: Implement local search filtering on Dexie results.
 - [ ] UI: Add Customer Search/Selection in POS.
 
@@ -141,14 +142,14 @@ Use this checklist to track your progress through the development phases.
 - [x] Implement `processQueue()`.
 - [x] Listener: Add `window.addEventListener('online', ...)` trigger.
 - [x] Loop: Query Dexie for `synced: false`.
-- [x] Write: Add to Firestore `transactions` collection.
-- [x] Write: Batch update Firestore items (decrement stock).
-- [ ] Write: If `customerId` present, increment `loyalty_points` in Firestore.
+- [x] Write: POST to `api/router.php?action=sync_transaction`.
+- [x] Write: Backend updates `transactions.json` and decrements stock in `items.json`.
+- [x] Write: If `customerId` present, backend updates `customers.json`.
 - [x] Update: Set Dexie transaction to `synced: true`.
 
 ### 6.2 Dashboard & Reports
 - [x] Create `src/modules/dashboard.js`.
-- [x] Fetch recent transactions from Firestore.
+- [ ] Fetch recent transactions from `transactions.json`.
 - [x] Calculate KPIs: Total Sales, Total Profit.
 - [x] Low Stock: Fetch & Render items where stock < `min_stock`.
 - [x] Trend: Render Sales Trend (Table or Chart).
@@ -166,7 +167,7 @@ Use this checklist to track your progress through the development phases.
 - [x] UI: "Close Shift" Modal (Input: Closing Cash Count).
 - [x] Logic: Calculate Expected Cash (Opening + Total Cash Sales in Shift).
 - [x] Report: Show Overage/Shortage summary upon closing.
-- [x] Write: Save shift records to Firestore `shifts` collection.
+- [ ] Write: Save shift records to `shifts.json`.
 
 ## Phase 8: Expense Management
 - [x] Create `src/modules/expenses.js`.
@@ -174,16 +175,16 @@ Use this checklist to track your progress through the development phases.
 - [x] UI: "Add Expense" Modal.
 - [x] Form: Amount, Category (Dropdown), Description, Date.
 - [x] Link: Optional "Supplier" dropdown (reuse `fetchSuppliers`).
-- [x] Write: Save to Firestore `expenses` collection.
+- [ ] Write: Save to `expenses.json`.
 
 ## Phase 9: User Management
 - [x] Create `src/modules/users.js`.
 - [x] UI: User List View (Table).
 - [x] UI: User Form Modal (Email, Name, Active Status).
 - [x] UI: Permissions Matrix (Read/Write checkboxes per module).
-- [x] Write: Save user profile and permissions to Firestore `users` collection.
-- [x] Logic: Update `auth.js` to fetch user profile on login.
-- [x] Logic: Auto-create Firestore document for new users with 0 permissions.
+- [x] Write: Save user profile and permissions to `users.json`.
+- [x] Logic: Update `auth.js` to fetch user profile from `users.json` on login.
+- [x] Logic: Admin must manually create users (or simple registration flow).
 - [x] UI: Create "Pending Approval" view for users with no access.
 - [x] Logic: Implement `checkPermission(module, action)` utility.
 - [x] UI: Update Sidebar to hide links based on 'read' permission.
@@ -192,4 +193,4 @@ Use this checklist to track your progress through the development phases.
 ## Final Polish
 - [ ] Testing: Verify Offline mode (Disconnect Network -> Sell -> Reconnect).
 - [ ] Testing: Verify Auto-breakdown math.
-- [ ] Deploy: Push code to GitHub and enable GitHub Pages.
+- [ ] Deploy: Copy files to Apache `htdocs` or `www` folder.
