@@ -1,0 +1,50 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper: Check if the user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper: Get the current user's profile data
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.token.email)).data;
+    }
+
+    // Helper: Check if the user is marked as active
+    function isActive() {
+      return getUserData().is_active == true;
+    }
+
+    // Helper: Check for specific module permissions
+    function hasPermission(module, type) {
+      let profile = getUserData();
+      return profile.is_active == true && 
+             profile.permissions[module][type] == true;
+    }
+
+    match /users/{email} {
+      // Users can read their own profile
+      allow read: if isAuthenticated() && request.auth.token.email == email;
+
+      // Allow initial profile creation during first login
+      // Constraints: Must match auth email, must be active, but MUST have empty permissions
+      allow create: if isAuthenticated() 
+                    && request.auth.token.email == email 
+                    && request.resource.data.permissions.size() == 0
+                    && request.resource.data.is_active == true;
+
+      // Users can update their own basic info (like name) 
+      // but NOT their permissions or active status.
+      allow update: if isAuthenticated() 
+                    && request.auth.token.email == email 
+                    && request.resource.data.permissions == resource.data.permissions
+                    && request.resource.data.is_active == resource.data.is_active;
+      
+      // Admins (defined in your system) could be granted full access here
+      allow write: if hasPermission('admin', 'manage_users');
+    }
+  }
+}
