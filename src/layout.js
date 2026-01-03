@@ -1,4 +1,3 @@
-import { checkActiveShift, showCloseShiftModal, showAdjustCashModal } from "./modules/shift.js";
 import { checkActiveShift, showCloseShiftModal } from "./modules/shift.js";
 import { getUserProfile, checkPermission } from "./auth.js";
 
@@ -73,16 +72,9 @@ async function updateShiftStatus() {
         statusEl.innerHTML = `
             <div class="flex flex-col gap-1">
                 <span class="text-green-600">● Shift Open</span>
-                <div class="flex gap-1">
-                    <button id="btn-adjust-cash" class="text-xs bg-yellow-100 text-yellow-700 hover:bg-yellow-200 px-2 py-1 rounded text-center flex-1">Adjust</button>
-                    <button id="btn-close-shift" class="text-xs bg-red-100 text-red-600 hover:bg-red-200 px-2 py-1 rounded text-center flex-1">Close</button>
-                </div>
                 <button id="btn-close-shift" class="text-xs bg-red-100 text-red-600 hover:bg-red-200 px-2 py-1 rounded text-center w-full">Close Shift</button>
             </div>
         `;
-        document.getElementById("btn-adjust-cash").addEventListener("click", () => {
-            showAdjustCashModal(() => updateShiftStatus());
-        });
         document.getElementById("btn-close-shift").addEventListener("click", () => {
             showCloseShiftModal(() => updateShiftStatus());
         });

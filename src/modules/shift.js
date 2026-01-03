@@ -324,7 +324,6 @@ export function showCloseShiftModal(onSuccess) {
     } else { modal.classList.remove("hidden"); }
 }
 
-export function showAdjustCashModal(onSuccess) {
 export function showAdjustCashModal(shiftId, onSuccess) {
     let modal = document.getElementById("modal-adjust-cash");
     
@@ -363,7 +362,6 @@ export function showAdjustCashModal(shiftId, onSuccess) {
             const amount = document.getElementById("adjust-amount").value;
             const reason = document.getElementById("adjust-reason").value;
             try {
-                await adjustCash(amount, reason);
                 await adjustCash(shiftId, amount, reason);
                 modal.remove();
                 if (onSuccess) onSuccess();
@@ -377,8 +375,6 @@ export function showAdjustCashModal(shiftId, onSuccess) {
     }
 }
 
-async function adjustCash(amount, reason) {
-    if (!currentShift) return;
 async function adjustCash(shiftId, amount, reason) {
     if (!checkPermission("shifts", "write")) {
         alert("You do not have permission to adjust shift cash.");
@@ -392,13 +388,10 @@ async function adjustCash(shiftId, amount, reason) {
         user: auth.currentUser.email
     };
     
-    await updateDoc(doc(db, "shifts", currentShift.id), {
     await updateDoc(doc(db, "shifts", shiftId), {
         adjustments: arrayUnion(adjustment)
     });
     
-    if (!currentShift.adjustments) currentShift.adjustments = [];
-    currentShift.adjustments.push(adjustment);
     if (currentShift && currentShift.id === shiftId) {
         if (!currentShift.adjustments) currentShift.adjustments = [];
         currentShift.adjustments.push(adjustment);
