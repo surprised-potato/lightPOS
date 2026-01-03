@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LightPOS - Cloud Point of Sale</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-gray-100 h-screen w-screen overflow-hidden text-gray-800">
+
+    <!-- Login View -->
+    <div id="login-view" class="hidden flex items-center justify-center h-full w-full">
+        <div class="bg-white p-8 rounded-lg shadow-lg w-96">
+            <h2 class="text-2xl font-bold mb-6 text-center text-blue-600">LightPOS Login</h2>
+            <form id="form-login">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="email">Email</label>
+                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500" id="email" type="email" placeholder="admin@lightpos.com" required>
+                </div>
+                <div class="mb-6">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="password">Password</label>
+                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500" id="password" type="password" placeholder="******************" required>
+                </div>
+                <div class="flex items-center justify-between">
+                    <button class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full transition duration-150" type="submit">
+                        Sign In
+                    </button>
+                </div>
+                <div class="mt-4 flex items-center justify-between">
+                    <span class="border-b w-1/5 lg:w-1/4"></span>
+                    <span class="text-xs text-center text-gray-500 uppercase">or</span>
+                    <span class="border-b w-1/5 lg:w-1/4"></span>
+                </div>
+                <div class="mt-4">
+                    <button type="button" id="btn-google-login" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full transition duration-150">
+                        Sign in with Google
+                    </button>
+                </div>
+                <p id="login-error" class="text-red-500 text-xs italic mt-4 hidden text-center"></p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main App Container -->
+    <div id="app-container" class="hidden h-full flex flex-col">
+        <header class="bg-blue-700 text-white p-4 flex justify-between items-center shadow-md z-10">
+            <h1 class="text-xl font-bold tracking-wide">LightPOS</h1>
+            <button id="btn-logout" class="bg-blue-800 hover:bg-blue-900 px-4 py-1 rounded text-sm transition duration-150">Logout</button>
+        </header>
+        
+        <div class="flex flex-1 overflow-hidden">
+            <!-- Sidebar Placeholder -->
+            <nav id="sidebar-container" class="w-64 bg-white border-r hidden md:block overflow-y-auto"></nav>
+            
+            <!-- Main Content Area -->
+            <main id="main-content" class="flex-1 p-6 overflow-auto bg-gray-50"></main>
+        </div>
+    </div>
+
+    <script type="module" src="src/main.js"></script>
+</body>
+</html>
