@@ -1,202 +1,554 @@
 import { db } from "../db.js";
+import { getUserProfile } from "../auth.js";
+import { checkActiveShift } from "./shift.js";
 
 export async function loadDashboardView() {
+    const user = getUserProfile();
     const content = document.getElementById("main-content");
     
+    if (user.role === 'cashier') {
+        await renderCashierDashboard(content, user);
+        return;
+    }
+
+    renderManagerDashboard(content);
+    
+    const refreshBtn = document.getElementById("btn-refresh-dash");
+    if (refreshBtn) {
+        refreshBtn.addEventListener("click", refreshDashboard);
+    }
+
+    await refreshDashboard();
+}
+
+let velocityChartInstance = null;
+let tenderChartInstance = null;
+
+async function renderCashierDashboard(content, user) {
+    const todayStr = new Date().toLocaleDateString('en-CA');
+    
+    // Sync shifts first for accurate count
+    await checkActiveShift();
+
+    const [todayTxs, allShifts] = await Promise.all([
+        db.transactions
+            .filter(tx => new Date(tx.timestamp).toLocaleDateString('en-CA') === todayStr && !tx.is_voided)
+            .toArray(),
+        db.shifts.toArray()
+    ]);
+    
+    const openShiftsCount = allShifts.filter(s => s.status === 'open').length;
+    
     content.innerHTML = `
-        <div class="max-w-4xl mx-auto">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6">Dashboard</h2>
+        <div class="flex flex-col items-center justify-center h-[calc(100vh-200px)] p-6">
+            <div class="bg-white p-10 rounded-3xl shadow-xl text-center max-w-md border border-blue-50 w-full">
+                <div class="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <span class="text-4xl">👋</span>
+                </div>
+                <h2 class="text-3xl font-black text-gray-800 mb-2">Hello, ${user.name || 'Cashier'}!</h2>
+                <p class="text-gray-500 mb-8 font-medium">Ready for another productive shift?</p>
+                
+                <div class="grid grid-cols-2 gap-4 mb-8">
+                    <div class="bg-gradient-to-br from-blue-600 to-indigo-700 p-6 rounded-2xl shadow-inner text-white">
+                        <div class="text-blue-100 text-[10px] font-bold uppercase tracking-widest mb-1">Transactions</div>
+                        <div class="text-4xl font-black">${todayTxs.length}</div>
+                    </div>
+                    <div class="bg-gradient-to-br from-purple-600 to-indigo-700 p-6 rounded-2xl shadow-inner text-white">
+                        <div class="text-purple-100 text-[10px] font-bold uppercase tracking-widest mb-1">Open Shifts</div>
+                        <div class="text-4xl font-black">${openShiftsCount}</div>
+                    </div>
+                </div>
+                
+                <button onclick="location.hash='#pos'" class="w-full bg-gray-900 hover:bg-black text-white font-bold py-4 rounded-xl shadow-lg transition transform hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                    Open POS Terminal
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+function renderManagerDashboard(content) {
+    content.innerHTML = `
+        <div class="p-6 max-w-7xl mx-auto">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800">Business Overview</h2>
+                    <p class="text-sm text-gray-500">Real-time performance and operational alerts.</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="flex flex-col items-end">
+                        <span class="text-[10px] font-bold text-gray-400 uppercase">Store Location</span>
+                        <select id="store-selector" class="text-sm border-none font-bold text-blue-600 bg-transparent focus:ring-0 p-0 cursor-pointer">
+                            <option value="main">Main Branch</option>
+                        </select>
+                    </div>
+                    <div class="h-8 w-px bg-gray-200 mx-2"></div>
+                    <button id="btn-refresh-dash" class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                        Refresh
+                    </button>
+                </div>
+            </div>
             
-            <!-- KPIs -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-blue-500">
-                    <div class="text-gray-500 text-sm font-bold uppercase mb-1">Total Sales</div>
-                    <div class="text-3xl font-bold text-gray-800" id="dash-total-sales">₱0.00</div>
-                </div>
-                <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-green-500">
-                    <div class="text-gray-500 text-sm font-bold uppercase mb-1">Total Profit</div>
-                    <div class="text-3xl font-bold text-gray-800" id="dash-total-profit">₱0.00</div>
-                </div>
-                <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-purple-500">
-                    <div class="text-gray-500 text-sm font-bold uppercase mb-1">Transactions</div>
-                    <div class="text-3xl font-bold text-gray-800" id="dash-total-count">0</div>
-                </div>
-            </div>
-
-            <!-- Charts & Alerts Grid -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                <!-- Sales Trend Chart -->
-                <div class="bg-white p-4 rounded-lg shadow-md">
-                    <h3 class="font-bold text-gray-800 mb-4">Sales Trend (Last 7 Days)</h3>
-                    <div class="relative h-64 w-full">
-                        <canvas id="salesChart"></canvas>
+            <!-- Pulse Strip: Real-Time KPIs -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+                    <div class="flex justify-between items-start mb-2">
+                        <div class="text-gray-400 text-[10px] font-bold uppercase tracking-wider">Net Sales (Today)</div>
+                        <span class="bg-blue-100 text-blue-600 p-1.5 rounded-lg">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        </span>
+                    </div>
+                    <div class="text-2xl font-black text-gray-800" id="dash-net-sales">₱0.00</div>
+                    <div class="flex items-center gap-1 mt-1">
+                        <span id="dash-sales-compare-icon"></span>
+                        <span class="text-[10px] font-bold" id="dash-sales-compare">--% vs last week</span>
                     </div>
                 </div>
 
-                <!-- Low Stock Alerts -->
-                <div class="bg-white p-4 rounded-lg shadow-md overflow-hidden">
-                    <h3 class="font-bold text-gray-800 mb-4 text-red-600">Low Stock Alerts</h3>
-                    <div class="overflow-y-auto h-64">
-                        <table class="min-w-full text-sm">
-                            <tbody id="dash-low-stock-body"></tbody>
-                        </table>
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+                    <div class="flex justify-between items-start mb-2">
+                        <div class="text-gray-400 text-[10px] font-bold uppercase tracking-wider">Gross Margin</div>
+                        <span class="bg-green-100 text-green-600 p-1.5 rounded-lg">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                        </span>
+                    </div>
+                    <div class="text-2xl font-black text-gray-800" id="dash-margin">0.00%</div>
+                    <div class="text-[10px] text-gray-400 mt-1 font-medium">Revenue vs COGS</div>
+                </div>
+
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+                    <div class="flex justify-between items-start mb-2">
+                        <div class="text-gray-400 text-[10px] font-bold uppercase tracking-wider">Transactions</div>
+                        <span class="bg-indigo-100 text-indigo-600 p-1.5 rounded-lg">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+                        </span>
+                    </div>
+                    <div class="text-2xl font-black text-gray-800" id="dash-tx-count">0</div>
+                    <div class="text-[10px] text-gray-400 mt-1 font-medium" id="dash-atv">ATV: ₱0.00</div>
+                </div>
+
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+                    <div class="flex justify-between items-start mb-2">
+                        <div class="text-gray-400 text-[10px] font-bold uppercase tracking-wider">Open Shifts</div>
+                        <span class="bg-purple-100 text-purple-600 p-1.5 rounded-lg">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                        </span>
+                    </div>
+                    <div class="text-2xl font-black text-gray-800" id="dash-open-shifts">0</div>
+                    <div class="text-[10px] text-gray-400 mt-1 font-medium">Active register sessions</div>
+                </div>
+            </div>
+
+            <!-- Main Content Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                <!-- Left: Sales Velocity -->
+                <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <div class="flex justify-between items-center mb-6">
+                        <div>
+                            <h3 class="font-bold text-gray-800">Sales Velocity</h3>
+                            <p class="text-xs text-gray-400">Hourly revenue: Today vs Yesterday</p>
+                        </div>
+                    </div>
+                    <div class="h-72">
+                        <canvas id="velocityChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Right: Action Center -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col">
+                    <h3 class="font-bold text-gray-800 mb-6 flex items-center gap-2">
+                        Action Center
+                        <span class="bg-red-100 text-red-600 text-[10px] px-2 py-0.5 rounded-full" id="total-alerts-badge">0</span>
+                    </h3>
+                    <div class="space-y-4 flex-1 overflow-y-auto pr-2">
+                        <!-- Low Stock -->
+                        <div class="group cursor-pointer p-3 rounded-lg bg-red-50 border border-red-100 hover:bg-red-100 transition">
+                            <div class="flex justify-between items-start">
+                                <div class="flex gap-3">
+                                    <div class="bg-red-200 p-2 rounded-lg text-red-700">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+                                    </div>
+                                    <div>
+                                        <div class="text-sm font-bold text-red-900" id="alert-low-stock-count">0 Items Low Stock</div>
+                                        <div class="text-[10px] text-red-700">Requires immediate reorder</div>
+                                    </div>
+                                </div>
+                                <svg class="w-4 h-4 text-red-400 group-hover:translate-x-1 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                            </div>
+                        </div>
+
+                        <!-- Overdue POs -->
+                        <div class="group cursor-pointer p-3 rounded-lg bg-orange-50 border border-orange-100 hover:bg-orange-100 transition">
+                            <div class="flex justify-between items-start">
+                                <div class="flex gap-3">
+                                    <div class="bg-orange-200 p-2 rounded-lg text-orange-700">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    </div>
+                                    <div>
+                                        <div class="text-sm font-bold text-orange-900" id="alert-po-count">0 POs Overdue</div>
+                                        <div class="text-[10px] text-orange-700">Supplier shipments delayed</div>
+                                    </div>
+                                </div>
+                                <svg class="w-4 h-4 text-orange-400 group-hover:translate-x-1 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                            </div>
+                        </div>
+
+                        <!-- Security Alerts -->
+                        <div class="group cursor-pointer p-3 rounded-lg bg-yellow-50 border border-yellow-100 hover:bg-yellow-100 transition">
+                            <div class="flex justify-between items-start">
+                                <div class="flex gap-3">
+                                    <div class="bg-yellow-200 p-2 rounded-lg text-yellow-700">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                                    </div>
+                                    <div>
+                                        <div class="text-sm font-bold text-yellow-900" id="alert-security-count">0 Security Alerts</div>
+                                        <div class="text-[10px] text-yellow-700" id="alert-security-detail">Voids/Returns today</div>
+                                    </div>
+                                </div>
+                                <svg class="w-4 h-4 text-yellow-400 group-hover:translate-x-1 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Recent Transactions -->
-            <div class="bg-white shadow-md rounded overflow-hidden mb-8">
-                <div class="px-6 py-4 border-b flex justify-between items-center">
-                    <h3 class="font-bold text-gray-800">Recent Transactions</h3>
-                    <button id="btn-refresh-dash" class="text-sm text-blue-600 hover:text-blue-800">Refresh</button>
+            <!-- Bottom Row -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Top Sellers -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <h3 class="font-bold text-gray-800 mb-4">Top 5 Sellers</h3>
+                    <div id="top-sellers-list" class="space-y-4">
+                        <!-- Items injected here -->
+                    </div>
                 </div>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full table-auto">
-                        <thead>
-                            <tr class="bg-gray-100 text-gray-600 uppercase text-sm leading-normal">
-                                <th class="py-3 px-6 text-left">Time</th>
-                                <th class="py-3 px-6 text-left">Items</th>
-                                <th class="py-3 px-6 text-right">Total</th>
-                                <th class="py-3 px-6 text-center">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="dash-tx-body" class="text-gray-600 text-sm font-light">
-                            <tr><td colspan="4" class="py-3 px-6 text-center">Loading...</td></tr>
-                        </tbody>
-                    </table>
+
+                <!-- Tender Split -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <h3 class="font-bold text-gray-800 mb-4">Tender Split</h3>
+                    <div class="h-48">
+                        <canvas id="tenderChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Financials / Cash Control -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <h3 class="font-bold text-gray-800 mb-4">Financials</h3>
+                    <div class="space-y-5">
+                        <div>
+                            <div class="text-xs text-gray-500 font-bold uppercase mb-1">Expected Cash in Drawer</div>
+                            <div class="text-xl font-black text-gray-800" id="dash-expected-cash">₱0.00</div>
+                        </div>
+                        <div class="pt-4 border-t border-gray-50">
+                            <div class="text-xs text-gray-500 font-bold uppercase mb-1">Accounts Payable (7d)</div>
+                            <div class="text-lg font-bold text-red-600">₱0.00</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Relationships -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <h3 class="font-bold text-gray-800 mb-4">Relationships</h3>
+                    <div class="space-y-5">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-gray-500 font-bold uppercase">New Signups</span>
+                            <span class="text-lg font-black text-gray-800" id="dash-new-customers">0</span>
+                        </div>
+                        <div class="pt-4 border-t border-gray-50">
+                            <div class="text-xs text-gray-500 font-bold uppercase mb-2">Active Staff</div>
+                            <div id="active-staff-list" class="flex flex-col gap-2">
+                                <div class="text-[10px] text-gray-400 italic">No active shifts</div>
+                            </div>
+                        </div>
+                        <div class="pt-4 border-t border-gray-50">
+                            <div class="text-xs text-gray-500 font-bold uppercase mb-2">Vendor Performance</div>
+                            <div id="vendor-flags" class="flex flex-col gap-2">
+                                <div class="flex items-center gap-2 text-[10px] font-bold text-green-600">
+                                    <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                                    All vendors healthy
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     `;
-
-    document.getElementById("btn-refresh-dash").addEventListener("click", renderRecentTransactions);
-    await renderRecentTransactions();
 }
 
-let salesChartInstance = null;
-
-async function renderRecentTransactions() {
-    const tbody = document.getElementById("dash-tx-body");
-    const lowStockBody = document.getElementById("dash-low-stock-body");
-    const totalSalesEl = document.getElementById("dash-total-sales");
-    const totalProfitEl = document.getElementById("dash-total-profit");
-    const totalCountEl = document.getElementById("dash-total-count");
-
+async function refreshDashboard() {
     try {
+        const now = new Date();
+        const todayStr = now.toLocaleDateString('en-CA');
+        
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toLocaleDateString('en-CA');
+
+        const lastWeek = new Date();
+        lastWeek.setDate(lastWeek.getDate() - 7);
+        const lastWeekStr = lastWeek.toLocaleDateString('en-CA');
+
+        // Sync shifts from server to local DB for accurate "Active Staff" count
+        await checkActiveShift();
+
         // 1. Fetch Data
-        const allTxs = await db.transactions.toArray();
-        const allItems = await db.items.toArray();
+        const [allTxs, allItems, allReturns, allShifts, allCustomers] = await Promise.all([
+            db.transactions.toArray(),
+            db.items.toArray(),
+            db.returns.toArray(),
+            db.shifts.toArray(),
+            db.customers.toArray()
+        ]);
 
-        // 2. Calculate KPIs
-        let totalSales = 0;
-        let totalProfit = 0;
-        const salesByDate = {};
+        // 2. Filter Data
+        const todayTxs = allTxs.filter(tx => new Date(tx.timestamp).toLocaleDateString('en-CA') === todayStr && !tx.is_voided);
+        const yesterdayTxs = allTxs.filter(tx => new Date(tx.timestamp).toLocaleDateString('en-CA') === yesterdayStr && !tx.is_voided);
+        const lastWeekTxs = allTxs.filter(tx => new Date(tx.timestamp).toLocaleDateString('en-CA') === lastWeekStr && !tx.is_voided);
+        const todayReturns = allReturns.filter(r => new Date(r.timestamp).toLocaleDateString('en-CA') === todayStr);
+        const todayVoids = allTxs.filter(tx => new Date(tx.timestamp).toLocaleDateString('en-CA') === todayStr && tx.is_voided);
 
-        allTxs.forEach(tx => {
-            totalSales += tx.total_amount;
+        // 3. Calculate KPIs
+        let netSalesToday = 0;
+        let totalCogsToday = 0;
+        const tenderSplit = { Cash: 0, Card: 0, 'E-Wallet': 0 };
+        const hourlySalesToday = new Array(24).fill(0);
+        const hourlySalesYesterday = new Array(24).fill(0);
+        const itemSales = {};
+
+        todayTxs.forEach(tx => {
+            netSalesToday += tx.total_amount;
+            tenderSplit[tx.payment_method] = (tenderSplit[tx.payment_method] || 0) + tx.total_amount;
             
-            // Calculate Profit
+            const hour = new Date(tx.timestamp).getHours();
+            hourlySalesToday[hour] += tx.total_amount;
+
             tx.items.forEach(item => {
-                const cost = item.cost_price || 0;
-                const price = item.selling_price || 0;
-                totalProfit += (price - cost) * item.qty;
+                totalCogsToday += (item.cost_price || 0) * item.qty;
+                itemSales[item.id] = (itemSales[item.id] || 0) + item.qty;
             });
-
-            // Group for Chart (YYYY-MM-DD)
-            const dateObj = new Date(tx.timestamp);
-            const dateKey = dateObj.toLocaleDateString('en-CA'); // YYYY-MM-DD
-            salesByDate[dateKey] = (salesByDate[dateKey] || 0) + tx.total_amount;
         });
+
+        yesterdayTxs.forEach(tx => {
+            const hour = new Date(tx.timestamp).getHours();
+            hourlySalesYesterday[hour] += tx.total_amount;
+        });
+
+        const netSalesLastWeek = lastWeekTxs.reduce((sum, tx) => sum + tx.total_amount, 0);
+        const salesDiff = netSalesLastWeek > 0 ? ((netSalesToday - netSalesLastWeek) / netSalesLastWeek * 100).toFixed(1) : 0;
         
-        totalSalesEl.textContent = `₱${totalSales.toFixed(2)}`;
-        totalProfitEl.textContent = `₱${totalProfit.toFixed(2)}`;
-        totalCountEl.textContent = allTxs.length;
+        const margin = netSalesToday > 0 ? ((netSalesToday - totalCogsToday) / netSalesToday * 100).toFixed(2) : 0;
+        const atv = todayTxs.length > 0 ? (netSalesToday / todayTxs.length).toFixed(2) : 0;
+        const openShiftsCount = allShifts.filter(s => s.status === 'open').length;
 
-        // 3. Render Chart
-        renderChart(salesByDate);
+        // Update KPI DOM
+        document.getElementById("dash-net-sales").textContent = `₱${netSalesToday.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+        const compareEl = document.getElementById("dash-sales-compare");
+        const compareIcon = document.getElementById("dash-sales-compare-icon");
+        
+        compareEl.textContent = `${salesDiff >= 0 ? '+' : ''}${salesDiff}% vs last week`;
+        compareEl.className = `text-[10px] font-bold ${salesDiff >= 0 ? 'text-green-600' : 'text-red-600'}`;
+        compareIcon.innerHTML = salesDiff >= 0 
+            ? `<svg class="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd"></path></svg>`
+            : `<svg class="w-3 h-3 text-red-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V5a1 1 0 112 0v7.586l2.293-2.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>`;
+        
+        document.getElementById("dash-margin").textContent = `${margin}%`;
+        document.getElementById("dash-tx-count").textContent = todayTxs.length;
+        document.getElementById("dash-atv").textContent = `ATV: ₱${atv}`;
+        document.getElementById("dash-open-shifts").textContent = openShiftsCount;
 
-        // 4. Render Low Stock
+        // 4. Visuals
+        renderVelocityChart(hourlySalesToday, hourlySalesYesterday);
+        renderTenderChart(tenderSplit);
+        renderTopSellers(itemSales, allItems);
+
+        // 5. Action Center
         const lowStockItems = allItems.filter(i => i.stock_level <= (i.min_stock || 10));
-        lowStockBody.innerHTML = lowStockItems.length ? "" : "<tr><td class='p-2 text-gray-500'>No low stock items.</td></tr>";
+        document.getElementById("alert-low-stock-count").textContent = `${lowStockItems.length} Items Low Stock`;
         
-        lowStockItems.forEach(item => {
-            const row = document.createElement("tr");
-            row.className = "border-b last:border-0";
-            row.innerHTML = `
-                <td class="py-2 text-gray-800 font-medium">${item.name}</td>
-                <td class="py-2 text-right text-red-600 font-bold">${item.stock_level}</td>
-            `;
-            lowStockBody.appendChild(row);
-        });
+        // Security Alerts
+        const securityCount = todayVoids.length + todayReturns.length;
+        document.getElementById("alert-security-count").textContent = `${securityCount} Security Alerts`;
+        document.getElementById("alert-security-detail").textContent = `${todayVoids.length} Voids, ${todayReturns.length} Returns today`;
+        
+        document.getElementById("total-alerts-badge").textContent = lowStockItems.length + securityCount;
 
-        // 5. Render Recent Transactions Table
-        const transactions = await db.transactions.orderBy("timestamp").reverse().limit(20).toArray();
-        tbody.innerHTML = "";
-        if (transactions.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="4" class="py-3 px-6 text-center">No transactions found.</td></tr>`;
-            return;
+        // 6. Relationships
+        const newCustToday = allCustomers.filter(c => c.id !== 'Guest' && c.timestamp && new Date(c.timestamp).toLocaleDateString('en-CA') === todayStr).length;
+        document.getElementById("dash-new-customers").textContent = newCustToday;
+        
+        const expectedCash = tenderSplit.Cash || 0;
+        document.getElementById("dash-expected-cash").textContent = `₱${expectedCash.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+
+        // Update Active Staff List
+        const activeStaffList = document.getElementById("active-staff-list");
+        const openShifts = allShifts.filter(s => s.status === 'open');
+        if (openShifts.length === 0) {
+            activeStaffList.innerHTML = `<div class="text-[10px] text-gray-400 italic">No active shifts</div>`;
+        } else {
+            activeStaffList.innerHTML = openShifts.map(s => `
+                <div class="flex items-center gap-2 text-[10px] font-bold text-gray-700">
+                    <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                    ${s.user_id}
+                </div>
+            `).join('');
         }
 
-        transactions.forEach(tx => {
-            const dateObj = new Date(tx.timestamp);
-            const timeStr = dateObj.toLocaleString();
-            const itemCount = tx.items.reduce((acc, i) => acc + i.qty, 0);
-            
-            // Status: 0 = Unsynced, 1 = Synced
-            const statusBadge = tx.sync_status === 1 
-                ? `<span class="bg-green-200 text-green-700 py-1 px-3 rounded-full text-xs">Synced</span>`
-                : `<span class="bg-yellow-200 text-yellow-700 py-1 px-3 rounded-full text-xs">Pending</span>`;
-
-            const row = document.createElement("tr");
-            row.className = "border-b border-gray-200 hover:bg-gray-100";
-            row.innerHTML = `
-                <td class="py-3 px-6 text-left whitespace-nowrap">${timeStr}</td>
-                <td class="py-3 px-6 text-left">${itemCount} items</td>
-                <td class="py-3 px-6 text-right font-bold">₱${tx.total_amount.toFixed(2)}</td>
-                <td class="py-3 px-6 text-center">${statusBadge}</td>
-            `;
-            tbody.appendChild(row);
-        });
     } catch (error) {
-        console.error("Error loading dashboard:", error);
-        tbody.innerHTML = `<tr><td colspan="4" class="py-3 px-6 text-center text-red-500">Error loading data.</td></tr>`;
+        console.error("Dashboard refresh error:", error);
     }
 }
 
-function renderChart(salesByDate) {
-    const ctx = document.getElementById('salesChart').getContext('2d');
-    
-    // Get last 7 days labels
-    const labels = [];
-    const data = [];
-    for (let i = 6; i >= 0; i--) {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        const dateKey = d.toLocaleDateString('en-CA');
-        labels.push(d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
-        data.push(salesByDate[dateKey] || 0);
-    }
+function renderVelocityChart(today, yesterday) {
+    const ctx = document.getElementById('velocityChart').getContext('2d');
+    if (velocityChartInstance) velocityChartInstance.destroy();
 
-    if (salesChartInstance) {
-        salesChartInstance.destroy();
-    }
-
-    salesChartInstance = new Chart(ctx, {
+    velocityChartInstance = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: labels,
+            labels: Array.from({length: 24}, (_, i) => `${i}:00`),
+            datasets: [
+                {
+                    label: 'Today',
+                    data: today,
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.05)',
+                    fill: true,
+                    tension: 0.4,
+                    borderWidth: 3,
+                    pointRadius: 0,
+                    pointHoverRadius: 6
+                },
+                {
+                    label: 'Yesterday',
+                    data: yesterday,
+                    borderColor: '#e5e7eb',
+                    backgroundColor: 'transparent',
+                    fill: false,
+                    tension: 0.4,
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    pointRadius: 0,
+                    pointHoverRadius: 4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { intersect: false, mode: 'index' },
+            scales: {
+                y: { 
+                    beginAtZero: true, 
+                    grid: { color: '#f9fafb' },
+                    ticks: { 
+                        callback: value => '₱' + value,
+                        font: { size: 10 }
+                    } 
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { font: { size: 10 }, maxRotation: 0 }
+                }
+            },
+            plugins: {
+                legend: { 
+                    position: 'top', 
+                    align: 'end',
+                    labels: { boxWidth: 10, font: { size: 11, weight: 'bold' } } 
+                },
+                tooltip: {
+                    backgroundColor: '#1f2937',
+                    padding: 12,
+                    titleFont: { size: 12 },
+                    bodyFont: { size: 12 },
+                    callbacks: {
+                        label: (context) => ` ${context.dataset.label}: ₱${context.raw.toFixed(2)}`
+                    }
+                }
+            }
+        }
+    });
+}
+
+function renderTenderChart(data) {
+    const ctx = document.getElementById('tenderChart').getContext('2d');
+    if (tenderChartInstance) tenderChartInstance.destroy();
+
+    const values = Object.values(data);
+    const hasData = values.some(v => v > 0);
+
+    tenderChartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(data),
             datasets: [{
-                label: 'Sales (₱)',
-                data: data,
-                borderColor: 'rgb(59, 130, 246)',
-                backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                tension: 0.3,
-                fill: true
+                data: hasData ? values : [1],
+                backgroundColor: hasData ? ['#3b82f6', '#10b981', '#f59e0b'] : ['#f3f4f6'],
+                borderWidth: 0,
+                hoverOffset: 4
             }]
         },
         options: {
             responsive: true,
-            maintainAspectRatio: false
+            maintainAspectRatio: false,
+            cutout: '70%',
+            plugins: {
+                legend: { 
+                    position: 'bottom', 
+                    labels: { 
+                        boxWidth: 8, 
+                        usePointStyle: true,
+                        font: { size: 10, weight: 'bold' },
+                        padding: 15
+                    } 
+                },
+                tooltip: {
+                    enabled: hasData,
+                    callbacks: {
+                        label: (context) => ` ₱${context.raw.toFixed(2)}`
+                    }
+                }
+            }
         }
+    });
+}
+
+function renderTopSellers(salesMap, allItems) {
+    const list = document.getElementById("top-sellers-list");
+    list.innerHTML = "";
+
+    const sorted = Object.entries(salesMap)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5);
+
+    if (sorted.length === 0) {
+        list.innerHTML = '<p class="text-xs text-gray-500 italic">No sales recorded today.</p>';
+        return;
+    }
+
+    sorted.forEach(([id, qty]) => {
+        const item = allItems.find(i => i.id === id);
+        if (!item) return;
+
+        const div = document.createElement("div");
+        div.className = "flex justify-between items-center group";
+        div.innerHTML = `
+            <div class="flex items-center gap-3 overflow-hidden">
+                <div class="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center text-sm font-bold text-blue-600 shrink-0 group-hover:bg-blue-600 group-hover:text-white transition">
+                    ${item.name.charAt(0)}
+                </div>
+                <div class="flex flex-col overflow-hidden">
+                    <div class="truncate text-sm font-bold text-gray-700">${item.name}</div>
+                    <div class="text-[10px] text-gray-400 font-medium">${item.category || 'General'}</div>
+                </div>
+            </div>
+            <div class="text-right shrink-0">
+                <div class="text-sm font-black text-gray-800">${qty}</div>
+                <div class="text-[9px] text-gray-400 uppercase font-bold tracking-tighter">Units</div>
+            </div>
+        `;
+        list.appendChild(div);
     });
 }

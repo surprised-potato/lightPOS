@@ -7,7 +7,6 @@ import { startRealtimeSync } from "./services/sync-service.js";
 const loginView = document.getElementById("login-view");
 const appContainer = document.getElementById("app-container");
 const formLogin = document.getElementById("form-login");
-const btnLogout = document.getElementById("btn-logout");
 const loginError = document.getElementById("login-error");
 const mainContent = document.getElementById("main-content");
 const btnGoogleLogin = document.getElementById("btn-google-login");
@@ -63,6 +62,3 @@ btnGoogleLogin.addEventListener("click", async () => {
     loginError.classList.add("hidden");
     alert("Google Login is not supported in this version.");
 });
-
-// 4. Handle Logout
-btnLogout.addEventListener("click", () => logout());

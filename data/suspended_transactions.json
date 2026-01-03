@@ -1,6 +1,6 @@
 [
     {
-        "id": "6ca30b88-d8c3-4c30-823b-c69bd7e916c1",
+        "id": "360f4c09-1f2a-4866-a677-e1475077cd43",
         "items": [
             {
                 "id": "00j72Gb7NIcZPz5rB7nD",
@@ -16,35 +16,45 @@
                 "stock_level": -1,
                 "base_unit": "Unit",
                 "cost_price": 146,
-                "qty": 1
-            },
+                "qty": 3
+            }
+        ],
+        "customer": {
+            "id": "Guest",
+            "name": "Guest"
+        },
+        "user_email": "admin@lightpos.com",
+        "timestamp": "2026-01-03T18:44:17.452Z",
+        "total": 477,
+        "sync_status": 0
+    },
+    {
+        "id": "mjypd2o20bhapcw32yh9",
+        "items": [
             {
-                "id": "LoXMqGDuJVU3yAiWcqrv",
-                "timestamp": {
-                    "seconds": 1767410320,
-                    "nanoseconds": 82000000
-                },
-                "min_stock": 2,
-                "selling_price": 275,
-                "cost_price": 250,
-                "category": "TBA",
-                "name": "HOLIDAY PEELED HOTDOG  SUPER JUMBO",
-                "base_unit": "Unit",
+                "id": "02VYfDbphAmBdJa9dBJZ",
                 "stock_level": 0,
-                "barcode": "56445646654654600",
+                "min_stock": 1,
+                "name": "Butane Refill",
+                "cost_price": 22,
+                "timestamp": {
+                    "seconds": 1767410325,
+                    "nanoseconds": 101000000
+                },
+                "barcode": "NULL",
+                "selling_price": 27,
+                "category": "none",
+                "base_unit": "Unit",
                 "qty": 1
             }
         ],
         "customer": {
-            "id": "cfb8b09c-3a1e-4fbd-94f2-881bae9a9204",
-            "name": "Jonas Brate",
-            "phone": "2u48974",
-            "email": "",
-            "loyalty_points": 0
+            "id": "Guest",
+            "name": "Guest"
         },
-        "user_email": "JohnRoss@LP.com",
-        "timestamp": "2026-01-03T12:48:02.109Z",
-        "total": 434,
+        "user_email": "admin@lightpos.com",
+        "timestamp": "2026-01-03T19:35:24.866Z",
+        "total": 27,
         "sync_status": 0
     }
 ]

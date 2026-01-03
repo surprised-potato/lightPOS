@@ -17,12 +17,30 @@
 - **Stock Out / Item Change:** Handling spoilage, theft, and manual unit conversions.
 - **Customers:** Data tracking for sales history and PHP-based reward points.
 - **Migrate:** Bulk import of item data via JSON files.
+- **Profile:** User account management for viewing details and updating name, contact number, and password.
 - **User Management:** Granular permission-based access control. No fixed roles; access is defined per module with specific Read and Write privileges.
-- **Shift Management:** Cash control features including opening petty cash entry and closing cash count reconciliation.
+- **Shift Management:** Cash control features including opening petty cash entry and closing cash count reconciliation. Supports **X-Reports** (mid-shift snapshot) and **Z-Reports** (end-of-day reset).
 - **Expense Management:** Recording operational expenses and procurement costs, optionally linked to suppliers.
 - **Reports:** Comprehensive reporting suite including:
-    - **Financials:** Profit & Loss (Gross Margin), Daily/Monthly Sales Summaries.
-    - **Inventory:** Stock Valuation, Low Stock, and Movement Logs.
+    - **Financials:** 
+        - **Z-Report:** Final daily summary (Sales, Tax, Payment Methods).
+        - **X-Report:** Real-time snapshot of current shift sales.
+        - **Tax Liability:** Aggregated VAT/Sales Tax collected for compliance.
+        - **Payment Method Breakdown:** Sales by Cash, Card, E-wallet, etc.
+        - **Cash Variance:** Comparison of expected vs. actual cash (Short/Over).
+    - **Inventory:** 
+        - **Inventory Valuation:** Total stock value at Cost and Retail prices.
+        - **COGS (Cost of Goods Sold):** Cost of items sold to calculate Gross Margin.
+        - **Low Stock:** Items below threshold for reordering.
+    - **Performance & Audit:**
+        - **Product Performance (Advanced Metrics):**
+            - **Velocity:** Units Sold, Sell-Through Rate (STR), Inventory Turnover.
+            - **Profitability:** Gross Margin (%), GMROI (Gross Margin Return on Investment).
+            - **Risk & Quality:** Return Rate, Shrinkage %.
+            - **Contribution:** Basket Penetration, Product Affinity (Attach Rate).
+        - **Retailer's Matrix:** Categorizing products into Winners, Cash Cows, Sleepers, and Dogs.
+        - **Slow Moving Items:** Identifying products with zero sales over a specific period.
+        - **Void & Return Report:** Log of cancelled or refunded transactions for fraud prevention.
     - **User Performance:** Sales breakdown by cashier/user for specific date ranges.
 
 ## 3. Data Schema (JSON Files)
@@ -82,6 +100,7 @@
 | `email` | string | Primary Key (matches Auth email) |
 | `name` | string | Display Name |
 | `password` | string | Hashed password (simple md5/sha for MVP) |
+| `phone` | string | Contact Number |
 | `permissions` | object | Object keyed by module (e.g., `items`, `pos`) |
 | `permissions.<module>` | map | `{ read: boolean, write: boolean }` |
 | `is_active` | boolean | Soft delete / Login block |

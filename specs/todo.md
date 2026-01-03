@@ -151,6 +151,7 @@ Use this checklist to track your progress through the development phases.
 - [x] Create `src/modules/dashboard.js`.
 - [ ] Fetch recent transactions from `transactions.json`.
 - [x] Calculate KPIs: Total Sales, Total Profit.
+- [x] Calculate Tax Liability (VAT) for the dashboard.
 - [x] Low Stock: Fetch & Render items where stock < `min_stock`.
 - [x] Trend: Render Sales Trend (Table or Chart).
 
@@ -158,15 +159,26 @@ Use this checklist to track your progress through the development phases.
 - [x] Create `src/modules/reports.js`.
 - [x] UI: Date Range Picker (Start Date, End Date).
 - [x] Report: Sales by User (Table: User, Total Sales, Transaction Count).
-- [x] Report: Financial Summary (Gross Sales, Cost of Goods, Gross Profit).
+- [x] Report: Financial Summary (Gross Sales, Tax, COGS, Gross Profit).
+- [x] Report: Payment Method Breakdown (Cash vs Card vs E-wallet).
+- [x] Report: Inventory Valuation (Total Cost vs Total Retail Value).
+- [x] Report: Void & Return Log (Audit trail).
+- [x] Report: Product Performance (Product Mix/Ranking).
+- [x] Report: Advanced Product Metrics (STR, Turnover, GMROI).
+- [ ] Report: Risk Metrics (Return Rate, Shrinkage %).
+- [x] Report: Strategic Metrics (Basket Penetration, Affinity).
+- [x] Report: Slow Moving Items (zero sales in period).
+- [x] Report: Retailer's Matrix Visualization.
 
 ## Phase 7: Shift Management
 - [x] Create `src/modules/shift.js`.
 - [x] UI: "Open Shift" Modal (Input: Opening Petty Cash).
 - [x] Logic: Block POS access if no shift is open.
+- [x] UI: "X-Report" button (Snapshot of current sales without closing).
 - [x] UI: "Close Shift" Modal (Input: Closing Cash Count).
 - [x] Logic: Calculate Expected Cash (Opening + Total Cash Sales in Shift).
 - [x] Report: Show Overage/Shortage summary upon closing.
+- [x] Report: Generate "Z-Report" on shift close (Final summary).
 - [ ] Write: Save shift records to `shifts.json`.
 
 ## Phase 8: Expense Management

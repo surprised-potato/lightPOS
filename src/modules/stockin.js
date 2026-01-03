@@ -62,13 +62,13 @@ function render() {
                         <form id="stockin-form" class="flex flex-col sm:flex-row items-start sm:items-end gap-4">
                             <div class="flex-grow w-full relative">
                                 <label for="item-search" class="block text-sm font-medium text-gray-700">Search Item (Name or Barcode)</label>
-                                <input type="text" id="item-search" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="e.g., 'Coffee' or '123456789'" autocomplete="off">
+                                <input type="text" id="item-search" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm py-2" placeholder="e.g., 'Coffee' or '123456789'" autocomplete="off">
                                 <div id="search-results" class="absolute z-10 w-full bg-white border border-gray-300 mt-1 rounded-md shadow-lg max-h-60 overflow-y-auto hidden"></div>
                                 <input type="hidden" id="selected-item-id">
                             </div>
                             <div class="w-full sm:w-auto">
                                 <label for="item-quantity" class="block text-sm font-medium text-gray-700">Quantity</label>
-                                <input type="number" id="item-quantity" min="1" value="1" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                <input type="number" id="item-quantity" min="1" value="1" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm py-2">
                             </div>
                             <button type="submit" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md shadow-sm">
                                 Add to Cart

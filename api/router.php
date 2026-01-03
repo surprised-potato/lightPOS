@@ -10,7 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 $dataDir = __DIR__ . '/../data/';
-$allowedFiles = ['items', 'users', 'suppliers', 'customers', 'transactions', 'shifts', 'expenses', 'stock_in_history', 'adjustments', 'suspended_transactions'];
+$allowedFiles = ['items', 'users', 'suppliers', 'customers', 'transactions', 'shifts', 'expenses', 'stock_in_history', 'adjustments', 'suspended_transactions', 'returns', 'settings'];
 
 $action = $_GET['action'] ?? null;
 $file = $_GET['file'] ?? null;
@@ -82,13 +82,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 "is_active" => true,
                 "permissions" => [
                     "pos" => ["read" => true, "write" => true],
+                    "customers" => ["read" => true, "write" => true],
                     "items" => ["read" => true, "write" => true],
+                    "suppliers" => ["read" => true, "write" => true],
                     "stockin" => ["read" => true, "write" => true],
                     "stock-count" => ["read" => true, "write" => true],
                     "reports" => ["read" => true, "write" => true],
                     "expenses" => ["read" => true, "write" => true],
                     "users" => ["read" => true, "write" => true],
-                    "shifts" => ["read" => true, "write" => true]
+                    "shifts" => ["read" => true, "write" => true],
+                    "migrate" => ["read" => true, "write" => true],
+                    "returns" => ["read" => true, "write" => true]
                 ]
             ]];
             file_put_contents($usersPath, json_encode($defaultAdmin, JSON_PRETTY_PRINT));

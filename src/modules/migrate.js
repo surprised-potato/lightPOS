@@ -5,7 +5,7 @@ const API_URL = 'api/router.php';
 
 export function loadMigrateView() {
     const content = document.getElementById("main-content");
-    if (!checkPermission("items", "write")) {
+    if (!checkPermission("migrate", "write")) {
         content.innerHTML = `<div class="p-6 text-center text-red-600 font-bold">You do not have permission to perform data migration.</div>`;
         return;
     }

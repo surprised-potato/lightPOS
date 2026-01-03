@@ -1,6 +1,8 @@
 import { db } from "../db.js";
-import { checkPermission } from "../auth.js";
+import { checkPermission, requestManagerApproval } from "../auth.js";
 import { checkActiveShift, requireShift, showCloseShiftModal } from "./shift.js";
+import { addNotification } from "../services/notification-service.js";
+import { getSystemSettings } from "./settings.js";
 
 const API_URL = 'api/router.php';
 
@@ -32,12 +34,17 @@ document.addEventListener("keydown", (e) => {
         if (btnCheckout && !btnCheckout.disabled) {
             btnCheckout.click();
         }
+    } else if (e.key === "F8") {
+        e.preventDefault();
+        const btnPrint = document.getElementById("btn-print-last-receipt");
+        if (btnPrint) btnPrint.click();
     }
 });
 
 let allItems = [];
 let allCustomers = [];
 let cart = [];
+let lastTransactionData = null;
 let selectedCustomer = { id: "Guest", name: "Guest" };
 
 export async function loadPosView() {
@@ -80,6 +87,7 @@ async function renderPosInterface(content) {
                     <h2 class="text-xl font-bold tracking-wide">Current Sale <span class="text-xs font-normal opacity-75 ml-1">(F3: Qty)</span></h2>
                     <div class="grid grid-cols-2 gap-1 shrink-0">
                         <button id="btn-view-suspended" class="text-[10px] bg-yellow-600 hover:bg-yellow-700 px-2 py-1 rounded transition w-24 h-8 flex items-center justify-center" title="View Suspended Sales">Suspended</button>
+                        <button id="btn-pos-history" class="text-[10px] bg-indigo-600 hover:bg-indigo-700 px-2 py-1 rounded transition w-24 h-8 flex items-center justify-center" title="Transaction History">History</button>
                         <button id="btn-suspend-sale" class="text-[10px] bg-orange-500 hover:bg-orange-600 px-2 py-1 rounded transition w-24 h-8 flex items-center justify-center" title="Suspend Current Sale">Suspend</button>
                         <button id="btn-pos-close-shift" class="text-[10px] bg-red-500 hover:bg-red-600 px-2 py-1 rounded transition w-24 h-8 flex items-center justify-center">Close Shift</button>
                         <button id="btn-clear-cart" class="text-[10px] bg-blue-800 hover:bg-blue-900 px-2 py-1 rounded transition w-24 h-8 flex items-center justify-center">Clear</button>
@@ -116,6 +124,7 @@ async function renderPosInterface(content) {
                         <div>Total: <span id="last-total" class="font-bold"></span></div>
                         <div>Paid: <span id="last-tendered" class="font-bold"></span></div>
                     </div>
+                    <button id="btn-print-last-receipt" class="w-full mt-3 bg-gray-800 text-white py-2 rounded font-bold text-sm flex items-center justify-center gap-2 hover:bg-black transition">Print Receipt (F8)</button>
                 </div>
 
                 <!-- Cart Items List -->
@@ -156,12 +165,20 @@ async function renderPosInterface(content) {
                     <div id="checkout-total" class="text-3xl font-bold text-blue-600">₱0.00</div>
                 </div>
                 <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Payment Method</label>
+                    <select id="select-payment-method" class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none">
+                        <option value="Cash">Cash</option>
+                        <option value="Points">Loyalty Points</option>
+                        <option value="Card">Card</option>
+                        <option value="E-Wallet">E-Wallet</option>
+                    </select>
+                    <div id="customer-points-info" class="hidden text-[10px] mt-1 font-bold text-blue-600">
+                        Available Points: <span id="available-points-display">0</span>
+                    </div>
+                </div>
+                <div class="mb-4" id="tendered-container">
                     <label class="block text-gray-700 text-sm font-bold mb-2">Amount Tendered</label>
                     <input type="number" id="input-tendered" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 text-xl text-center" step="0.01">
-                </div>
-                <div class="mb-6 text-center">
-                    <div class="text-sm text-gray-600">Change</div>
-                    <div id="checkout-change" class="text-xl font-bold text-green-600">₱0.00</div>
                 </div>
                 <div class="flex justify-between gap-2">
                     <button id="btn-cancel-checkout" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded w-1/2">Cancel</button>
@@ -185,6 +202,29 @@ async function renderPosInterface(content) {
                 </div>
                 <div class="mt-6 flex justify-end">
                     <button id="btn-cancel-suspended" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded">Close</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transaction History Modal -->
+        <div id="modal-pos-history" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center z-50">
+            <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-2xl">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-gray-800">Recent Transactions</h3>
+                    <button id="btn-close-history" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+                </div>
+                <div class="overflow-y-auto max-h-96">
+                    <table class="min-w-full text-sm">
+                        <thead class="bg-gray-50">
+                            <tr class="border-b">
+                                <th class="text-left p-2">Time</th>
+                                <th class="text-left p-2">Customer</th>
+                                <th class="text-right p-2">Total</th>
+                                <th class="text-center p-2">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pos-history-body"></tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -240,6 +280,12 @@ async function renderPosInterface(content) {
         }
     });
     
+    document.getElementById("btn-print-last-receipt").addEventListener("click", () => {
+        if (lastTransactionData) {
+            printReceipt(lastTransactionData);
+        }
+    });
+
     document.getElementById("btn-clear-cart").addEventListener("click", () => {
         if (cart.length > 0 && confirm("Are you sure you want to clear the current sale?")) {
             cart = [];
@@ -253,6 +299,10 @@ async function renderPosInterface(content) {
     document.getElementById("btn-close-suspended").addEventListener("click", closeSuspendedModal);
     document.getElementById("btn-cancel-suspended").addEventListener("click", closeSuspendedModal);
     document.getElementById("btn-refresh-suspended").addEventListener("click", openSuspendedModal);
+
+    // History Logic
+    document.getElementById("btn-pos-history").addEventListener("click", openHistoryModal);
+    document.getElementById("btn-close-history").addEventListener("click", () => document.getElementById("modal-pos-history").classList.add("hidden"));
     
     // Customer Search Logic
     const custInput = document.getElementById("pos-customer-search");
@@ -352,23 +402,37 @@ async function renderPosInterface(content) {
     document.getElementById("btn-checkout").addEventListener("click", openCheckout);
     document.getElementById("btn-cancel-checkout").addEventListener("click", closeCheckout);
     
+    const selectPayment = document.getElementById("select-payment-method");
+    selectPayment.addEventListener("change", (e) => {
+        const method = e.target.value;
+        const tenderedContainer = document.getElementById("tendered-container");
+        const btnConfirm = document.getElementById("btn-confirm-pay");
+        const total = parseFloat(document.getElementById("modal-checkout").dataset.total) || 0;
+
+        if (method === "Points") {
+            tenderedContainer.classList.add("hidden");
+            const points = selectedCustomer.loyalty_points || 0;
+            btnConfirm.disabled = points < total;
+            if (points < total) {
+                showToast("Insufficient loyalty points.", true);
+            }
+        } else {
+            tenderedContainer.classList.remove("hidden");
+            const tendered = parseFloat(document.getElementById("input-tendered").value) || 0;
+            btnConfirm.disabled = tendered < total;
+        }
+    });
+
     const inputTendered = document.getElementById("input-tendered");
     inputTendered.addEventListener("input", (e) => {
         const tendered = parseFloat(e.target.value) || 0;
         const total = parseFloat(document.getElementById("modal-checkout").dataset.total) || 0;
         const change = tendered - total;
-        
-        const changeEl = document.getElementById("checkout-change");
         const btnConfirm = document.getElementById("btn-confirm-pay");
         
-        changeEl.textContent = `₱${change.toFixed(2)}`;
         if (change >= 0) {
-            changeEl.classList.remove("text-red-600");
-            changeEl.classList.add("text-green-600");
             btnConfirm.disabled = false;
         } else {
-            changeEl.classList.add("text-red-600");
-            changeEl.classList.remove("text-green-600");
             btnConfirm.disabled = true;
         }
     });
@@ -442,7 +506,12 @@ function renderGrid(items) {
         card.setAttribute("tabindex", "0");
         
         // Stock Indicator Color
-        const stockColor = item.stock_level <= (item.min_stock || 10) ? 'text-red-600' : 'text-gray-500';
+        let stockColor = 'text-green-600';
+        if (item.stock_level <= 0) {
+            stockColor = 'text-red-600';
+        } else if (item.stock_level <= (item.min_stock || 10)) {
+            stockColor = 'text-yellow-600';
+        }
         
         card.innerHTML = `
             <div>
@@ -667,15 +736,25 @@ function openCheckout() {
     const modal = document.getElementById("modal-checkout");
     const totalEl = document.getElementById("checkout-total");
     const inputTendered = document.getElementById("input-tendered");
-    const changeEl = document.getElementById("checkout-change");
     const btnConfirm = document.getElementById("btn-confirm-pay");
+    const pointsInfo = document.getElementById("customer-points-info");
+    const pointsDisplay = document.getElementById("available-points-display");
+    const selectPayment = document.getElementById("select-payment-method");
 
     modal.dataset.total = total;
     totalEl.textContent = `₱${total.toFixed(2)}`;
     inputTendered.value = "";
-    changeEl.textContent = "₱0.00";
     btnConfirm.disabled = true;
-    
+    selectPayment.value = "Cash";
+    document.getElementById("tendered-container").classList.remove("hidden");
+
+    if (selectedCustomer.id !== "Guest") {
+        pointsInfo.classList.remove("hidden");
+        pointsDisplay.textContent = (selectedCustomer.loyalty_points || 0).toLocaleString();
+    } else {
+        pointsInfo.classList.add("hidden");
+    }
+
     modal.classList.remove("hidden");
     setTimeout(() => inputTendered.focus(), 100);
 }
@@ -687,6 +766,7 @@ function closeCheckout() {
 async function processTransaction() {
     const btnConfirm = document.getElementById("btn-confirm-pay");
     const inputTendered = document.getElementById("input-tendered");
+    const paymentMethod = document.getElementById("select-payment-method").value;
 
     // Prevent double submission
     if (btnConfirm.hasAttribute("data-processing")) return;
@@ -697,11 +777,12 @@ async function processTransaction() {
     const originalText = btnConfirm.textContent;
     btnConfirm.textContent = "Processing...";
 
+    const settings = await getSystemSettings();
     const total = parseFloat(document.getElementById("modal-checkout").dataset.total);
-    const tendered = parseFloat(inputTendered.value);
+    const tendered = paymentMethod === "Points" ? total : (parseFloat(inputTendered.value) || 0);
 
-    if (isNaN(tendered) || tendered < total) {
-        showToast("Amount tendered must be equal to or greater than the total amount.", true);
+    if (paymentMethod !== "Points" && tendered < total) {
+        showToast("Amount tendered is insufficient.", true);
         btnConfirm.removeAttribute("data-processing");
         btnConfirm.disabled = false;
         inputTendered.disabled = false;
@@ -710,17 +791,26 @@ async function processTransaction() {
     }
 
     const user = JSON.parse(localStorage.getItem('pos_user'));
+    const taxRate = (settings.tax?.rate || 0) / 100;
+    const taxAmount = total - (total / (1 + taxRate));
+
+    const rewardRatio = settings.rewards?.ratio || 100;
+    const pointsEarned = Math.floor(total / rewardRatio);
     
     const transaction = {
         items: JSON.parse(JSON.stringify(cart)), // Deep copy
         total_amount: total,
         amount_tendered: tendered,
         change: tendered - total,
+        tax_amount: taxAmount,
+        payment_method: paymentMethod,
         user_email: user ? user.email : "Guest",
         customer_id: selectedCustomer.id,
         customer_name: selectedCustomer.name,
+        points_earned: pointsEarned,
         timestamp: new Date(),
-        sync_status: 0 // 0 = Unsynced
+        sync_status: 0, // 0 = Unsynced
+        is_voided: false
     };
 
     try {
@@ -771,6 +861,21 @@ async function processTransaction() {
                 body: JSON.stringify(serverTxs)
             });
 
+            // Update Customer Points
+            if (selectedCustomer.id !== "Guest") {
+                const custRes = await fetch(`${API_URL}?file=customers`);
+                let customers = await custRes.json();
+                const cIdx = customers.findIndex(c => c.id === selectedCustomer.id);
+                if (cIdx !== -1) {
+                    customers[cIdx].loyalty_points = (customers[cIdx].loyalty_points || 0) + pointsEarned;
+                    if (paymentMethod === "Points") {
+                        customers[cIdx].loyalty_points -= total;
+                    }
+                    selectedCustomer.loyalty_points = customers[cIdx].loyalty_points; // Update local ref
+                    await fetch(`${API_URL}?file=customers`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(customers) });
+                }
+            }
+
             // Mark Local as Synced
             await db.transactions.update(txId, { sync_status: 1 });
 
@@ -779,6 +884,7 @@ async function processTransaction() {
             // Do not alert user, just log. Transaction is safe in Dexie with sync_status=0.
         }
 
+        lastTransactionData = { ...transaction, id: txId };
         cart = [];
         renderCart();
         closeCheckout();
@@ -795,6 +901,7 @@ async function processTransaction() {
         document.getElementById("last-total").textContent = `₱${transaction.total_amount.toFixed(2)}`;
         document.getElementById("last-tendered").textContent = `₱${transaction.amount_tendered.toFixed(2)}`;
         lastTxDiv.classList.remove("hidden");
+        printReceipt(lastTransactionData); // Auto-print
         
         // Focus back on search input for next sale
         document.getElementById("pos-search").focus();
@@ -806,6 +913,113 @@ async function processTransaction() {
         btnConfirm.removeAttribute("data-processing");
         inputTendered.disabled = false;
         btnConfirm.textContent = originalText;
+    }
+}
+
+async function openHistoryModal() {
+    const modal = document.getElementById("modal-pos-history");
+    const tbody = document.getElementById("pos-history-body");
+    modal.classList.remove("hidden");
+    tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center">Loading...</td></tr>`;
+
+    try {
+        const txs = await db.transactions.orderBy('timestamp').reverse().limit(50).toArray();
+        tbody.innerHTML = txs.map(tx => `
+            <tr class="border-b ${tx.is_voided ? 'bg-red-50 opacity-60' : ''}">
+                <td class="p-2 text-xs">${new Date(tx.timestamp).toLocaleString()}</td>
+                <td class="p-2">${tx.customer_name}</td>
+                <td class="p-2 text-right font-bold">₱${tx.total_amount.toFixed(2)}</td>
+                <td class="p-2 text-center">
+                    ${tx.is_voided 
+                        ? '<span class="text-red-600 font-bold text-xs uppercase">Voided</span>' 
+                        : `<button class="bg-red-100 text-red-600 hover:bg-red-200 px-2 py-1 rounded text-xs font-bold btn-void-tx" data-id="${tx.id}">Void</button>`
+                    }
+                </td>
+            </tr>
+        `).join('');
+
+        tbody.querySelectorAll(".btn-void-tx").forEach(btn => {
+            btn.addEventListener("click", () => voidTransaction(btn.dataset.id));
+        });
+    } catch (error) {
+        tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-red-500">Error loading history.</td></tr>`;
+    }
+}
+
+async function voidTransaction(id) {
+    if (!checkPermission("pos", "write")) {
+        showToast("Permission denied.", true);
+        return;
+    }
+
+    if (!confirm("Are you sure you want to VOID this transaction? This will reverse stock levels.")) return;
+
+    if (!(await requestManagerApproval())) return;
+
+    try {
+        const txId = isNaN(id) ? id : parseInt(id);
+        const tx = await db.transactions.get(txId);
+        if (!tx) return;
+
+        const user = JSON.parse(localStorage.getItem('pos_user'));
+
+        // 1. Update Dexie Transaction
+        await db.transactions.update(txId, { 
+            is_voided: true, 
+            voided_at: new Date(),
+            voided_by: user ? user.email : "System",
+            sync_status: 0 
+        });
+
+        // 2. Reverse Stock in Dexie
+        for (const item of tx.items) {
+            const current = await db.items.get(item.id);
+            if (current) {
+                await db.items.update(item.id, { stock_level: current.stock_level + item.qty });
+            }
+        }
+
+        // 3. Sync to Server
+        if (navigator.onLine) {
+            try {
+                // Update Server Items
+                const itemsRes = await fetch(`${API_URL}?file=items`);
+                let serverItems = await itemsRes.json();
+                tx.items.forEach(txItem => {
+                    const idx = serverItems.findIndex(i => i.id === txItem.id);
+                    if (idx !== -1) serverItems[idx].stock_level += txItem.qty;
+                });
+                await fetch(`${API_URL}?file=items`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(serverItems)
+                });
+
+                // Update Server Transaction
+                const txRes = await fetch(`${API_URL}?file=transactions`);
+                let serverTxs = await txRes.json();
+                const sIdx = serverTxs.findIndex(t => t.timestamp === tx.timestamp && t.total_amount === tx.total_amount);
+                if (sIdx !== -1) {
+                    serverTxs[sIdx].is_voided = true;
+                    serverTxs[sIdx].voided_at = new Date();
+                    serverTxs[sIdx].voided_by = user ? user.email : "System";
+                    await fetch(`${API_URL}?file=transactions`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(serverTxs)
+                    });
+                    await db.transactions.update(txId, { sync_status: 1 });
+                }
+            } catch (e) { console.warn("Void sync failed, will retry later."); }
+        }
+
+        showToast("Transaction voided and stock reversed.");
+        await addNotification('Void', `Transaction ${txId} was voided by ${user ? user.email : "System"}`);
+        openHistoryModal(); // Refresh list
+        fetchItemsFromDexie(); // Refresh grid
+    } catch (error) {
+        console.error("Void error:", error);
+        showToast("Failed to void transaction.", true);
     }
 }
 
@@ -855,9 +1069,7 @@ async function openSuspendedModal() {
     updateSuspendedCount();
 
     try {
-        const user = JSON.parse(localStorage.getItem('pos_user'));
         const suspended = await db.suspended_transactions
-            .where('user_email').equals(user ? user.email : "Guest")
             .filter(tx => tx.sync_status !== 2).toArray();
         if (suspended.length === 0) {
             container.innerHTML = `<div class="text-center p-4 text-gray-500">No suspended transactions.</div>`;
@@ -870,6 +1082,7 @@ async function openSuspendedModal() {
                     <tr class="border-b">
                         <th class="text-left p-2">Time</th>
                         <th class="text-left p-2">Customer</th>
+                        <th class="text-left p-2">Cashier</th>
                         <th class="text-right p-2">Total</th>
                         <th class="text-center p-2">Action</th>
                     </tr>
@@ -879,9 +1092,11 @@ async function openSuspendedModal() {
                         <tr class="border-b hover:bg-gray-50">
                             <td class="p-2 text-xs">${new Date(tx.timestamp).toLocaleString()}</td>
                             <td class="p-2 font-medium">${tx.customer?.name || 'Guest'}</td>
+                            <td class="p-2 text-[10px] text-gray-500">${tx.user_email || 'Unknown'}</td>
                             <td class="p-2 text-right font-bold">₱${tx.total.toFixed(2)}</td>
-                            <td class="p-2 text-center">
+                            <td class="p-2 text-center flex justify-center gap-2">
                                 <button class="bg-blue-600 hover:bg-blue-700 text-white text-xs px-2 py-1 rounded btn-resume-suspended" data-id="${tx.id}">Resume</button>
+                                <button class="bg-red-100 text-red-600 hover:bg-red-200 text-xs px-2 py-1 rounded btn-delete-suspended" data-id="${tx.id}">Delete</button>
                             </td>
                         </tr>
                     `).join('')}
@@ -891,6 +1106,9 @@ async function openSuspendedModal() {
 
         container.querySelectorAll(".btn-resume-suspended").forEach(btn => {
             btn.addEventListener("click", () => resumeTransaction(btn.dataset.id));
+        });
+        container.querySelectorAll(".btn-delete-suspended").forEach(btn => {
+            btn.addEventListener("click", () => deleteSuspendedTransaction(btn.dataset.id));
         });
     } catch (error) {
         console.error("Error loading suspended transactions:", error);
@@ -908,19 +1126,28 @@ async function resumeTransaction(id) {
     }
 
     try {
-        const tx = await db.suspended_transactions.get(id);
+        // Robust ID lookup: try as string, then as number if applicable
+        let tx = await db.suspended_transactions.get(id);
+        let actualId = id;
+        if (!tx && !isNaN(id)) {
+            actualId = parseInt(id);
+            tx = await db.suspended_transactions.get(actualId);
+        }
+
         if (tx) {
             cart = tx.items;
             selectedCustomer = tx.customer || { id: "Guest", name: "Guest" };
             
             // Mark for deletion locally (status 2) and trigger background sync
-            await db.suspended_transactions.update(id, { sync_status: 2 });
+            await db.suspended_transactions.update(actualId, { sync_status: 2 });
             
             renderCart();
             selectCustomer(selectedCustomer);
             closeSuspendedModal();
             showToast("Transaction resumed.");
             syncSuspendedFromServer().then(() => updateSuspendedCount());
+        } else {
+            showToast("Could not find transaction record.", true);
         }
     } catch (error) {
         console.error("Error resuming transaction:", error);
@@ -928,11 +1155,33 @@ async function resumeTransaction(id) {
     }
 }
 
+async function deleteSuspendedTransaction(id) {
+    if (!confirm("Are you sure you want to permanently delete this suspended transaction?")) return;
+
+    try {
+        // Robust ID lookup for deletion
+        let tx = await db.suspended_transactions.get(id);
+        let actualId = id;
+        if (!tx && !isNaN(id)) {
+            actualId = parseInt(id);
+            tx = await db.suspended_transactions.get(actualId);
+        }
+
+        // Mark for deletion (status 2) so sync service handles server-side removal
+        await db.suspended_transactions.update(actualId, { sync_status: 2 });
+        
+        showToast("Transaction marked for deletion.");
+        openSuspendedModal(); // Refresh list
+        syncSuspendedFromServer().then(() => updateSuspendedCount());
+    } catch (error) {
+        console.error("Error deleting suspended transaction:", error);
+        showToast("Failed to delete transaction.", true);
+    }
+}
+
 async function updateSuspendedCount() {
-    const user = JSON.parse(localStorage.getItem('pos_user'));
     const count = await db.suspended_transactions
-        .where('user_email').equals(user ? user.email : "Guest")
-        .and(tx => tx.sync_status !== 2).count();
+        .filter(tx => tx.sync_status !== 2).count();
     const btn = document.getElementById("btn-view-suspended");
     if (!btn) return;
     
@@ -949,7 +1198,6 @@ async function updateSuspendedCount() {
 
 async function syncSuspendedFromServer() {
     const user = JSON.parse(localStorage.getItem('pos_user'));
-    const userEmail = user ? user.email : "Guest";
 
     if (!navigator.onLine) return;
 
@@ -1010,12 +1258,11 @@ async function syncSuspendedFromServer() {
                 const localPendingDeleteIds = new Set(localPendingDelete.map(t => t.id));
                 
                 // Remove local ones that were resumed/deleted elsewhere (only if they were previously synced)
-                const localSyncedForUser = await db.suspended_transactions
-                    .where('user_email').equals(userEmail)
-                    .filter(tx => tx.sync_status === 1)
+                const localSynced = await db.suspended_transactions
+                    .where('sync_status').equals(1)
                     .toArray();
                 
-                for (const local of localSyncedForUser) {
+                for (const local of localSynced) {
                     if (!serverIds.has(local.id)) {
                         await db.suspended_transactions.delete(local.id);
                     }
@@ -1033,6 +1280,76 @@ async function syncSuspendedFromServer() {
     }
     
     updateSuspendedCount();
+}
+
+async function printReceipt(tx) {
+    const settings = await getSystemSettings();
+    const store = settings.store || { name: "LightPOS", data: "" };
+    
+    const printWindow = window.open('', '_blank', 'width=300,height=600');
+    const itemsHtml = tx.items.map(item => `
+        <tr>
+            <td colspan="2" style="padding-top: 5px;">${item.name}</td>
+        </tr>
+        <tr>
+            <td style="font-size: 10px;">${item.qty} x ${item.selling_price.toFixed(2)}</td>
+            <td style="text-align: right;">${(item.qty * item.selling_price).toFixed(2)}</td>
+        </tr>
+    `).join('');
+
+    const receiptHtml = `
+        <html>
+        <head>
+            <title>Print Receipt</title>
+            <style>
+                @page { margin: 0; }
+                body { 
+                    width: 76mm; 
+                    font-family: 'Courier New', Courier, monospace; 
+                    font-size: 12px; 
+                    padding: 5mm;
+                    margin: 0;
+                    color: #000;
+                }
+                .text-center { text-align: center; }
+                .text-right { text-align: right; }
+                .bold { font-weight: bold; }
+                .hr { border-bottom: 1px dashed #000; margin: 5px 0; }
+                table { width: 100%; border-collapse: collapse; }
+                .footer { margin-top: 20px; font-size: 10px; }
+            </style>
+        </head>
+        <body onload="window.print(); window.close();">
+            <div class="text-center">
+                <div class="bold" style="font-size: 16px;">${store.name}</div>
+                <div style="white-space: pre-wrap; font-size: 10px;">${store.data}</div>
+            </div>
+            <div class="hr"></div>
+            <div style="font-size: 10px;">
+                Date: ${new Date(tx.timestamp).toLocaleString()}<br>
+                Trans: #${tx.id}<br>
+                Cashier: ${tx.user_email}<br>
+                Customer: ${tx.customer_name}
+            </div>
+            <div class="hr"></div>
+            <table>
+                ${itemsHtml}
+            </table>
+            <div class="hr"></div>
+            <table>
+                <tr><td class="bold">TOTAL</td><td class="text-right bold">₱${tx.total_amount.toFixed(2)}</td></tr>
+                <tr><td>Payment (${tx.payment_method})</td><td class="text-right">₱${tx.amount_tendered.toFixed(2)}</td></tr>
+                <tr><td>Change</td><td class="text-right">₱${tx.change.toFixed(2)}</td></tr>
+            </table>
+            <div class="footer text-center">
+                THIS IS NOT AN OFFICIAL RECEIPT<br>
+                Thank you for shopping!
+            </div>
+        </body>
+        </html>
+    `;
+    printWindow.document.write(receiptHtml);
+    printWindow.document.close();
 }
 
 // Auto-sync when coming back online

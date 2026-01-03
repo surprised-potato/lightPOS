@@ -28,7 +28,7 @@
         "name": "Big Shot Hotdog Classic King 1K",
         "barcode": "4800088288347",
         "category": "FROZEN FOODS",
-        "stock_level": 10,
+        "stock_level": 9,
         "base_unit": "Unit",
         "cost_price": 146
     },
@@ -36,7 +36,7 @@
         "id": "00pyyobyPZbSsU00GGHm",
         "min_stock": 1,
         "cost_price": 79.5,
-        "stock_level": -1,
+        "stock_level": -2,
         "barcode": "9556006012086",
         "timestamp": {
             "seconds": 1767410325,
@@ -83,7 +83,7 @@
         "barcode": "4800140001082",
         "min_stock": 2,
         "name": "Bactidol 60mL",
-        "stock_level": 8,
+        "stock_level": 7,
         "base_unit": "Unit",
         "category": "MEDICINE",
         "timestamp": {
@@ -109,7 +109,7 @@
     },
     {
         "id": "02VYfDbphAmBdJa9dBJZ",
-        "stock_level": 0,
+        "stock_level": -1,
         "min_stock": 1,
         "name": "Butane Refill",
         "cost_price": 22,
@@ -157,7 +157,7 @@
         "barcode": "4800086038692",
         "base_unit": "Unit",
         "name": "Selecta 2in1 Quezo Buco Salad 1.5L",
-        "stock_level": -6,
+        "stock_level": -7,
         "timestamp": {
             "seconds": 1767410305,
             "nanoseconds": 595000000
@@ -171,7 +171,7 @@
         "id": "03MdLvOBOkR57VGbaAZY",
         "min_stock": 2,
         "barcode": "6910019013738",
-        "stock_level": 0,
+        "stock_level": -1,
         "selling_price": 6,
         "name": "Fasclean Detergent 50g",
         "base_unit": "Unit",
@@ -322,7 +322,7 @@
         "cost_price": 14.09,
         "min_stock": 2,
         "selling_price": 17,
-        "stock_level": 0,
+        "stock_level": -1,
         "timestamp": {
             "seconds": 1767410316,
             "nanoseconds": 772000000
@@ -336,7 +336,7 @@
         "id": "06lVnQBxodbNevev7nL2",
         "base_unit": "Unit",
         "cost_price": 29.35,
-        "stock_level": 0,
+        "stock_level": -2,
         "category": "BAKING ESSENTIALS",
         "min_stock": 2,
         "timestamp": {
@@ -382,7 +382,7 @@
         "name": "Albatross Lemon 50g",
         "min_stock": 2,
         "barcode": "4800067600108",
-        "stock_level": 0,
+        "stock_level": -1,
         "selling_price": 31,
         "cost_price": 27.25,
         "timestamp": {
@@ -404,7 +404,7 @@
             "seconds": 1767410300,
             "nanoseconds": 571000000
         },
-        "stock_level": 0,
+        "stock_level": -1,
         "category": "TBA"
     },
     {
@@ -439,7 +439,7 @@
     },
     {
         "id": "095aMExbcACFwU2dOk8E",
-        "stock_level": 0,
+        "stock_level": -1,
         "selling_price": 104,
         "min_stock": 2,
         "base_unit": "Unit",
@@ -506,7 +506,7 @@
         },
         "selling_price": 13,
         "category": "NOODLES",
-        "stock_level": 0,
+        "stock_level": -1,
         "min_stock": 1,
         "name": "Lm Beef Chilimansi 53G",
         "barcode": "4807770274893",
@@ -684,7 +684,7 @@
         "min_stock": 2,
         "barcode": "4806516144056",
         "name": "Jolly Ole Chef APF 200g",
-        "stock_level": 0,
+        "stock_level": -1,
         "cost_price": 22.13,
         "timestamp": {
             "seconds": 1767410313,
@@ -22161,7 +22161,7 @@
     },
     {
         "id": "8oFvlKvNOXuEjKz2iyKn",
-        "base_unit": "Unit",
+        "base_unit": "can",
         "stock_level": 0,
         "category": "DRINK",
         "timestamp": {
@@ -22172,7 +22172,10 @@
         "name": "Coke Mismo 1 case",
         "min_stock": 2,
         "selling_price": 205,
-        "cost_price": 190
+        "cost_price": 190,
+        "supplier_id": "",
+        "parent_id": null,
+        "conv_factor": 1
     },
     {
         "id": "8qNRIBQzS7yLPB1WgBx8",
@@ -87091,14 +87094,17 @@
         "cost_price": 15.83,
         "barcode": "4801981118502",
         "min_stock": 2,
-        "base_unit": "Unit",
+        "base_unit": "Can",
         "category": "DRINK",
         "stock_level": 0,
         "timestamp": {
             "seconds": 1767410312,
             "nanoseconds": 40000000
         },
-        "selling_price": 19
+        "selling_price": 19,
+        "supplier_id": "",
+        "parent_id": "8oFvlKvNOXuEjKz2iyKn",
+        "conv_factor": 12
     },
     {
         "id": "ZEKej1HElA9R317z0WGZ",
@@ -142223,7 +142229,7 @@
         "cost_price": 30.24,
         "min_stock": 2,
         "barcode": "8888168012422",
-        "stock_level": 0,
+        "stock_level": -1,
         "selling_price": 35,
         "name": "OKI SWEETENED CONDENSED CREAMER 390g",
         "base_unit": "Unit"

@@ -1,5 +1,57 @@
 [
     {
+        "id": "local_1767441607620",
+        "user_id": "JohnRoss@LP.com",
+        "username": "John",
+        "items": [
+            {
+                "id": "0M9K4k4qgQj27wG5vNcP",
+                "name": "Knorr Liquid Seasoning 250ml",
+                "quantity": 4,
+                "cost_price": 105
+            }
+        ],
+        "timestamp": "2026-01-03T12:00:07.620Z",
+        "item_count": 4,
+        "supplier_id_override": null
+    },
+    {
+        "id": "local_1767439997550",
+        "user_id": "admin@lightpos.com",
+        "username": "Super Admin",
+        "items": [
+            {
+                "id": "1VTsLmlg28uJY3fkePe6",
+                "name": "Green Cross Antiseptic 75ml",
+                "quantity": 4,
+                "cost_price": 21.85
+            }
+        ],
+        "timestamp": "2026-01-03T11:33:17.550Z",
+        "item_count": 4,
+        "supplier_id_override": null
+    },
+    {
+        "id": "local_1767438816732",
+        "user_id": "admin@lightpos.com",
+        "username": "Super Admin",
+        "items": [
+            {
+                "id": "3H4xfEYWctb0Mp5JgXVZ",
+                "name": "Chingu Soju Coffee 360ml",
+                "quantity": 5
+            },
+            {
+                "id": "5K7v7x39wmVaU5U3qg5x",
+                "name": "KOJIC org Acid Soap",
+                "quantity": 10
+            }
+        ],
+        "timestamp": "2026-01-03T11:13:36.732Z",
+        "item_count": 15,
+        "supplier_id_override": null
+    },
+    {
         "id": "01b77b7a-e139-4330-9f53-9dea64a023ec",
         "timestamp": "2026-01-03T08:55:22.053Z",
         "items": [

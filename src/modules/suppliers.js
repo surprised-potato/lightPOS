@@ -4,7 +4,7 @@ const API_URL = 'api/router.php';
 
 export async function loadSuppliersView() {
     const content = document.getElementById("main-content");
-    const canWrite = checkPermission("items", "write"); // Using 'items' permission for suppliers
+    const canWrite = checkPermission("suppliers", "write"); 
 
     content.innerHTML = `
         <div class="max-w-6xl mx-auto">

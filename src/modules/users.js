@@ -1,7 +1,37 @@
 import { checkPermission } from "../auth.js";
 
 const API_URL = 'api/router.php';
-const MODULES = ['pos', 'items', 'stockin', 'stock-count', 'reports', 'expenses', 'users', 'shifts'];
+const MODULES = ['pos', 'customers', 'shifts', 'items', 'suppliers', 'stockin', 'stock-count', 'expenses', 'reports', 'users', 'migrate', 'returns', 'settings'];
+
+const ROLES = {
+    admin: {
+        label: 'Administrator',
+        permissions: MODULES.reduce((acc, mod) => ({ ...acc, [mod]: { read: true, write: true } }), {})
+    },
+    manager: {
+        label: 'Manager',
+        permissions: {
+            pos: { read: true, write: true },
+            customers: { read: true, write: true },
+            shifts: { read: true, write: true },
+            items: { read: true, write: true },
+            suppliers: { read: true, write: true },
+            stockin: { read: true, write: true },
+            'stock-count': { read: true, write: true },
+            expenses: { read: true, write: true },
+            reports: { read: true, write: false },
+            returns: { read: true, write: true },
+            users: { read: false, write: false },
+            migrate: { read: false, write: false },
+            settings: { read: false, write: false }
+        }
+    },
+    cashier: {
+        label: 'Cashier',
+        permissions: MODULES.reduce((acc, mod) => ({ ...acc, [mod]: { read: ['pos', 'customers', 'shifts', 'returns'].includes(mod), write: ['pos', 'customers', 'shifts', 'returns'].includes(mod) } }), {})
+    },
+    custom: { label: 'Custom', permissions: {} }
+};
 
 export async function loadUsersView() {
     const content = document.getElementById("main-content");
@@ -39,7 +69,17 @@ export async function loadUsersView() {
                 <div class="mt-3">
                     <h3 id="modal-title" class="text-lg leading-6 font-medium text-gray-900 mb-4">Add User</h3>
                     <form id="user-form">
-                        <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div class="mb-4 p-3 bg-blue-50 rounded-md border border-blue-100">
+                            <label class="block text-sm font-bold text-blue-800 mb-1">Role Template</label>
+                            <select id="user-role" class="block w-full border border-blue-300 rounded-md shadow-sm p-2 bg-white">
+                                <option value="custom">Custom Permissions</option>
+                                <option value="cashier">Cashier</option>
+                                <option value="manager">Manager</option>
+                                <option value="admin">Administrator</option>
+                            </select>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">Email (ID)</label>
                                 <input type="email" id="user-email" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
@@ -47,6 +87,10 @@ export async function loadUsersView() {
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">Display Name</label>
                                 <input type="text" id="user-name" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Contact Number</label>
+                                <input type="text" id="user-phone" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
                             </div>
                         </div>
 
@@ -70,8 +114,12 @@ export async function loadUsersView() {
                                     <thead class="bg-gray-50">
                                         <tr>
                                             <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Module</th>
-                                            <th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase">Read</th>
-                                            <th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase">Write</th>
+                                            <th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase">
+                                                Read <br> <input type="checkbox" id="select-all-read" class="form-checkbox h-3 w-3 text-blue-600">
+                                            </th>
+                                            <th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase">
+                                                Write <br> <input type="checkbox" id="select-all-write" class="form-checkbox h-3 w-3 text-blue-600">
+                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody id="permissions-body" class="bg-white divide-y divide-gray-200">
@@ -154,9 +202,11 @@ function openUserModal(user = null) {
     const title = document.getElementById("modal-title");
     const emailInput = document.getElementById("user-email");
     const nameInput = document.getElementById("user-name");
+    const phoneInput = document.getElementById("user-phone");
     const activeInput = document.getElementById("user-active");
     const permBody = document.getElementById("permissions-body");
     const passwordContainer = document.getElementById("password-container");
+    const roleSelect = document.getElementById("user-role");
 
     modal.classList.remove("hidden");
     
@@ -181,17 +231,70 @@ function openUserModal(user = null) {
         emailInput.value = user.email;
         emailInput.disabled = true; // Cannot change ID
         nameInput.value = user.name;
+        phoneInput.value = user.phone || "";
         activeInput.checked = user.is_active;
         passwordContainer.classList.add("hidden");
+
+        // Determine Role based on permissions
+        let matchedRole = 'custom';
+        for (const [roleKey, roleData] of Object.entries(ROLES)) {
+            if (roleKey === 'custom') continue;
+            if (JSON.stringify(user.permissions) === JSON.stringify(roleData.permissions)) {
+                matchedRole = roleKey;
+                break;
+            }
+        }
+        roleSelect.value = matchedRole;
     } else {
         title.textContent = "Add User";
         emailInput.value = "";
         emailInput.disabled = false;
         nameInput.value = "";
+        phoneInput.value = "";
         activeInput.checked = true;
         passwordContainer.classList.remove("hidden");
+        roleSelect.value = "cashier"; // Default for new users
         document.getElementById("user-password").value = "";
+        
+        // Apply default role permissions
+        setTimeout(() => applyRolePermissions("cashier"), 0);
     }
+
+    // Event Listeners for Role and Select All
+    roleSelect.onchange = (e) => applyRolePermissions(e.target.value);
+    
+    document.getElementById("select-all-read").onchange = (e) => {
+        document.querySelectorAll('.perm-check[data-type="read"]').forEach(cb => cb.checked = e.target.checked);
+        roleSelect.value = "custom";
+    };
+    
+    document.getElementById("select-all-write").onchange = (e) => {
+        document.querySelectorAll('.perm-check[data-type="write"]').forEach(cb => cb.checked = e.target.checked);
+        roleSelect.value = "custom";
+    };
+
+    // If any individual checkbox is changed, set role to custom
+    permBody.querySelectorAll(".perm-check").forEach(cb => {
+        cb.addEventListener("change", () => {
+            roleSelect.value = "custom";
+        });
+    });
+}
+
+function applyRolePermissions(roleKey) {
+    if (roleKey === 'custom') return;
+    
+    const perms = ROLES[roleKey].permissions;
+    MODULES.forEach(mod => {
+        const readCb = document.querySelector(`.perm-check[data-module="${mod}"][data-type="read"]`);
+        const writeCb = document.querySelector(`.perm-check[data-module="${mod}"][data-type="write"]`);
+        
+        if (readCb) readCb.checked = perms[mod]?.read || false;
+        if (writeCb) writeCb.checked = perms[mod]?.write || false;
+    });
+    
+    document.getElementById("select-all-read").checked = false;
+    document.getElementById("select-all-write").checked = false;
 }
 
 function closeUserModal() {
@@ -203,6 +306,7 @@ async function handleUserSubmit(e) {
     
     const email = document.getElementById("user-email").value.trim();
     const name = document.getElementById("user-name").value.trim();
+    const phone = document.getElementById("user-phone").value.trim();
     const password = document.getElementById("user-password").value;
     const isActive = document.getElementById("user-active").checked;
     const isEdit = document.getElementById("user-email").disabled;
@@ -231,6 +335,7 @@ async function handleUserSubmit(e) {
             const index = users.findIndex(u => u.email === email);
             if (index !== -1) {
                 users[index].name = name;
+                users[index].phone = phone;
                 users[index].is_active = isActive;
                 users[index].permissions = permissions;
                 if (password) users[index].password = md5(password);
@@ -244,6 +349,7 @@ async function handleUserSubmit(e) {
             users.push({
                 email,
                 name,
+                phone,
                 password: md5(password),
                 is_active: isActive,
                 permissions

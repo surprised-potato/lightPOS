@@ -42,7 +42,7 @@ export async function loadItemsView() {
         <div id="modal-add-item" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
             <div class="relative top-10 mx-auto p-5 border w-96 md:w-[500px] shadow-lg rounded-md bg-white">
                 <div class="mt-3">
-                    <h3 class="text-lg leading-6 font-medium text-gray-900 text-center mb-4">Add New Item</h3>
+                    <h3 id="item-modal-title" class="text-lg leading-6 font-medium text-gray-900 text-center mb-4">Add New Item</h3>
                     <form id="form-add-item">
                         <input type="hidden" id="item-id">
                         <div class="grid grid-cols-2 gap-4">
@@ -156,6 +156,8 @@ export async function loadItemsView() {
         document.getElementById("form-add-item").reset();
         document.getElementById("item-id").value = ""; // Empty ID means new item
         document.getElementById("item-parent-id").value = "";
+        document.getElementById("item-modal-title").textContent = "Add New Item";
+        document.getElementById("item-stock").disabled = false;
         modal.classList.remove("hidden");
         populateSupplierDropdown();
         });
@@ -278,7 +280,7 @@ function renderItems(items) {
 
     items.forEach(item => {
         const row = document.createElement("tr");
-        row.className = "border-b border-gray-200 hover:bg-gray-100";
+        row.className = "border-b border-gray-200 hover:bg-gray-100" + (canWrite ? " cursor-pointer" : "");
         row.innerHTML = `
             <td class="py-3 px-6 text-left font-mono text-xs">${item.barcode}</td>
             <td class="py-3 px-6 text-left font-medium">${item.name}</td>
@@ -296,34 +298,43 @@ function renderItems(items) {
             </td>
         `;
         
+        const openEditModal = () => {
+            if (!canWrite) return;
+            document.getElementById("item-modal-title").textContent = "Edit Item";
+            document.getElementById("item-stock").disabled = true;
+            document.getElementById("item-id").value = item.id;
+            document.getElementById("item-name").value = item.name;
+            document.getElementById("item-barcode").value = item.barcode;
+            document.getElementById("item-cost").value = item.cost_price;
+            document.getElementById("item-price").value = item.selling_price;
+            document.getElementById("item-stock").value = item.stock_level;
+            document.getElementById("item-min-stock").value = item.min_stock;
+            document.getElementById("item-unit").value = item.base_unit || "";
+            document.getElementById("item-conv").value = item.conv_factor || "";
+            
+            populateSupplierDropdown();
+            
+            document.getElementById("item-supplier").value = item.supplier_id || "";
+            
+            // Populate Parent Search
+            const parentItem = itemsData.find(p => p.id === item.parent_id);
+            document.getElementById("item-parent-search").value = parentItem ? parentItem.name : "";
+            document.getElementById("item-parent-id").value = item.parent_id || "";
+            
+            document.getElementById("modal-add-item").classList.remove("hidden");
+        };
+
+        if (canWrite) {
+            row.addEventListener("click", openEditModal);
+        }
+
         row.querySelector(".edit-btn").addEventListener("click", (e) => {
-            const id = e.currentTarget.getAttribute("data-id");
-            const itemToEdit = items.find(i => i.id === id);
-            if (itemToEdit) {
-                document.getElementById("item-id").value = itemToEdit.id;
-                document.getElementById("item-name").value = itemToEdit.name;
-                document.getElementById("item-barcode").value = itemToEdit.barcode;
-                document.getElementById("item-cost").value = itemToEdit.cost_price;
-                document.getElementById("item-price").value = itemToEdit.selling_price;
-                document.getElementById("item-stock").value = itemToEdit.stock_level;
-                document.getElementById("item-min-stock").value = itemToEdit.min_stock;
-                document.getElementById("item-unit").value = itemToEdit.base_unit || "";
-                document.getElementById("item-conv").value = itemToEdit.conv_factor || "";
-                
-                populateSupplierDropdown();
-                
-                document.getElementById("item-supplier").value = itemToEdit.supplier_id || "";
-                
-                // Populate Parent Search
-                const parentItem = itemsData.find(p => p.id === itemToEdit.parent_id);
-                document.getElementById("item-parent-search").value = parentItem ? parentItem.name : "";
-                document.getElementById("item-parent-id").value = itemToEdit.parent_id || "";
-                
-                document.getElementById("modal-add-item").classList.remove("hidden");
-            }
+            e.stopPropagation();
+            openEditModal();
         });
 
         row.querySelector(".delete-btn").addEventListener("click", async (e) => {
+            e.stopPropagation();
             if (confirm(`Delete item "${item.name}"?`)) {
                 const id = e.currentTarget.getAttribute("data-id");
                 try {

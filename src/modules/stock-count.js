@@ -1,4 +1,5 @@
 import { checkPermission } from "../auth.js";
+import { addNotification } from "../services/notification-service.js";
 
 const API_URL = 'api/router.php';
 
@@ -332,6 +333,8 @@ async function processAdjustment(newStock, reason) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(adjustments)
         });
+
+        await addNotification('Stock Count', `Stock adjustment for ${selectedItem.name}: ${difference > 0 ? '+' : ''}${difference} units by ${user}`);
 
         alert("Stock adjusted successfully.");
         

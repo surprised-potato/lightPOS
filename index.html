@@ -7,6 +7,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/blueimp-md5/2.19.0/js/md5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="bg-gray-100 h-screen w-screen overflow-hidden text-gray-800">
@@ -48,12 +52,12 @@
     <div id="app-container" class="hidden h-full flex flex-col">
         <header class="bg-blue-700 text-white p-4 flex justify-between items-center shadow-md z-10">
             <h1 class="text-xl font-bold tracking-wide">lightPOS</h1>
-            <button id="btn-logout" class="bg-blue-800 hover:bg-blue-900 px-4 py-1 rounded text-sm transition duration-150">Logout</button>
+            <div id="header-actions" class="flex items-center gap-4"></div>
         </header>
         
         <div class="flex flex-1 overflow-hidden">
             <!-- Sidebar Placeholder -->
-            <nav id="sidebar-container" class="w-64 bg-white border-r hidden md:block overflow-y-auto shadow-sm"></nav>
+            <nav id="sidebar-container" class="w-64 bg-white border-r hidden md:block relative shadow-sm"></nav>
             
             <!-- Main Content Area -->
             <main id="main-content" class="flex-1 p-6 overflow-auto bg-gray-50"></main>

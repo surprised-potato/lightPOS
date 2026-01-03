@@ -1,0 +1,21 @@
+import { db } from "../db.js";
+
+export async function addNotification(type, message) {
+    const notification = {
+        type,
+        message,
+        timestamp: new Date().toISOString(),
+        read: 0 // 0 for unread, 1 for read
+    };
+    await db.notifications.add(notification);
+    window.dispatchEvent(new CustomEvent('notification-updated'));
+}
+
+export async function getRecentNotifications(limit = 7) {
+    return await db.notifications.orderBy('timestamp').reverse().limit(limit).toArray();
+}
+
+export async function markAllAsRead() {
+    await db.notifications.where('read').equals(0).modify({ read: 1 });
+    window.dispatchEvent(new CustomEvent('notification-updated'));
+}

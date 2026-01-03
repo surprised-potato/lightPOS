@@ -1,5 +1,6 @@
 import { db } from "../db.js";
-import { checkPermission } from "../auth.js";
+import { checkPermission, requestManagerApproval } from "../auth.js";
+import { addNotification } from "../services/notification-service.js";
 
 const API_URL = 'api/router.php';
 
@@ -17,6 +18,12 @@ export async function checkActiveShift() {
         const response = await fetch(`${API_URL}?file=shifts`);
         let shifts = await response.json();
         if (!Array.isArray(shifts)) shifts = [];
+
+        // Sync to local DB for dashboard visibility
+        await db.shifts.clear();
+        if (shifts.length > 0) {
+            await db.shifts.bulkPut(shifts);
+        }
 
         // Find open shift for this user
         const active = shifts.find(s => s.user_id === user.email && s.status === "open");
@@ -65,6 +72,9 @@ export async function startShift(openingCash) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(shifts)
         });
+
+        // Update local DB
+        await db.shifts.add(shiftData);
 
         currentShift = shiftData;
         return currentShift;
@@ -129,6 +139,9 @@ export async function closeShift(closingCash) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(shifts)
         });
+
+        // Update local DB
+        await db.shifts.put(shifts[index]);
     }
     
     const summary = {
@@ -433,6 +446,8 @@ async function adjustCash(shiftId, amount, reason) {
         return;
     }
 
+    if (!(await requestManagerApproval())) return;
+
     const user = getCurrentUser();
     
     const adjustment = {
@@ -464,7 +479,12 @@ async function adjustCash(shiftId, amount, reason) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(shifts)
         });
+
+        // Update local DB
+        await db.shifts.put(shift);
     }
+
+    await addNotification('Adjustment', `Cash adjustment of ₱${adjustment.amount} for shift ${shiftId} by ${user ? user.email : 'unknown'}`);
     
     if (currentShift && currentShift.id === shiftId) {
         if (!currentShift.adjustments) currentShift.adjustments = [];

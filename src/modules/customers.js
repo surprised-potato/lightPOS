@@ -5,8 +5,7 @@ let customersData = [];
 
 export async function loadCustomersView() {
     const content = document.getElementById("main-content");
-    // Using 'pos' permission as customers are primarily for POS
-    const canWrite = checkPermission("pos", "write"); 
+    const canWrite = checkPermission("customers", "write"); 
 
     content.innerHTML = `
         <div class="max-w-6xl mx-auto">

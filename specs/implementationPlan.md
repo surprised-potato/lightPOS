@@ -36,11 +36,11 @@ This document outlines the step-by-step execution plan for the surprised-potato 
 ## Phase 6: Synchronization & Reporting
 **Goal:** Reconcile offline data and visualize results.
 - **Sync Service:** The "Back Online" logic. Loop through Dexie queue -> POST to API -> Update Stock.
-- **Dashboard & Reports:** Read-only views using Chart.js or simple HTML tables.
+- **Dashboard & Reports:** Read-only views using Chart.js or simple HTML tables. Includes Financials (Tax, COGS, Valuation) and Performance (Product Mix, Voids).
 
 ## Phase 7: Shift Management
 **Goal:** Cash control and session tracking.
-- **Shift Logic:** Open/Close shift with cash reconciliation.
+- **Shift Logic:** Open/Close shift with cash reconciliation. Implement X-Report (snapshot) and Z-Report (finalization).
 - **Enforcement:** Block POS access if no shift is open.
 
 ## Phase 8: Expense Management
@@ -209,15 +209,23 @@ Update `src/services/sync-service.js`.
 ### Prompt 7.1: Dashboard
 Build `src/modules/dashboard.js`.
 1. Fetch `transactions.json` from API.
-2. Compute: Total Sales, Total Profit.
+2. Compute: Total Sales, Total Profit, and **Tax Liability**.
 3. Fetch `items` where `stock_level` < `min_stock` for "Low Stock" table.
 4. Render a simple HTML table or use a lightweight chart lib (like Chart.js via CDN) for "Sales Trend".
 
 ### Prompt 7.2: Advanced Reporting
 Build `src/modules/reports.js`.
 1. UI: Date Range Picker (Start/End).
-2. Report: Sales by User (Table: User, Total Sales, Transaction Count).
-3. Report: Financial Summary (Gross Sales, Cost of Goods, Gross Profit).
+2. Report: **Financial Summary** (Gross Sales, Tax, COGS, Gross Profit, Payment Method breakdown).
+3. Report: **Inventory Valuation** (Current stock at Cost vs Retail).
+4. Report: **Audit Logs** (Voided transactions and Returns).
+5. Report: **Product Performance** (Advanced Metrics):
+   - Velocity: Units Sold, Sell-Through Rate (STR), Inventory Turnover.
+   - Profitability: Gross Margin (%), GMROI.
+   - Risk: Return Rate, Shrinkage %.
+   - Strategic: Basket Penetration, Product Affinity.
+   - Slow Moving: Items with zero sales in the selected period.
+6. Report: Sales by User (Table: User, Total Sales, Transaction Count).
 
 ## Prompt Set 8: Shift Management
 

@@ -1,4 +1,4 @@
-import { getUserProfile } from "../auth.js";
+import { getUserProfile, updateLocalProfile } from "../auth.js";
 
 const API_URL = 'api/router.php';
 
@@ -16,22 +16,33 @@ export function loadProfileView() {
                 <div class="p-6">
                     <div class="mb-6 border-b pb-6">
                         <h3 class="text-lg font-medium text-gray-900 mb-4">Account Information</h3>
-                        <div class="grid grid-cols-1 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-500">Display Name</label>
-                                <div class="mt-1 text-gray-900 font-semibold">${profile?.name || 'N/A'}</div>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-500">Email Address</label>
-                                <div class="mt-1 text-gray-900 font-semibold">${profile?.email || 'N/A'}</div>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-500">Role / Permissions</label>
+                        <form id="form-update-profile">
+                            <div class="grid grid-cols-1 gap-4 mb-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-500">Email Address (Username)</label>
+                                    <div class="mt-1 text-gray-900 font-semibold">${profile?.email || 'N/A'}</div>
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 text-sm font-bold mb-2">Display Name</label>
+                                    <input type="text" id="profile-name" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500" value="${profile?.name || ''}" required>
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 text-sm font-bold mb-2">Contact Number</label>
+                                    <input type="text" id="profile-phone" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500" value="${profile?.phone || ''}">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-500">Role / Permissions</label>
                                 <div class="mt-1 text-sm text-gray-600">
                                     ${Object.keys(profile?.permissions || {}).length} Modules Enabled
                                 </div>
                             </div>
-                        </div>
+                            <div id="profile-update-message" class="hidden mb-4 p-3 rounded text-sm"></div>
+                            <div class="flex justify-end">
+                                <button type="submit" id="btn-save-profile" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                                    Update Details
+                                </button>
+                            </div>
+                        </form>
                     </div>
 
                     <div>
@@ -68,7 +79,50 @@ export function loadProfileView() {
         </div>
     `;
 
+    document.getElementById("form-update-profile").addEventListener("submit", handleUpdateProfile);
     document.getElementById("form-change-password").addEventListener("submit", handleChangePassword);
+}
+
+async function handleUpdateProfile(e) {
+    e.preventDefault();
+    const name = document.getElementById("profile-name").value.trim();
+    const phone = document.getElementById("profile-phone").value.trim();
+    const btn = document.getElementById("btn-save-profile");
+    const msgDiv = document.getElementById("profile-update-message");
+
+    try {
+        btn.disabled = true;
+        btn.textContent = "Updating...";
+
+        const profile = getUserProfile();
+        if (!profile || !profile.email) throw new Error("User session invalid.");
+
+        const response = await fetch(`${API_URL}?file=users`);
+        let users = await response.json();
+        if (!Array.isArray(users)) users = [];
+
+        const userIndex = users.findIndex(u => u.email === profile.email);
+        if (userIndex === -1) throw new Error("User record not found.");
+
+        users[userIndex].name = name;
+        users[userIndex].phone = phone;
+
+        await fetch(`${API_URL}?file=users`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(users)
+        });
+
+        updateLocalProfile(users[userIndex]);
+        showProfileMessage(msgDiv, "Profile updated successfully!", false);
+
+    } catch (error) {
+        console.error("Error updating profile:", error);
+        showProfileMessage(msgDiv, error.message || "Failed to update profile.", true);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = "Update Details";
+    }
 }
 
 async function handleChangePassword(e) {
@@ -80,16 +134,13 @@ async function handleChangePassword(e) {
     const msgDiv = document.getElementById("password-message");
     const btn = document.getElementById("btn-save-password");
 
-    msgDiv.classList.add("hidden");
-    msgDiv.className = "hidden mb-4 p-3 rounded text-sm"; // reset classes
-
     if (newPass !== confirmPass) {
-        showMessage("New passwords do not match.", true);
+        showProfileMessage(msgDiv, "New passwords do not match.", true);
         return;
     }
 
     if (newPass.length < 6) {
-        showMessage("Password must be at least 6 characters.", true);
+        showProfileMessage(msgDiv, "Password must be at least 6 characters.", true);
         return;
     }
 
@@ -125,25 +176,25 @@ async function handleChangePassword(e) {
             body: JSON.stringify(users)
         });
 
-        showMessage("Password updated successfully!", false);
+        showProfileMessage(msgDiv, "Password updated successfully!", false);
         document.getElementById("form-change-password").reset();
 
     } catch (error) {
         console.error("Error updating password:", error);
-        showMessage(error.message || "Failed to update password.", true);
+        showProfileMessage(msgDiv, error.message || "Failed to update password.", true);
     } finally {
         btn.disabled = false;
         btn.textContent = "Update Password";
     }
 }
 
-function showMessage(msg, isError) {
-    const msgDiv = document.getElementById("password-message");
+function showProfileMessage(msgDiv, msg, isError) {
     msgDiv.textContent = msg;
-    msgDiv.classList.remove("hidden");
+    msgDiv.classList.remove("hidden", "bg-red-100", "text-red-700", "bg-green-100", "text-green-700", "border", "border-red-200", "border-green-200");
     if (isError) {
         msgDiv.classList.add("bg-red-100", "text-red-700", "border", "border-red-200");
     } else {
         msgDiv.classList.add("bg-green-100", "text-green-700", "border", "border-green-200");
     }
+    msgDiv.classList.remove("hidden");
 }

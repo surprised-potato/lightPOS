@@ -9,7 +9,19 @@
                 "read": true,
                 "write": true
             },
+            "customers": {
+                "read": true,
+                "write": true
+            },
+            "shifts": {
+                "read": true,
+                "write": true
+            },
             "items": {
+                "read": true,
+                "write": true
+            },
+            "suppliers": {
                 "read": true,
                 "write": true
             },
@@ -21,11 +33,11 @@
                 "read": true,
                 "write": true
             },
-            "reports": {
+            "expenses": {
                 "read": true,
                 "write": true
             },
-            "expenses": {
+            "reports": {
                 "read": true,
                 "write": true
             },
@@ -33,11 +45,20 @@
                 "read": true,
                 "write": true
             },
-            "shifts": {
+            "migrate": {
+                "read": true,
+                "write": true
+            },
+            "returns": {
+                "read": true,
+                "write": true
+            },
+            "settings": {
                 "read": true,
                 "write": true
             }
-        }
+        },
+        "phone": ""
     },
     {
         "email": "JohnRoss@LP.com",
@@ -49,6 +70,14 @@
                 "read": true,
                 "write": true
             },
+            "customers": {
+                "read": true,
+                "write": true
+            },
+            "suppliers": {
+                "read": true,
+                "write": true
+            },
             "items": {
                 "read": true,
                 "write": true
@@ -74,6 +103,71 @@
                 "write": true
             },
             "shifts": {
+                "read": true,
+                "write": true
+            },
+            "migrate": {
+                "read": true,
+                "write": true
+            },
+            "returns": {
+                "read": true,
+                "write": true
+            }
+        }
+    },
+    {
+        "email": "cashier@lp.com",
+        "name": "default cashier",
+        "phone": "",
+        "password": "5f4dcc3b5aa765d61d8327deb882cf99",
+        "is_active": true,
+        "permissions": {
+            "pos": {
+                "read": true,
+                "write": true
+            },
+            "customers": {
+                "read": true,
+                "write": true
+            },
+            "shifts": {
+                "read": true,
+                "write": true
+            },
+            "items": {
+                "read": false,
+                "write": false
+            },
+            "suppliers": {
+                "read": false,
+                "write": false
+            },
+            "stockin": {
+                "read": false,
+                "write": false
+            },
+            "stock-count": {
+                "read": false,
+                "write": false
+            },
+            "expenses": {
+                "read": false,
+                "write": false
+            },
+            "reports": {
+                "read": false,
+                "write": false
+            },
+            "users": {
+                "read": false,
+                "write": false
+            },
+            "migrate": {
+                "read": false,
+                "write": false
+            },
+            "returns": {
                 "read": true,
                 "write": true
             }
