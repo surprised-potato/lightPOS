@@ -4822,7 +4822,7 @@
         "base_unit": "Unit",
         "barcode": "6973739330059",
         "name": "Hello Baby Pants L12",
-        "stock_level": 0,
+        "stock_level": 10,
         "min_stock": 2,
         "timestamp": {
             "seconds": 1767410318,
@@ -4830,7 +4830,8 @@
         },
         "cost_price": 86.1,
         "category": "DIAPERS",
-        "selling_price": 103
+        "selling_price": 103,
+        "updatedAt": "2026-01-03T13:56:31.137Z"
     },
     {
         "id": "1pzrGmSGtZ0HnTzWmV77",
@@ -5727,10 +5728,11 @@
             "seconds": 1767410320,
             "nanoseconds": 82000000
         },
-        "stock_level": 0,
+        "stock_level": 5,
         "name": "Pilit 1KL",
         "base_unit": "Unit",
-        "category": "RICE"
+        "category": "RICE",
+        "updatedAt": "2026-01-03T13:23:39.887Z"
     },
     {
         "id": "2BCE1OLeTqTxqJxzpP7U",
@@ -31497,10 +31499,11 @@
         "name": "`Extra Rolled Cotton 25g",
         "category": "TBA",
         "selling_price": 16,
-        "stock_level": 0,
+        "stock_level": 13,
         "barcode": "4806506150364",
         "min_stock": 2,
-        "base_unit": "Unit"
+        "base_unit": "Unit",
+        "updatedAt": "2026-01-03T13:56:06.058Z"
     },
     {
         "id": "CkbSDJqRzOvwG3944gqM",
@@ -37680,7 +37683,8 @@
         "selling_price": 69,
         "base_unit": "Unit",
         "barcode": "NULL",
-        "stock_level": 0
+        "stock_level": 15,
+        "updatedAt": "2026-01-03T13:24:16.363Z"
     },
     {
         "id": "FHZD2wuMhJDXwaZ0cYIx",
@@ -39461,11 +39465,12 @@
             "nanoseconds": 606000000
         },
         "cost_price": 85,
-        "stock_level": 0,
+        "stock_level": 2,
         "selling_price": 125,
         "min_stock": 1,
         "category": "tools",
-        "base_unit": "Unit"
+        "base_unit": "Unit",
+        "updatedAt": "2026-01-03T13:24:46.736Z"
     },
     {
         "id": "GAA1PZSDJkXyENQ2ycWC",
@@ -43206,7 +43211,7 @@
         "id": "HcIxjEMRervTaE55rCNP",
         "base_unit": "Unit",
         "selling_price": 15,
-        "stock_level": 0,
+        "stock_level": 10,
         "min_stock": 1,
         "cost_price": 10,
         "name": "Banana Chip",
@@ -43215,7 +43220,8 @@
         "timestamp": {
             "seconds": 1767410329,
             "nanoseconds": 606000000
-        }
+        },
+        "updatedAt": "2026-01-03T13:21:11.117Z"
     },
     {
         "id": "HcQAdfOWYMXx5Eov7fo8",
@@ -59777,7 +59783,7 @@
     },
     {
         "id": "OCvrxg348eQeRNOvyfud",
-        "stock_level": 0,
+        "stock_level": 11,
         "cost_price": 12.81,
         "base_unit": "Unit",
         "barcode": "748485201818",
@@ -59788,7 +59794,8 @@
         },
         "min_stock": 2,
         "selling_price": 15,
-        "name": "555 Corned Sardines 100g"
+        "name": "555 Corned Sardines 100g",
+        "updatedAt": "2026-01-03T13:24:31.735Z"
     },
     {
         "id": "ODUQDhm2r8kSo6lNhYbu",
@@ -72531,12 +72538,13 @@
         "min_stock": 2,
         "name": "Texas Colored Medium",
         "category": "PLASTIC PRODUCTS",
-        "stock_level": 0,
+        "stock_level": 1,
         "selling_price": 59,
         "timestamp": {
             "seconds": 1767410300,
             "nanoseconds": 568000000
-        }
+        },
+        "updatedAt": "2026-01-03T13:43:40.641Z"
     },
     {
         "id": "TOARNRrHP1G9tnqjiIwk",
@@ -75638,10 +75646,11 @@
             "nanoseconds": 760000000
         },
         "base_unit": "Unit",
-        "stock_level": 0,
+        "stock_level": -5,
         "cost_price": 40,
         "min_stock": 2,
-        "selling_price": 46
+        "selling_price": 46,
+        "updatedAt": "2026-01-03T13:23:15.979Z"
     },
     {
         "id": "UnUKESvMx1BUHFC9Nst4",
@@ -77250,7 +77259,7 @@
     },
     {
         "id": "VNdmzq6Vwu3LnZbeorhX",
-        "stock_level": 0,
+        "stock_level": 13,
         "name": "Bench Daily Spell Clean Fun 70ml",
         "selling_price": 62,
         "cost_price": 50.45,
@@ -77261,7 +77270,8 @@
         },
         "min_stock": 2,
         "category": "TBA",
-        "base_unit": "Unit"
+        "base_unit": "Unit",
+        "updatedAt": "2026-01-03T13:25:00.364Z"
     },
     {
         "id": "VNqQlFKnnp7JNIf1iG4k",
@@ -80526,12 +80536,13 @@
         },
         "category": "DRINK",
         "name": "gold strike predator energy 245ml",
-        "stock_level": 0,
+        "stock_level": 15,
         "cost_price": 16,
         "min_stock": 1,
         "base_unit": "Unit",
         "barcode": "4897036694404",
-        "selling_price": 16
+        "selling_price": 16,
+        "updatedAt": "2026-01-03T13:21:48.532Z"
     },
     {
         "id": "Wg2fscsMDQqo0vdoNHc9",
@@ -82835,13 +82846,14 @@
             "seconds": 1767410329,
             "nanoseconds": 606000000
         },
-        "stock_level": 0,
+        "stock_level": 10,
         "category": "made in china",
         "base_unit": "Unit",
         "barcode": "23021815731441",
         "min_stock": 1,
         "cost_price": 1,
-        "selling_price": 45
+        "selling_price": 45,
+        "updatedAt": "2026-01-03T13:21:35.501Z"
     },
     {
         "id": "XaiYUeCZpO59Ra0PWFhD",
@@ -119156,7 +119168,8 @@
             "seconds": 1767410305,
             "nanoseconds": 594000000
         },
-        "stock_level": 0
+        "stock_level": 10,
+        "updatedAt": "2026-01-03T13:20:57.007Z"
     },
     {
         "id": "nJv2wlqbawMFisWtwOw7",
@@ -130140,7 +130153,7 @@
     },
     {
         "id": "rslAJdewKpDmQamv5zJj",
-        "stock_level": 0,
+        "stock_level": 150,
         "timestamp": {
             "seconds": 1767410320,
             "nanoseconds": 82000000
@@ -130151,7 +130164,8 @@
         "selling_price": 93,
         "cost_price": 82,
         "name": "Muscovado 1 KL",
-        "base_unit": "Unit"
+        "base_unit": "Unit",
+        "updatedAt": "2026-01-03T13:23:55.189Z"
     },
     {
         "id": "rv1HefoGR6234gPPEyKV",
@@ -130548,7 +130562,7 @@
         "selling_price": 9,
         "min_stock": 2,
         "barcode": "4806533700075",
-        "stock_level": 0,
+        "stock_level": 4,
         "category": "TBA",
         "timestamp": {
             "seconds": 1767410315,
@@ -130556,7 +130570,8 @@
         },
         "base_unit": "Unit",
         "cost_price": 5,
-        "name": "Gourmet - Cheese - 30g"
+        "name": "Gourmet - Cheese - 30g",
+        "updatedAt": "2026-01-03T13:26:48.732Z"
     },
     {
         "id": "s4C2KHS1C5vQrPMqli54",
