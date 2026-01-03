@@ -118,11 +118,14 @@ function parseCSV(text) {
     // Detect delimiter: comma or tab
     const delimiter = firstLine.includes('\t') ? '\t' : ',';
     
-    const headers = lines[0].split(delimiter).map(h => h.trim().toLowerCase());
+    // Helper to strip quotes and trim
+    const clean = (val) => val ? val.trim().replace(/^"|"$/g, '') : "";
+
+    const headers = lines[0].split(delimiter).map(h => clean(h).toLowerCase());
     const items = [];
 
     for (let i = 1; i < lines.length; i++) {
-        const values = lines[i].split(delimiter).map(v => v.trim());
+        const values = lines[i].split(delimiter).map(v => clean(v));
         const row = {};
         headers.forEach((header, index) => {
             row[header] = values[index];
@@ -130,7 +133,7 @@ function parseCSV(text) {
 
         // Map CSV fields to internal schema based on the requested layout
         items.push({
-            barcode: row.item_id || "",
+            barcode: row.barcode || "",
             name: row.name || "",
             category: row.category || "",
             cost_price: parseFloat(row.cost_price) || 0,
@@ -196,7 +199,12 @@ function downloadSample(type) {
         mimeType = "application/json";
     } else {
         // Use the layout provided by the user
-        content = "item_id,name,category,cost_price,unit_price,reorder_level\n57521,Rubber Band,SCHOOL SUPPLIES,0.45,0.5,0\n122278,Nivea Cool Kick 25ml,DEODORANT,54,59,2\n122279,Nivea Silver P 25ml,DEODORANT,67,73,2\n122280,Nivea Invisible 25ml,DEODORANT,62,68,2";
+        content = '"barcode","name","category","cost_price","unit_price","reorder_level"\n' +
+                  '"123465","Rubber Band","SCHOOL SUPPLIES","0.45","0.50","0.000"\n' +
+                  '"42184676","Nivea Cool Kick 25ml","DEODORANT","54.00","59.00","2.000"\n' +
+                  '"42187608","Nivea Silver P 25ml","DEODORANT","67.00","73.00","2.000"\n' +
+                  '"42316688","Nivea Invisible 25ml","DEODORANT","62.00","68.00","2.000"\n' +
+                  '"45687485","Royal Rice 1Kl","rice","35.00","43.00","2.000"';
         filename = "surprised-potato-items-sample.csv";
         mimeType = "text/csv";
     }
