@@ -278,34 +278,20 @@ async function addToCart(item, qty = 1) {
     // Hide last transaction summary when starting a new sale
     document.getElementById("last-transaction").classList.add("hidden");
 
-    // 1. Check Stock & Auto-Breakdown Logic
-    if (item.stock_level < qty) {
-        if (item.parent_id) {
-            // Find parent in local data
-            const parent = allItems.find(p => p.id === item.parent_id);
+    // Auto-Breakdown Logic: Still useful to keep inventory accurate where possible
+    if (item.stock_level < qty && item.parent_id) {
+        const parent = allItems.find(p => p.id === item.parent_id);
+        if (parent && parent.stock_level > 0) {
+            const factor = item.conv_factor || 1;
+            parent.stock_level -= 1;
+            item.stock_level += factor;
+
+            // Persist to Dexie immediately so state is saved
+            await db.items.bulkPut([parent, item]);
+            showToast(`Auto-converted 1 ${parent.name} to ${factor} ${item.name}`);
             
-            if (parent && parent.stock_level > 0) {
-                // Perform Breakdown
-                const factor = item.conv_factor || 1;
-                
-                parent.stock_level -= 1;
-                item.stock_level += factor;
-
-                // Persist to Dexie immediately so state is saved
-                await db.items.bulkPut([parent, item]);
-
-                showToast(`Auto-converted 1 ${parent.name} to ${factor} ${item.name}`);
-                
-                // Refresh Grid to show new stock levels
-                const searchInput = document.getElementById("pos-search");
-                filterItems(searchInput.value);
-            } else {
-                showToast("Insufficient stock (Parent item also empty).", true);
-                return;
-            }
-        } else {
-            showToast("Insufficient stock.", true);
-            return;
+            // Refresh Grid to show new stock levels
+            filterItems(document.getElementById("pos-search").value);
         }
     }
 

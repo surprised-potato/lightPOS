@@ -1,4 +1,6 @@
 import { db } from './db.js';
+import { db as firestore } from './firebase-config.js';
+import { collection, onSnapshot, query, where, Timestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 export async function syncProductCatalog(fetchChangesFromCloud) {
     try {
@@ -29,6 +31,27 @@ export async function syncProductCatalog(fetchChangesFromCloud) {
         console.error('Sync failed:', error);
         throw error;
     }
+}
+
+/**
+ * Listens for real-time updates to items to keep local cache fresh
+ * and prevent UI lag between devices.
+ */
+export function startLiveStockSync() {
+    const q = query(collection(firestore, "items"));
+    
+    return onSnapshot(q, (snapshot) => {
+        snapshot.docChanges().forEach(async (change) => {
+            if (change.type === "modified" || change.type === "added") {
+                const item = { id: change.doc.id, ...change.doc.data() };
+                await db.items.put(item);
+                console.log(`Live sync: Updated ${item.name} stock to ${item.stock_level}`);
+            }
+            if (change.type === "removed") {
+                await db.items.delete(change.doc.id);
+            }
+        });
+    });
 }
 
 /**
