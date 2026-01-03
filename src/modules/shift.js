@@ -123,6 +123,7 @@ export async function loadShiftsView() {
                             <th class="py-3 px-6 text-right">Expected</th>
                             <th class="py-3 px-6 text-right">Diff</th>
                             <th class="py-3 px-6 text-center">Status</th>
+                            <th class="py-3 px-6 text-center">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="shifts-table-body" class="text-gray-600 text-sm font-light">
@@ -159,6 +160,7 @@ async function fetchShifts() {
             return;
         }
 
+        const canAdjust = checkPermission("shifts", "write");
         snapshot.forEach(doc => {
             const data = doc.data();
             const start = data.start_time ? data.start_time.toDate().toLocaleString() : "-";
@@ -178,8 +180,16 @@ async function fetchShifts() {
                 <td class="py-3 px-6 text-center">
                     <span class="${data.status === 'open' ? 'bg-green-200 text-green-700' : 'bg-gray-200 text-gray-700'} py-1 px-3 rounded-full text-xs uppercase">${data.status}</span>
                 </td>
+                <td class="py-3 px-6 text-center">
+                    ${canAdjust ? `<button class="btn-adjust-shift text-blue-600 hover:text-blue-900 font-medium">Adjust</button>` : '-'}
+                </td>
             `;
             tbody.appendChild(row);
+            if (canAdjust) {
+                row.querySelector(".btn-adjust-shift").addEventListener("click", () => {
+                    showAdjustCashModal(doc.id, () => fetchShifts());
+                });
+            }
         });
 
     } catch (error) {
@@ -315,6 +325,7 @@ export function showCloseShiftModal(onSuccess) {
 }
 
 export function showAdjustCashModal(onSuccess) {
+export function showAdjustCashModal(shiftId, onSuccess) {
     let modal = document.getElementById("modal-adjust-cash");
     
     if (!modal) {
@@ -353,6 +364,7 @@ export function showAdjustCashModal(onSuccess) {
             const reason = document.getElementById("adjust-reason").value;
             try {
                 await adjustCash(amount, reason);
+                await adjustCash(shiftId, amount, reason);
                 modal.remove();
                 if (onSuccess) onSuccess();
             } catch (error) {
@@ -367,6 +379,7 @@ export function showAdjustCashModal(onSuccess) {
 
 async function adjustCash(amount, reason) {
     if (!currentShift) return;
+async function adjustCash(shiftId, amount, reason) {
     if (!checkPermission("shifts", "write")) {
         alert("You do not have permission to adjust shift cash.");
         return;
@@ -380,9 +393,14 @@ async function adjustCash(amount, reason) {
     };
     
     await updateDoc(doc(db, "shifts", currentShift.id), {
+    await updateDoc(doc(db, "shifts", shiftId), {
         adjustments: arrayUnion(adjustment)
     });
     
     if (!currentShift.adjustments) currentShift.adjustments = [];
     currentShift.adjustments.push(adjustment);
+    if (currentShift && currentShift.id === shiftId) {
+        if (!currentShift.adjustments) currentShift.adjustments = [];
+        currentShift.adjustments.push(adjustment);
+    }
 }
