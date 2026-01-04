@@ -8,6 +8,7 @@ const API_URL = 'api/router.php';
 
 let reportData = {};
 let valuationChartInstance = null;
+let velocityTrendChartInstance = null;
 let sortState = {}; // { tableId: { key, dir } }
 let filterState = {}; // { tableId: term }
 
@@ -367,6 +368,7 @@ export async function loadReportsView() {
                     <div class="flex gap-4 mb-6 border-b border-gray-100">
                         <button data-subtab="ins-customers" class="subtab-btn border-blue-500 text-blue-600 py-2 px-4 border-b-2 text-xs font-bold transition-colors">Customer Insights</button>
                         <button data-subtab="ins-suppliers" class="subtab-btn border-transparent text-gray-500 hover:text-gray-700 py-2 px-4 border-b-2 text-xs font-bold transition-colors">Supplier Insights</button>
+                        <button data-subtab="ins-velocity-trend" class="subtab-btn border-transparent text-gray-500 hover:text-gray-700 py-2 px-4 border-b-2 text-xs font-bold transition-colors">Sales Velocity Trend</button>
                     </div>
 
                     <div id="subpanel-ins-customers" class="sub-panel">
@@ -484,6 +486,16 @@ export async function loadReportsView() {
                         </div>
                     </div>
                     </div>
+
+                    <div id="subpanel-ins-velocity-trend" class="sub-panel hidden">
+                        <div class="bg-white shadow-md rounded p-6">
+                            <h3 class="font-bold text-gray-800 mb-4">Average Hourly Sales Velocity</h3>
+                            <p class="text-xs text-gray-500 mb-6">This chart shows the average revenue generated per hour across the selected date range.</p>
+                            <div class="h-80">
+                                <canvas id="velocity-trend-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Products Panel -->
@@ -493,6 +505,7 @@ export async function loadReportsView() {
                         <button data-subtab="prod-risk" class="subtab-btn border-transparent text-gray-500 hover:text-gray-700 py-2 px-4 border-b-2 text-xs font-bold transition-colors">Risk Metrics</button>
                         <button data-subtab="prod-affinity" class="subtab-btn border-transparent text-gray-500 hover:text-gray-700 py-2 px-4 border-b-2 text-xs font-bold transition-colors">Product Affinity</button>
                         <button data-subtab="prod-lowstock" class="subtab-btn border-transparent text-gray-500 hover:text-gray-700 py-2 px-4 border-b-2 text-xs font-bold transition-colors">Low Stock</button>
+                        <button data-subtab="prod-velocity" class="subtab-btn border-transparent text-gray-500 hover:text-gray-700 py-2 px-4 border-b-2 text-xs font-bold transition-colors">Sales Velocity</button>
                     </div>
 
                     <div id="subpanel-prod-perf" class="sub-panel">
@@ -631,6 +644,34 @@ export async function loadReportsView() {
                                     </thead>
                                     <tbody id="report-low-stock-body" class="text-gray-600 text-sm font-light">
                                         <tr><td colspan="5" class="py-3 px-6 text-center">Generate report to view data.</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="subpanel-prod-velocity" class="sub-panel hidden">
+                        <div class="bg-white shadow-md rounded overflow-hidden">
+                            <div class="px-6 py-4 border-b bg-gray-50 flex justify-between items-center">
+                                <h3 class="font-bold text-gray-800">Average Sales Velocity (Units/Day)</h3>
+                                <button class="btn-toggle-filter text-blue-500 hover:text-blue-700" data-target="velocity">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
+                                </button>
+                            </div>
+                            <div id="filter-velocity" class="hidden px-6 py-2 bg-gray-100 border-b"><input type="text" placeholder="Filter items..." class="filter-input w-full p-1 border rounded text-sm" data-table="velocity"></div>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full table-auto">
+                                    <thead>
+                                        <tr class="bg-gray-100 text-gray-600 uppercase text-xs leading-normal">
+                                            <th class="py-3 px-6 text-left cursor-pointer hover:bg-gray-200" data-sort="name" data-table="velocity">Product</th>
+                                            <th class="py-3 px-6 text-right cursor-pointer hover:bg-gray-200" data-sort="totalSold" data-table="velocity">Total Sold</th>
+                                            <th class="py-3 px-6 text-right cursor-pointer hover:bg-gray-200" data-sort="velocity" data-table="velocity">Avg Velocity</th>
+                                            <th class="py-3 px-6 text-right cursor-pointer hover:bg-gray-200" data-sort="stock_level" data-table="velocity">Current Stock</th>
+                                            <th class="py-3 px-6 text-right cursor-pointer hover:bg-gray-200" data-sort="daysLeft" data-table="velocity">Est. Days Left</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="report-velocity-body" class="text-gray-600 text-sm font-light">
+                                        <tr><td colspan="5" class="py-3 px-6 text-center">Select dates and click Generate.</td></tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -930,6 +971,7 @@ async function generateReport() {
     // Clone and set boundaries to ensure full day coverage
     const startDate = drp.startDate.clone().startOf('day').toDate();
     const endDate = drp.endDate.clone().endOf('day').toDate();
+    const daysInRange = Math.max(1, Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)));
 
     usersBody.innerHTML = `<tr><td colspan="3" class="py-3 px-6 text-center">Loading data from cloud...</td></tr>`;
 
@@ -1004,6 +1046,7 @@ async function generateReport() {
         const itemTxCounts = {};
         const paymentStats = {};
         const voidedTxs = [];
+        const hourlySales = new Array(24).fill(0);
         const totalTxCount = transactions.filter(t => !t.is_voided).length;
 
         transactions.forEach(data => {
@@ -1019,6 +1062,9 @@ async function generateReport() {
             const taxRate = (settings.tax?.rate || 0) / 100;
             const calculatedTax = data.total_amount - (data.total_amount / (1 + taxRate));
             totalTax += calculatedTax;
+
+            const hour = new Date(data.timestamp).getHours();
+            hourlySales[hour] += data.total_amount || 0;
             
             if (data.items && Array.isArray(data.items)) {
                 // Affinity Logic
@@ -1117,6 +1163,21 @@ async function generateReport() {
             };
         });
 
+        reportData.velocity = reportData.products.map(p => {
+            const velocity = p.qty / daysInRange;
+            const itemMaster = allItems.find(i => i.id === p.id);
+            const currentStock = itemMaster ? itemMaster.stock_level : 0;
+            return {
+                name: p.name,
+                totalSold: p.qty,
+                velocity: velocity,
+                stock_level: currentStock,
+                daysLeft: velocity > 0 ? (currentStock / velocity) : Infinity
+            };
+        });
+
+        reportData.hourlyTrend = hourlySales.map(val => val / daysInRange);
+
         const shrinkageStats = { Theft: 0, 'Admin Error': 0, 'Vendor Fraud': 0, Other: 0 };
         filteredAdjustments.forEach(a => {
             if (a.difference < 0) shrinkageStats[a.reason || 'Other'] += Math.abs(a.difference);
@@ -1209,6 +1270,8 @@ async function generateReport() {
         renderShrinkageAnalysis(reportData.shrinkage, reportData.products);
         renderRiskMetrics(reportData.products);
         renderLowStockReport(reportData.lowStock);
+        renderSalesVelocity(reportData.velocity);
+        renderVelocityTrendChart(reportData.hourlyTrend);
 
         // If no transactions were found, update the users table message
         if (transactions.length === 0) {
@@ -1487,6 +1550,7 @@ function renderTable(tableId) {
         case 'movements': renderStockMovement(reportData.movements); break;
         case 'payments': renderPaymentStats(reportData.payments); break;
         case 'audit': renderAuditLog(reportData.audit); break;
+        case 'velocity': renderSalesVelocity(reportData.velocity); break;
         case 'invLedger': renderInventoryLedger(reportData.ledgerSnapshot); break;
         case 'lowStock': renderLowStockReport(reportData.lowStock); break;
         case 'quadrantDetails': renderQuadrantDetails(); break;
@@ -1526,6 +1590,98 @@ function renderUserStats(data) {
             <td class="py-3 px-6 text-left font-medium">${d.user}</td>
             <td class="py-3 px-6 text-center">${d.count}</td>
             <td class="py-3 px-6 text-right font-bold">₱${d.total.toFixed(2)}</td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function renderVelocityTrendChart(data) {
+    const canvas = document.getElementById('velocity-trend-chart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    
+    if (velocityTrendChartInstance) {
+        velocityTrendChartInstance.destroy();
+    }
+
+    velocityTrendChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: Array.from({length: 24}, (_, i) => `${i}:00`),
+            datasets: [{
+                label: 'Avg Hourly Revenue',
+                data: data,
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                fill: true,
+                tension: 0.4,
+                borderWidth: 3,
+                pointRadius: 4,
+                pointBackgroundColor: '#3b82f6',
+                pointBorderColor: '#fff',
+                pointHoverRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: value => '₱' + value.toLocaleString(),
+                        font: { size: 10 }
+                    },
+                    grid: { color: '#f3f4f6' }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { font: { size: 10 } }
+                }
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: '#1f2937',
+                    padding: 12,
+                    titleFont: { size: 12 },
+                    bodyFont: { size: 12 },
+                    callbacks: {
+                        label: (context) => ` Avg Revenue: ₱${context.raw.toFixed(2)}`
+                    }
+                }
+            }
+        }
+    });
+}
+
+function renderSalesVelocity(data) {
+    const tbody = document.getElementById("report-velocity-body");
+    if (!tbody) return;
+    tbody.innerHTML = "";
+    const processed = applySortAndFilter(data, 'velocity');
+
+    if (processed.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="py-3 px-6 text-center">No sales data found for this period.</td></tr>`;
+        return;
+    }
+
+    processed.forEach(item => {
+        const row = document.createElement("tr");
+        row.className = "border-b border-gray-200 hover:bg-gray-100";
+        const daysLeft = item.daysLeft === Infinity ? '∞' : item.daysLeft.toFixed(1);
+        const daysLeftClass = item.daysLeft < 7 ? 'text-red-600 font-bold' : (item.daysLeft < 14 ? 'text-orange-600' : 'text-gray-600');
+
+        row.innerHTML = `
+            <td class="py-3 px-6 text-left font-medium">${item.name}</td>
+            <td class="py-3 px-6 text-right">${item.totalSold}</td>
+            <td class="py-3 px-6 text-right font-bold text-blue-600">${item.velocity.toFixed(2)}</td>
+            <td class="py-3 px-6 text-right">${item.stock_level}</td>
+            <td class="py-3 px-6 text-right ${daysLeftClass}">${daysLeft}</td>
         `;
         tbody.appendChild(row);
     });

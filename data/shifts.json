@@ -31,5 +31,16 @@
         "expected_cash": 3059,
         "status": "closed",
         "adjustments": []
+    },
+    {
+        "id": "cc40b601-8ba3-4261-b739-e354b7cb5cc3",
+        "user_id": "admin@lightpos.com",
+        "start_time": "2026-01-04T11:25:35.856Z",
+        "end_time": null,
+        "opening_cash": 100,
+        "closing_cash": 0,
+        "expected_cash": 100,
+        "status": "open",
+        "adjustments": []
     }
 ]
