@@ -1,28 +1,45 @@
 # LightPOS
 
-A lightweight, self-hosted Point of Sale (POS) & Inventory system built with Vanilla JavaScript, Tailwind CSS, and PHP/JSON storage.
+A lightweight, offline-first Point of Sale system designed for speed and reliability.
 
 ## Features
-- **Offline-First:** Works without internet using Dexie.js (IndexedDB).
-- **Simple Sync:** Syncs data to server JSON files when online.
-- **Inventory Management:** Items, Suppliers, Stock In/Out, Stock Counts.
-- **POS:** Cart, Checkout, Auto-Breakdown of units.
-- **Reporting:** Dashboard, Sales Reports, Expense Tracking.
-- **Shift Management:** Cash control and shift tracking.
 
-## Setup
-1. Clone the repository.
-2. Ensure you have a web server (Apache/Nginx) with PHP enabled.
-3. Place the files in your web root.
-4. Ensure the `data/` directory is writable by the web server.
+- **POS Terminal**: Fast item search, customer selection, and checkout with keyboard shortcuts (F1-F4). Supports barcode scanning and receipt printing.
+- **Inventory Management**: Comprehensive tracking of stock levels, suppliers, and stock-in history. Includes a robust audit/stock count module.
+- **Shift Management**: Secure register sessions with opening/closing cash tracking and discrepancy alerts.
+- **Customer Loyalty**: Manage customer profiles and track loyalty points earned from purchases.
+- **Returns & Refunds**: Process returns with manager approval and track inventory disposition (restockable vs damaged).
+- **Advanced Reporting**: Real-time business overview, financial summaries, inventory valuation (historical OHLC charts), and product performance analysis.
+- **Expense Tracking**: Record and categorize business expenses.
+- **User Roles & Permissions**: Granular access control for Admin, Manager, and Cashier roles.
+- **Offline-First Architecture**: Built with IndexedDB (Dexie.js) to ensure the system works without an internet connection, syncing automatically when back online.
+- **Data Migration**: Bulk import items via CSV or JSON files.
 
-## Deployment
-1. Copy files to your server.
-2. Secure the `data/` directory so it cannot be accessed directly via browser (use `.htaccess`).
+## Installation
 
-## Testing Offline Mode
-1. Open the app and let it sync initial data.
-2. Disconnect your internet connection.
-3. Process a sale in the POS.
-4. Reconnect to the internet.
-5. Watch the console logs or Dashboard to verify the transaction synced.
+### Prerequisites
+
+- A web server with PHP support (e.g., XAMPP, LAMPP, or Nginx with PHP-FPM).
+- A modern web browser (Chrome, Firefox, Edge).
+
+### Setup Instructions
+
+1. **Clone the Repository**:
+   Copy the `lightPOS` folder to your web server's document root (e.g., `/opt/lampp/htdocs/` on Linux or `C:\xampp\htdocs\` on Windows).
+
+2. **Configure Permissions**:
+   Ensure the web server has write permissions to the `api/` directory, as it uses JSON files for data persistence.
+
+3. **Access the Application**:
+   Open your browser and navigate to `http://localhost/lightPOS`.
+
+4. **Default Credentials**:
+   - **Email**: `admin@lightpos.com`
+   - **Password**: `admin`
+
+## Tech Stack
+
+- **Frontend**: Vanilla JavaScript (ES6 Modules), Tailwind CSS, Chart.js.
+- **Database**: IndexedDB (via Dexie.js) for local storage.
+- **Backend**: PHP (API Router) with JSON file-based storage.
+- **Testing**: Playwright for E2E testing.
