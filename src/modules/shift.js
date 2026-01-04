@@ -2,6 +2,7 @@ import { db } from "../db.js";
 import { checkPermission, requestManagerApproval } from "../auth.js";
 import { addNotification } from "../services/notification-service.js";
 import { generateUUID } from "../utils.js";
+import { syncCollection } from "../services/sync-service.js";
 
 const API_URL = 'api/router.php';
 
@@ -58,24 +59,18 @@ export async function startShift(openingCash) {
         closing_cash: 0,
         expected_cash: parseFloat(openingCash),
         status: "open",
-        adjustments: []
+        adjustments: [],
+        sync_status: 0
     };
 
     try {
-        const response = await fetch(`${API_URL}?file=shifts`);
-        let shifts = await response.json();
-        if (!Array.isArray(shifts)) shifts = [];
-        
-        shifts.push(shiftData);
-
-        await fetch(`${API_URL}?file=shifts`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(shifts)
-        });
-
-        // Update local DB
+        // Save locally first to allow offline operation
         await db.shifts.add(shiftData);
+
+        if (navigator.onLine) {
+            const success = await syncCollection('shifts', shiftData.id, shiftData);
+            if (success) await db.shifts.update(shiftData.id, { sync_status: 1 });
+        }
 
         currentShift = shiftData;
         window.dispatchEvent(new CustomEvent('shift-updated'));
@@ -142,26 +137,22 @@ export async function closeShift(closingCash) {
     const expected = await calculateExpectedCash();
     const closing = parseFloat(closingCash);
     
-    const response = await fetch(`${API_URL}?file=shifts`);
-    let shifts = await response.json();
-    if (!Array.isArray(shifts)) shifts = [];
+    const updatedShift = {
+        ...currentShift,
+        end_time: new Date(),
+        closing_cash: closing,
+        expected_cash: expected,
+        status: "closed",
+        sync_status: 0
+    };
 
-    const index = shifts.findIndex(s => s.id === currentShift.id);
-    if (index !== -1) {
-        shifts[index].end_time = new Date();
-        shifts[index].closing_cash = closing;
-        shifts[index].expected_cash = expected;
-        shifts[index].status = "closed";
+    await db.shifts.put(updatedShift);
 
-        await fetch(`${API_URL}?file=shifts`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(shifts)
-        });
-
-        // Update local DB
-        await db.shifts.put(shifts[index]);
+    if (navigator.onLine) {
+        const success = await syncCollection('shifts', updatedShift.id, updatedShift);
+        if (success) await db.shifts.update(updatedShift.id, { sync_status: 1 });
     }
+
     window.dispatchEvent(new CustomEvent('shift-updated'));
 
     // Check for discrepancy notification threshold

@@ -1,5 +1,6 @@
 import { checkPermission } from "../auth.js";
 import { syncCollection } from "../services/sync-service.js";
+import { db } from "../db.js";
 
 const API_URL = 'api/router.php';
 const MODULES = ['pos', 'customers', 'shifts', 'items', 'suppliers', 'stockin', 'stock-count', 'expenses', 'reports', 'users', 'migrate', 'returns', 'settings'];
@@ -395,8 +396,14 @@ async function handleUserSubmit(e) {
     try {
         const success = await syncCollection('users', email, userData);
         
-        if (!success) {
-            throw new Error("Server sync failed");
+        if (success) {
+            alert("User saved and synced.");
+        } else {
+            await db.syncQueue.add({
+                action: 'sync_user',
+                data: { id: email, fileName: 'users', payload: userData }
+            });
+            alert("User saved locally. Will sync when online.");
         }
         
         closeUserModal();

@@ -272,7 +272,7 @@ export async function processQueue() {
 
     try {
         // 1. Get unsynced local data (including items and customers)
-        const [unsyncedTxs, unsyncedMovements, unsyncedStockins, unsyncedAdjustments, unsyncedItems, unsyncedCustomers, unsyncedSuppliers, unsyncedExpenses, syncQueueItems] = await Promise.all([
+        const [unsyncedTxs, unsyncedMovements, unsyncedStockins, unsyncedAdjustments, unsyncedItems, unsyncedCustomers, unsyncedSuppliers, unsyncedExpenses, unsyncedShifts, syncQueueItems] = await Promise.all([
             db.transactions.where("sync_status").equals(0).toArray(),
             db.stock_movements.where("sync_status").equals(0).toArray(),
             db.stockins.where("sync_status").equals(0).toArray(),
@@ -281,6 +281,7 @@ export async function processQueue() {
             db.customers.where("sync_status").equals(0).toArray(),
             db.suppliers.where("sync_status").equals(0).toArray(),
             db.expenses.where("sync_status").equals(0).toArray(),
+            db.shifts.where("sync_status").equals(0).toArray(),
             db.syncQueue.toArray()
         ]);
 
@@ -288,12 +289,13 @@ export async function processQueue() {
             unsyncedStockins.length === 0 && unsyncedAdjustments.length === 0 && 
             unsyncedItems.length === 0 && unsyncedCustomers.length === 0 &&
             unsyncedSuppliers.length === 0 && unsyncedExpenses.length === 0 &&
+            unsyncedShifts.length === 0 &&
             syncQueueItems.length === 0) return;
 
         console.log("Processing background sync for all entities...");
 
         // 2. Fetch Server State
-        const [itemsRes, txRes, movementsRes, stockinsRes, adjustmentsRes, customersRes, suppliersRes, expensesRes] = await Promise.all([
+        const [itemsRes, txRes, movementsRes, stockinsRes, adjustmentsRes, customersRes, suppliersRes, expensesRes, shiftsRes] = await Promise.all([
             fetch(`${API_URL}?file=items`),
             fetch(`${API_URL}?file=transactions`),
             fetch(`${API_URL}?file=stock_movements`),
@@ -301,7 +303,8 @@ export async function processQueue() {
             fetch(`${API_URL}?file=adjustments`),
             fetch(`${API_URL}?file=customers`),
             fetch(`${API_URL}?file=suppliers`),
-            fetch(`${API_URL}?file=expenses`)
+            fetch(`${API_URL}?file=expenses`),
+            fetch(`${API_URL}?file=shifts`)
         ]);
 
         let serverItems = await itemsRes.json();
@@ -327,6 +330,9 @@ export async function processQueue() {
 
         let serverExpenses = await expensesRes.json();
         if (!Array.isArray(serverExpenses)) serverExpenses = [];
+
+        let serverShifts = await shiftsRes.json();
+        if (!Array.isArray(serverShifts)) serverShifts = [];
 
         // 3. Process each unsynced transaction
         for (const tx of unsyncedTxs) {
@@ -420,6 +426,16 @@ export async function processQueue() {
             }
         }
 
+        // j. Process local unsynced shifts
+        for (const shift of unsyncedShifts) {
+            const idx = serverShifts.findIndex(s => s.id === shift.id);
+            if (idx !== -1) {
+                serverShifts[idx] = { ...shift, sync_status: 1 };
+            } else {
+                serverShifts.push({ ...shift, sync_status: 1 });
+            }
+        }
+
         // d. Process local unsynced stock-ins (History logs)
         for (const s of unsyncedStockins) {
             if (!serverStockins.some(ss => ss.id === s.id)) {
@@ -475,11 +491,16 @@ export async function processQueue() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(serverExpenses)
+            }),
+            fetch(`${API_URL}?file=shifts`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(serverShifts)
             })
         ]);
 
         // 5. Mark local records as synced
-        await db.transaction('rw', [db.transactions, db.stock_movements, db.stockins, db.adjustments, db.items, db.customers, db.suppliers, db.expenses], async () => {
+        await db.transaction('rw', [db.transactions, db.stock_movements, db.stockins, db.adjustments, db.items, db.customers, db.suppliers, db.expenses, db.shifts], async () => {
             for (const tx of unsyncedTxs) {
                 await db.transactions.update(tx.id, { sync_status: 1 });
             }
@@ -503,6 +524,9 @@ export async function processQueue() {
             }
             for (const e of unsyncedExpenses) {
                 await db.expenses.update(e.id, { sync_status: 1 });
+            }
+            for (const s of unsyncedShifts) {
+                await db.shifts.update(s.id, { sync_status: 1 });
             }
         });
 
@@ -534,6 +558,23 @@ export async function processQueue() {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify(item.data)
+                        });
+                        await db.syncQueue.delete(item.id);
+                        continue;
+                    }
+
+                    if (item.action === 'sync_user') {
+                        const res = await fetch(`${API_URL}?file=${item.data.fileName}`);
+                        let remoteData = await res.json();
+                        if (!Array.isArray(remoteData)) remoteData = [];
+                        const idx = remoteData.findIndex(u => u.email === item.data.id);
+                        if (idx !== -1) remoteData[idx] = item.data.payload;
+                        else remoteData.push(item.data.payload);
+                        
+                        await fetch(`${API_URL}?file=${item.data.fileName}`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(remoteData)
                         });
                         await db.syncQueue.delete(item.id);
                         continue;
