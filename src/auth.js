@@ -76,8 +76,15 @@ export async function verifyManagerPassword(password) {
     if (now < lockoutUntil) return false;
 
     try {
-        const response = await fetch(`${API_URL}?file=users`);
-        const users = await response.json();
+        let users;
+        if (navigator.onLine) {
+            const response = await fetch(`${API_URL}?file=users`);
+            users = await response.json();
+            if (db.isOpen()) await db.users.bulkPut(users);
+        } else {
+            users = await db.users.toArray();
+        }
+
         const hashed = md5(password);
         const isValid = users.some(u => 
             u.is_active && 

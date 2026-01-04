@@ -182,8 +182,14 @@ async function fetchAndRenderUsers(filter = "all") {
     const tbody = document.getElementById("users-table-body");
     const canWrite = checkPermission("users", "write");
     try {
-        const response = await fetch(`${API_URL}?file=users`);
-        const users = await response.json();
+        let users;
+        if (navigator.onLine) {
+            const response = await fetch(`${API_URL}?file=users`);
+            users = await response.json();
+            if (db.isOpen()) await db.users.bulkPut(users);
+        } else {
+            users = await db.users.toArray();
+        }
         
         tbody.innerHTML = "";
         

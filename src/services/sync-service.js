@@ -55,7 +55,7 @@ export function startRealtimeSync() {
     setInterval(syncTransactionsDown, SYNC_INTERVAL);
 
     // 1b. Additional Downlink entities
-    const extraEntities = ['shifts', 'expenses', 'adjustments', 'returns', 'suppliers', 'settings', 'stock_in_history', 'stock_movements', 'suspended_transactions'];
+    const extraEntities = ['shifts', 'expenses', 'adjustments', 'returns', 'suppliers', 'settings', 'stock_in_history', 'stock_movements', 'suspended_transactions', 'users'];
     extraEntities.forEach(entity => {
         let table = entity;
         if (entity === 'settings') table = 'sync_metadata';
@@ -249,7 +249,8 @@ export async function syncAll() {
             { file: 'adjustments', table: 'adjustments' },
             { file: 'returns', table: 'returns' },
             { file: 'suppliers', table: 'suppliers' },
-            { file: 'stock_movements', table: 'stock_movements' }
+            { file: 'stock_movements', table: 'stock_movements' },
+            { file: 'users', table: 'users' }
         ];
         
         for (const entity of entities) {
