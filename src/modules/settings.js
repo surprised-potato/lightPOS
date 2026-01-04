@@ -573,13 +573,23 @@ async function handleSave(e) {
     };
 
     try {
-        await fetch(`${API_URL}?file=settings`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(settings)
-        });
-        
-        alert("Settings saved successfully!");
+        // Save locally first
+        await db.sync_metadata.put({ key: 'settings', value: settings });
+
+        if (navigator.onLine) {
+            await fetch(`${API_URL}?file=settings`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(settings)
+            });
+            alert("Settings saved and synced!");
+        } else {
+            await db.syncQueue.add({
+                action: 'update_settings',
+                data: settings
+            });
+            alert("Settings saved locally. Will sync when online.");
+        }
         renderHeader(); // Refresh title bar
     } catch (error) {
         console.error("Error saving settings:", error);

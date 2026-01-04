@@ -158,6 +158,12 @@ async function deleteSupplier(id) {
         
         if (navigator.onLine) {
             await syncCollection('suppliers', id, null, true);
+        } else {
+            // Queue deletion
+            await db.syncQueue.add({
+                action: 'delete_item',
+                data: { id, fileName: 'suppliers' }
+            });
         }
         fetchSuppliers();
     } catch (error) {

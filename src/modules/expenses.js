@@ -187,7 +187,6 @@ async function fetchExpenses() {
                 const response = await fetch(`${API_URL}?file=expenses`);
                 const serverExpenses = await response.json();
                 if (Array.isArray(serverExpenses)) {
-                    await db.expenses.clear();
                     await db.expenses.bulkPut(serverExpenses);
                 }
             } catch (error) {
@@ -235,6 +234,12 @@ async function fetchExpenses() {
                     
                     if (navigator.onLine) {
                         await syncCollection('expenses', id, null, true);
+                    } else {
+                        // Queue deletion
+                        await db.syncQueue.add({
+                            action: 'delete_item',
+                            data: { id, fileName: 'expenses' }
+                        });
                     }
 
                     fetchExpenses();
