@@ -94,6 +94,29 @@ export async function loadSettingsView() {
                 <!-- Advanced Tab -->
                 <div id="settings-tab-advanced" class="settings-panel hidden space-y-6">
                     <div class="bg-white p-6 rounded-lg shadow-sm border">
+                        <h3 class="text-lg font-bold mb-4">Print Settings</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-2">Paper Width (mm)</label>
+                                <input type="number" id="set-print-width" step="1" min="40" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="76">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-2">Header Font Size (px)</label>
+                                <input type="number" id="set-print-header-size" step="1" min="8" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="14">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-2">Body Font Size (px)</label>
+                                <input type="number" id="set-print-body-size" step="1" min="8" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="12">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-2">Footer Font Size (px)</label>
+                                <input type="number" id="set-print-footer-size" step="1" min="8" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="10">
+                            </div>
+                        </div>
+                        <p class="text-[10px] text-gray-500 mt-2 italic">Adjust these if the receipt prints outside the paper boundaries or if text is too small for your printer (e.g. Epson TM-U220).</p>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-lg shadow-sm border">
                         <h3 class="text-lg font-bold mb-4">Shift Settings</h3>
                         <div class="max-w-xs">
                             <label class="block text-sm font-bold text-gray-700 mb-2">Discrepancy Alert Threshold (₱)</label>
@@ -322,6 +345,12 @@ async function loadSettings() {
             if (settings.pos) {
                 document.getElementById("set-auto-print").checked = settings.pos.auto_print || false;
             }
+            if (settings.print) {
+                document.getElementById("set-print-width").value = settings.print.paper_width || 76;
+                document.getElementById("set-print-header-size").value = settings.print.header_font_size || 14;
+                document.getElementById("set-print-body-size").value = settings.print.body_font_size || 12;
+                document.getElementById("set-print-footer-size").value = settings.print.footer_font_size || 10;
+            }
             await renderSyncHistory();
         }
     } catch (error) {
@@ -372,6 +401,12 @@ async function handleSave(e) {
         },
         pos: {
             auto_print: document.getElementById("set-auto-print").checked
+        },
+        print: {
+            paper_width: parseInt(document.getElementById("set-print-width").value) || 76,
+            header_font_size: parseInt(document.getElementById("set-print-header-size").value) || 14,
+            body_font_size: parseInt(document.getElementById("set-print-body-size").value) || 12,
+            footer_font_size: parseInt(document.getElementById("set-print-footer-size").value) || 10
         }
     };
 
@@ -402,7 +437,8 @@ export async function getSystemSettings() {
             tax: { rate: 12 },
             rewards: { ratio: 100 },
             shift: { threshold: 0 },
-            pos: { auto_print: false }
+            pos: { auto_print: false },
+            print: { paper_width: 76, header_font_size: 14, body_font_size: 12, footer_font_size: 10 }
         };
     } catch (e) {
         return {
@@ -410,7 +446,8 @@ export async function getSystemSettings() {
             tax: { rate: 12 },
             rewards: { ratio: 100 },
             shift: { threshold: 0 },
-            pos: { auto_print: false }
+            pos: { auto_print: false },
+            print: { paper_width: 76, header_font_size: 14, body_font_size: 12, footer_font_size: 10 }
         };
     }
 }

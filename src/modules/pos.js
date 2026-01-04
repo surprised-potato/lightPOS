@@ -1531,6 +1531,13 @@ async function printReceipt(tx, isReprint = false) {
     }
     const settings = await getSystemSettings();
     const store = settings.store || { name: "LightPOS", data: "" };
+    const printSet = settings.print || {
+        paper_width: 76,
+        header_font_size: 14,
+        body_font_size: 12,
+        footer_font_size: 10
+    };
+    const pWidth = printSet.paper_width || 76;
     
     const printWindow = window.open('', '_blank', 'width=300,height=600');
     const itemsHtml = tx.items.map(item => `
@@ -1538,7 +1545,7 @@ async function printReceipt(tx, isReprint = false) {
             <td colspan="2" style="padding-top: 5px;">${item.name}</td>
         </tr>
         <tr>
-            <td style="font-size: 10px;">${item.qty} x ${item.selling_price.toFixed(2)}</td>
+            <td style="font-size: ${printSet.footer_font_size}px;">${item.qty} x ${item.selling_price.toFixed(2)}</td>
             <td style="text-align: right;">${(item.qty * item.selling_price).toFixed(2)}</td>
         </tr>
     `).join('');
@@ -1550,9 +1557,9 @@ async function printReceipt(tx, isReprint = false) {
             <style>
                 @page { margin: 0; }
                 body { 
-                    width: 76mm; 
+                    width: ${pWidth}mm; 
                     font-family: 'Courier New', Courier, monospace; 
-                    font-size: 12px; 
+                    font-size: ${printSet.body_font_size}px; 
                     padding: 5mm;
                     margin: 0;
                     color: #000;
@@ -1561,8 +1568,8 @@ async function printReceipt(tx, isReprint = false) {
                 .text-right { text-align: right; }
                 .bold { font-weight: bold; }
                 .hr { border-bottom: 1px dashed #000; margin: 5px 0; }
-                table { width: 100%; border-collapse: collapse; }
-                .footer { margin-top: 20px; font-size: 10px; }
+                table { width: 100%; border-collapse: collapse; font-size: ${printSet.body_font_size}px; }
+                .footer { margin-top: 20px; font-size: ${printSet.footer_font_size}px; }
                 .watermark {
                     position: fixed;
                     top: 50%;
@@ -1581,11 +1588,11 @@ async function printReceipt(tx, isReprint = false) {
             ${isReprint ? '<div class="watermark">REPRINT</div>' : ''}
             <div class="text-center">
                 ${store.logo ? `<img src="${store.logo}" style="max-width: 40mm; max-height: 20mm; margin-bottom: 5px; filter: grayscale(1);"><br>` : ''}
-                <div class="bold" style="font-size: 16px;">${store.name}</div>
-                <div style="white-space: pre-wrap; font-size: 10px;">${store.data}</div>
+                <div class="bold" style="font-size: ${printSet.header_font_size + 2}px;">${store.name}</div>
+                <div style="white-space: pre-wrap; font-size: ${printSet.footer_font_size}px;">${store.data}</div>
             </div>
             <div class="hr"></div>
-            <div style="font-size: 10px;">
+            <div style="font-size: ${printSet.header_font_size}px;">
                 Date: ${new Date(tx.timestamp).toLocaleString()}<br>
                 Trans: #${tx.id}<br>
                 Cashier: ${tx.user_name || tx.user_email}<br>

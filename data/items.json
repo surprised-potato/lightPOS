@@ -20072,7 +20072,7 @@
         "cost_price": 54,
         "selling_price": 63,
         "min_stock": 2,
-        "stock_level": -3,
+        "stock_level": -4,
         "base_unit": "Unit",
         "supplier_id": ""
     },
@@ -53264,7 +53264,7 @@
         "cost_price": 16,
         "selling_price": 18,
         "min_stock": 2,
-        "stock_level": -3,
+        "stock_level": -4,
         "base_unit": "Unit",
         "supplier_id": ""
     },
@@ -84980,7 +84980,7 @@
         "cost_price": 22,
         "selling_price": 30,
         "min_stock": 1,
-        "stock_level": -1,
+        "stock_level": -2,
         "base_unit": "Unit",
         "supplier_id": ""
     },

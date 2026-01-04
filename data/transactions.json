@@ -1724,5 +1724,65 @@
         "timestamp": "2026-01-04T07:26:04.558Z",
         "sync_status": 1,
         "is_voided": false
+    },
+    {
+        "id": "3e8a2719-5e2a-46cd-9579-e2ff721a2f78",
+        "items": [
+            {
+                "id": "001c8bed-b8f0-4f33-adda-e1581bbd9223",
+                "barcode": "4800016084065",
+                "name": "Wafrets Brix Chocolate - 24g x 10pc",
+                "category": "BISCUITS",
+                "cost_price": 54,
+                "selling_price": 63,
+                "min_stock": 2,
+                "stock_level": -3,
+                "base_unit": "Unit",
+                "supplier_id": "",
+                "updatedAt": "2026-01-04T14:34:43.983Z",
+                "qty": 1
+            },
+            {
+                "id": "002da6b6-5112-44e6-a01b-bc305752f915",
+                "barcode": "4800571160129",
+                "name": "Rain Polish",
+                "category": "PERSONAL HYGIENE",
+                "cost_price": 22,
+                "selling_price": 30,
+                "min_stock": 1,
+                "stock_level": -1,
+                "base_unit": "Unit",
+                "supplier_id": "",
+                "updatedAt": "2026-01-04T14:34:43.985Z",
+                "qty": 1
+            },
+            {
+                "id": "005590b6-62e5-4cbb-8573-5dbcc9354cc1",
+                "barcode": "4806501705224",
+                "name": "Champion Powder Freesia 100g",
+                "category": "TBA",
+                "cost_price": 16,
+                "selling_price": 18,
+                "min_stock": 2,
+                "stock_level": -3,
+                "base_unit": "Unit",
+                "supplier_id": "",
+                "updatedAt": "2026-01-04T14:34:43.983Z",
+                "qty": 1
+            }
+        ],
+        "total_amount": 111,
+        "amount_tendered": 150,
+        "change": 39,
+        "tax_amount": 11.8928571428571530077533680014312267303466796875,
+        "payment_method": "Cash",
+        "user_email": "admin@lightpos.com",
+        "user_name": "Super Admin",
+        "customer_id": "Guest",
+        "customer_name": "Guest",
+        "points_earned": 0,
+        "timestamp": "2026-01-04T14:35:10.099Z",
+        "sync_status": 1,
+        "is_voided": false
     }
 ]

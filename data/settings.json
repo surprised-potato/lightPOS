@@ -15,5 +15,11 @@
     },
     "pos": {
         "auto_print": false
+    },
+    "print": {
+        "paper_width": 76,
+        "header_font_size": 20,
+        "body_font_size": 12,
+        "footer_font_size": 10
     }
 }

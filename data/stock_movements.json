@@ -997,5 +997,38 @@
         "user": "admin@lightpos.com",
         "reason": "Routine Audit",
         "sync_status": 1
+    },
+    {
+        "id": "3e8a2719-5e2a-46cd-9579-e2ff721a2f78-001c8bed-b8f0-4f33-adda-e1581bbd9223",
+        "item_id": "001c8bed-b8f0-4f33-adda-e1581bbd9223",
+        "item_name": "Wafrets Brix Chocolate - 24g x 10pc",
+        "timestamp": "2026-01-04T14:35:10.099Z",
+        "type": "Sale",
+        "qty": -1,
+        "user": "admin@lightpos.com",
+        "transaction_id": "3e8a2719-5e2a-46cd-9579-e2ff721a2f78",
+        "reason": "Customer Purchase"
+    },
+    {
+        "id": "3e8a2719-5e2a-46cd-9579-e2ff721a2f78-002da6b6-5112-44e6-a01b-bc305752f915",
+        "item_id": "002da6b6-5112-44e6-a01b-bc305752f915",
+        "item_name": "Rain Polish",
+        "timestamp": "2026-01-04T14:35:10.099Z",
+        "type": "Sale",
+        "qty": -1,
+        "user": "admin@lightpos.com",
+        "transaction_id": "3e8a2719-5e2a-46cd-9579-e2ff721a2f78",
+        "reason": "Customer Purchase"
+    },
+    {
+        "id": "3e8a2719-5e2a-46cd-9579-e2ff721a2f78-005590b6-62e5-4cbb-8573-5dbcc9354cc1",
+        "item_id": "005590b6-62e5-4cbb-8573-5dbcc9354cc1",
+        "item_name": "Champion Powder Freesia 100g",
+        "timestamp": "2026-01-04T14:35:10.099Z",
+        "type": "Sale",
+        "qty": -1,
+        "user": "admin@lightpos.com",
+        "transaction_id": "3e8a2719-5e2a-46cd-9579-e2ff721a2f78",
+        "reason": "Customer Purchase"
     }
 ]
