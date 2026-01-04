@@ -403,6 +403,12 @@ function renderItems(items) {
                     
                     if (navigator.onLine) {
                         await syncCollection('items', id, null, true);
+                    } else {
+                        // Queue the deletion for later
+                        await db.syncQueue.add({
+                            action: 'delete_item',
+                            data: { id, fileName: 'items' }
+                        });
                     }
                     fetchItems();
                 } catch (error) {
