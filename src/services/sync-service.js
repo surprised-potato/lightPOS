@@ -272,21 +272,27 @@ export async function processQueue() {
 
     try {
         // 1. Get unsynced local data
-        const [unsyncedTxs, unsyncedMovements, syncQueueItems] = await Promise.all([
+        const [unsyncedTxs, unsyncedMovements, unsyncedStockins, unsyncedAdjustments, syncQueueItems] = await Promise.all([
             db.transactions.where("sync_status").equals(0).toArray(),
             db.stock_movements.where("sync_status").equals(0).toArray(),
+            db.stockins.where("sync_status").equals(0).toArray(),
+            db.adjustments.where("sync_status").equals(0).toArray(),
             db.syncQueue.toArray()
         ]);
 
-        if (unsyncedTxs.length === 0 && unsyncedMovements.length === 0 && syncQueueItems.length === 0) return;
+        if (unsyncedTxs.length === 0 && unsyncedMovements.length === 0 && 
+            unsyncedStockins.length === 0 && unsyncedAdjustments.length === 0 && 
+            syncQueueItems.length === 0) return;
 
-        console.log(`Syncing ${unsyncedTxs.length} transactions and ${unsyncedMovements.length} movements to Server...`);
+        console.log(`Syncing ${unsyncedTxs.length} transactions, ${unsyncedMovements.length} movements, ${unsyncedStockins.length} stock-ins, and ${unsyncedAdjustments.length} adjustments to Server...`);
 
-        // 2. Fetch Server State (Items, Transactions & Movements)
-        const [itemsRes, txRes, movementsRes] = await Promise.all([
+        // 2. Fetch Server State (Items, Transactions, Movements, Stock-ins & Adjustments)
+        const [itemsRes, txRes, movementsRes, stockinsRes, adjustmentsRes] = await Promise.all([
             fetch(`${API_URL}?file=items`),
             fetch(`${API_URL}?file=transactions`),
-            fetch(`${API_URL}?file=stock_movements`)
+            fetch(`${API_URL}?file=stock_movements`),
+            fetch(`${API_URL}?file=stock_in_history`),
+            fetch(`${API_URL}?file=adjustments`)
         ]);
 
         let serverItems = await itemsRes.json();
@@ -297,6 +303,12 @@ export async function processQueue() {
 
         let serverMovements = await movementsRes.json();
         if (!Array.isArray(serverMovements)) serverMovements = [];
+
+        let serverStockins = await stockinsRes.json();
+        if (!Array.isArray(serverStockins)) serverStockins = [];
+
+        let serverAdjustments = await adjustmentsRes.json();
+        if (!Array.isArray(serverAdjustments)) serverAdjustments = [];
 
         // 3. Process each unsynced transaction
         for (const tx of unsyncedTxs) {
@@ -353,6 +365,20 @@ export async function processQueue() {
             }
         }
 
+        // d. Process local unsynced stock-ins (History logs)
+        for (const s of unsyncedStockins) {
+            if (!serverStockins.some(ss => ss.id === s.id)) {
+                serverStockins.push({ ...s, sync_status: 1 });
+            }
+        }
+
+        // e. Process local unsynced adjustments (History logs)
+        for (const a of unsyncedAdjustments) {
+            if (!serverAdjustments.some(sa => sa.id === a.id)) {
+                serverAdjustments.push({ ...a, sync_status: 1 });
+            }
+        }
+
         // 4. Save back to Server
         await Promise.all([
             fetch(`${API_URL}?file=items`, {
@@ -369,16 +395,32 @@ export async function processQueue() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(serverMovements)
+            }),
+            fetch(`${API_URL}?file=stock_in_history`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(serverStockins)
+            }),
+            fetch(`${API_URL}?file=adjustments`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(serverAdjustments)
             })
         ]);
 
-        // 5. Mark local transactions and movements as synced
-        await db.transaction('rw', [db.transactions, db.stock_movements], async () => {
+        // 5. Mark local records as synced
+        await db.transaction('rw', [db.transactions, db.stock_movements, db.stockins, db.adjustments], async () => {
             for (const tx of unsyncedTxs) {
                 await db.transactions.update(tx.id, { sync_status: 1 });
             }
             for (const m of unsyncedMovements) {
                 await db.stock_movements.update(m.id, { sync_status: 1 });
+            }
+            for (const s of unsyncedStockins) {
+                await db.stockins.update(s.id, { sync_status: 1 });
+            }
+            for (const a of unsyncedAdjustments) {
+                await db.adjustments.update(a.id, { sync_status: 1 });
             }
         });
 
