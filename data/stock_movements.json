@@ -1074,5 +1074,38 @@
         "user": "admin@lightpos.com",
         "transaction_id": "621b5f83-989a-434f-bcc9-9108cb777dce",
         "reason": "Customer Purchase"
+    },
+    {
+        "id": "5c3c5cff-8ea6-4e93-a0dc-24dd54bf498c",
+        "item_id": "055262ef-0996-4457-a985-15ead7a3f13f",
+        "item_name": "Nescafe Classic 92g",
+        "timestamp": "2026-01-04T16:50:32.875Z",
+        "type": "Stock-In",
+        "qty": 900,
+        "user": "Super Admin",
+        "reason": "Supplier Delivery",
+        "sync_status": 1
+    },
+    {
+        "id": "b535e1f7-4777-46ae-bc91-d209cfac9abf",
+        "item_id": "03915142-9a2b-42d2-a96c-7634d3e495fe",
+        "item_name": "XO coffee candy 50x40",
+        "timestamp": "2026-01-04T16:59:00.288Z",
+        "type": "Stock-In",
+        "qty": 100,
+        "user": "Super Admin",
+        "reason": "Supplier Delivery",
+        "sync_status": 1
+    },
+    {
+        "id": "fd7a1888-6128-4bfc-ae3d-f35a661a68a9",
+        "item_id": "057aa9e9-3997-4920-9af3-8e2e0caa0389",
+        "item_name": "RAM Three Cheese Spag Sauce 250g",
+        "timestamp": "2026-01-04T17:02:50.510Z",
+        "type": "Stock-In",
+        "qty": 100,
+        "user": "Super Admin",
+        "reason": "Supplier Delivery",
+        "sync_status": 1
     }
 ]

@@ -1,5 +1,6 @@
 import { checkPermission } from "../auth.js";
 import { generateUUID } from "../utils.js";
+import { db } from "../db.js";
 
 const API_URL = 'api/router.php';
 let itemsData = [];
@@ -213,25 +214,16 @@ export async function loadItemsView() {
             min_stock: parseInt(document.getElementById("item-min-stock").value),
             base_unit: document.getElementById("item-unit").value,
             parent_id: document.getElementById("item-parent-id").value || null,
-            conv_factor: document.getElementById("item-conv").value ? parseFloat(document.getElementById("item-conv").value) : 1
+            conv_factor: document.getElementById("item-conv").value ? parseFloat(document.getElementById("item-conv").value) : 1,
+            sync_status: 0
         };
 
         try {
-            // Fetch latest data to ensure we don't overwrite concurrent updates
-            const response = await fetch(`${API_URL}?file=items`);
-            let items = await response.json();
-            if (!Array.isArray(items)) items = [];
-
             if (itemId) {
-                // Update existing
-                const index = items.findIndex(i => i.id === itemId);
-                if (index !== -1) {
-                    items[index] = { ...items[index], ...itemData };
-                }
+                await db.items.update(itemId, itemData);
             } else {
-                // Create new
                 itemData.id = generateUUID();
-                items.push(itemData);
+                await db.items.add(itemData);
 
                 // Record Initial Stock Movement
                 if (itemData.stock_level > 0) {
@@ -250,11 +242,27 @@ export async function loadItemsView() {
                 }
             }
 
-            await fetch(`${API_URL}?file=items`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(items)
-            });
+            if (navigator.onLine) {
+                const response = await fetch(`${API_URL}?file=items`);
+                let items = await response.json();
+                if (!Array.isArray(items)) items = [];
+
+                if (itemId) {
+                    const index = items.findIndex(i => i.id === itemId);
+                    if (index !== -1) items[index] = { ...items[index], ...itemData, sync_status: 1 };
+                } else {
+                    items.push({ ...itemData, sync_status: 1 });
+                }
+
+                await fetch(`${API_URL}?file=items`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(items)
+                });
+                
+                if (itemId) await db.items.update(itemId, { sync_status: 1 });
+                else await db.items.update(itemData.id, { sync_status: 1 });
+            }
 
             modal.classList.add("hidden");
             e.target.reset();
@@ -302,8 +310,7 @@ function applyFiltersAndSort() {
 
 async function fetchSuppliers() {
     try {
-        const response = await fetch(`${API_URL}?file=suppliers`);
-        const data = await response.json();
+        const data = await db.suppliers.toArray();
         suppliersList = Array.isArray(data) ? data : [];
     } catch (error) {
         console.error("Error loading suppliers:", error);
@@ -327,8 +334,7 @@ async function fetchItems() {
     tbody.innerHTML = `<tr><td colspan="7" class="py-3 px-6 text-center">Loading...</td></tr>`;
 
     try {
-        const response = await fetch(`${API_URL}?file=items`);
-        const data = await response.json();
+        const data = await db.items.toArray();
         itemsData = Array.isArray(data) ? data : [];
         applyFiltersAndSort();
     } catch (error) {
@@ -407,15 +413,19 @@ function renderItems(items) {
             if (confirm(`Delete item "${item.name}"?`)) {
                 const id = e.currentTarget.getAttribute("data-id");
                 try {
-                    const response = await fetch(`${API_URL}?file=items`);
-                    let currentItems = await response.json();
-                    const updatedItems = currentItems.filter(i => i.id !== id);
+                    await db.items.delete(id);
                     
-                    await fetch(`${API_URL}?file=items`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(updatedItems)
-                    });
+                    if (navigator.onLine) {
+                        const response = await fetch(`${API_URL}?file=items`);
+                        let currentItems = await response.json();
+                        const updatedItems = currentItems.filter(i => i.id !== id);
+                        
+                        await fetch(`${API_URL}?file=items`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(updatedItems)
+                        });
+                    }
                     fetchItems();
                 } catch (error) {
                     console.error("Error deleting item:", error);

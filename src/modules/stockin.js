@@ -1,6 +1,5 @@
 import { checkPermission, getUserProfile } from "../auth.js";
 import { db } from "../db.js";
-import { syncManager } from "../sync-manager.js";
 import { generateUUID } from "../utils.js";
 
 const API_URL = 'api/router.php';
@@ -409,37 +408,41 @@ async function saveStockIn() {
     };
 
     try {
-        // Optimistically update local database
+        // 1. Update local items DB
         const itemIds = stockInCart.map(item => item.id);
-        const itemsToUpdate = await db.items.bulkGet(itemIds);
+        const itemsToUpdate = (await db.items.bulkGet(itemIds)).filter(i => i !== undefined);
+        const cartMap = new Map(stockInCart.map(i => [i.id, i]));
 
         itemsToUpdate.forEach(item => {
-            const cartItem = stockInCart.find(ci => ci.id === item.id);
+            const cartItem = cartMap.get(item.id);
             if (cartItem) {
                 item.stock_level = (item.stock_level || 0) + cartItem.quantity;
-                // Update supplier if one is selected and item doesn't have one
+                item.cost_price = cartItem.cost_price;
                 if (supplierId && !item.supplier_id) {
                     item.supplier_id = supplierId;
                 }
+                item.sync_status = 0;
             }
         });
-
         await db.items.bulkPut(itemsToUpdate);
+        await loadAllItems();
 
-        // Add to local history immediately
+        // 2. Create local history and movement records
         const historyRecord = {
-            id: `local_${Date.now()}`,
+            id: generateUUID(), // Use UUID for server
             user_id: user.email,
             username: user.name,
             items: stockInCart,
             timestamp: new Date().toISOString(),
-            item_count: stockInCart.reduce((sum, item) => sum + item.quantity, 0)
+            item_count: stockInCart.reduce((sum, item) => sum + item.quantity, 0),
+            supplier_id_override: supplierId || null,
+            sync_status: 0
         };
         await db.stockins.add(historyRecord);
 
-        // Record Stock Movements Locally
+        const movements = [];
         for (const item of stockInData.items) {
-            await db.stock_movements.add({
+            const movement = {
                 id: item.movement_id,
                 item_id: item.item_id,
                 item_name: item.name,
@@ -448,22 +451,64 @@ async function saveStockIn() {
                 qty: item.quantity,
                 user: user.name || user.email,
                 reason: 'Supplier Delivery',
-                sync_status: 1
-            });
+                sync_status: 0 // Corrected
+            };
+            movements.push(movement);
         }
+        await db.stock_movements.bulkPut(movements);
 
-        // Queue the stock-in operation for server sync
-        await syncManager.enqueue({
-            action: 'batch_stock_in',
-            data: { ...historyRecord, supplier_id_override: supplierId || null }, // Pass the override supplier
-            timestamp: historyRecord.timestamp
-        });
+        // 3. Sync with server
+        if (navigator.onLine) {
+            try {
+                // Sync items
+                const serverItemsRes = await fetch(`${API_URL}?file=items`);
+                let serverItems = await serverItemsRes.json();
+                if (!Array.isArray(serverItems)) serverItems = [];
+
+                itemsToUpdate.forEach(localItem => {
+                    const index = serverItems.findIndex(serverItem => serverItem.id === localItem.id);
+                    if (index !== -1) {
+                        serverItems[index] = { ...localItem, sync_status: 1 }; // Overwrite with updated local data
+                    } else {
+                        serverItems.push({ ...localItem, sync_status: 1 });
+                    }
+                });
+                await fetch(`${API_URL}?file=items`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(serverItems) });
+
+                // Mark local items as synced
+                itemsToUpdate.forEach(i => i.sync_status = 1);
+                await db.items.bulkPut(itemsToUpdate);
+
+                // Sync history
+                const serverHistoryRes = await fetch(`${API_URL}?file=stock_in_history`);
+                let serverHistory = await serverHistoryRes.json();
+                if (!Array.isArray(serverHistory)) serverHistory = [];
+                serverHistory.push({ ...historyRecord, sync_status: 1 });
+                await fetch(`${API_URL}?file=stock_in_history`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(serverHistory) });
+
+                await db.stockins.update(historyRecord.id, { sync_status: 1 });
+
+                // Sync movements
+                const serverMovementsRes = await fetch(`${API_URL}?file=stock_movements`);
+                let serverMovements = await serverMovementsRes.json();
+                if (!Array.isArray(serverMovements)) serverMovements = [];
+                const syncedMovements = movements.map(m => ({ ...m, sync_status: 1 }));
+                serverMovements.push(...syncedMovements);
+                await fetch(`${API_URL}?file=stock_movements`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(serverMovements) });
+
+                for (const movement of movements) {
+                    await db.stock_movements.update(movement.id, { sync_status: 1 });
+                }
+            } catch (syncError) {
+                console.warn("Server sync failed, data is saved locally.", syncError);
+            }
+        }
 
         alert('Stock-in successful! Data is saved locally and will sync with the server.');
         
         stockInCart = [];
         renderStockInCart();
-        await loadStockInHistory(); // Refresh history view
+        await loadStockInHistory();
 
     } catch (error) {
         console.error('Failed to save stock-in:', error);

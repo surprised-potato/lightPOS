@@ -32,6 +32,12 @@
             "bold": false,
             "italic": false
         },
+        "items": {
+            "font_size": 12,
+            "font_family": "'Courier New', Courier, monospace",
+            "bold": false,
+            "italic": false
+        },
         "footer": {
             "text": "This is not an official Receipt\nThank you for Shopping!",
             "font_size": 14,

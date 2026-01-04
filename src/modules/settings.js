@@ -167,10 +167,36 @@ export async function loadSettingsView() {
                                 </div>
                             </div>
 
-                            <!-- Footer Section -->
+                            <!-- Items Section -->
                             <div class="border rounded-lg p-4">
                                 <h4 class="font-bold text-blue-600 mb-3 flex items-center gap-2">
                                     <span class="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center text-xs">3</span>
+                                    Items (Sold Products)
+                                </h4>
+                                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Font Size (px)</label>
+                                        <input type="number" id="set-print-items-size" class="w-full border rounded p-2 text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Font Family</label>
+                                        <select id="set-print-items-font" class="w-full border rounded p-2 text-sm">
+                                            <option value="'Courier New', Courier, monospace">Courier New</option>
+                                            <option value="Arial, sans-serif">Arial</option>
+                                            <option value="'Times New Roman', serif">Times New Roman</option>
+                                        </select>
+                                    </div>
+                                    <div class="flex items-center gap-4 pt-5">
+                                        <label class="inline-flex items-center"><input type="checkbox" id="set-print-items-bold" class="form-checkbox"><span class="ml-1 text-xs">Bold</span></label>
+                                        <label class="inline-flex items-center"><input type="checkbox" id="set-print-items-italic" class="form-checkbox"><span class="ml-1 text-xs">Italic</span></label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Footer Section -->
+                            <div class="border rounded-lg p-4">
+                                <h4 class="font-bold text-blue-600 mb-3 flex items-center gap-2">
+                                    <span class="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center text-xs">4</span>
                                     Footer Configuration
                                 </h4>
                                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -462,6 +488,11 @@ async function loadSettings() {
                 document.getElementById("set-print-body-bold").checked = p.body?.bold || false;
                 document.getElementById("set-print-body-italic").checked = p.body?.italic || false;
 
+                document.getElementById("set-print-items-size").value = p.items?.font_size || 12;
+                document.getElementById("set-print-items-font").value = p.items?.font_family || "'Courier New', Courier, monospace";
+                document.getElementById("set-print-items-bold").checked = p.items?.bold || false;
+                document.getElementById("set-print-items-italic").checked = p.items?.italic || false;
+
                 document.getElementById("set-print-footer-text").value = p.footer?.text || "";
                 document.getElementById("set-print-footer-size").value = p.footer?.font_size || 10;
                 document.getElementById("set-print-footer-font").value = p.footer?.font_family || "'Courier New', Courier, monospace";
@@ -535,6 +566,12 @@ async function handleSave(e) {
                 bold: document.getElementById("set-print-body-bold").checked,
                 italic: document.getElementById("set-print-body-italic").checked
             },
+            items: {
+                font_size: parseInt(document.getElementById("set-print-items-size").value) || 12,
+                font_family: document.getElementById("set-print-items-font").value,
+                bold: document.getElementById("set-print-items-bold").checked,
+                italic: document.getElementById("set-print-items-italic").checked
+            },
             footer: {
                 text: document.getElementById("set-print-footer-text").value.trim(),
                 font_size: parseInt(document.getElementById("set-print-footer-size").value) || 10,
@@ -589,6 +626,12 @@ export async function getSystemSettings() {
                     bold: false, 
                     italic: false 
                 },
+                items: { 
+                    font_size: 12, 
+                    font_family: "'Courier New', Courier, monospace", 
+                    bold: false, 
+                    italic: false 
+                },
                 footer: { 
                     text: "Thank you for shopping!", 
                     font_size: 10, 
@@ -616,6 +659,12 @@ export async function getSystemSettings() {
                     italic: false 
                 },
                 body: { 
+                    font_size: 12, 
+                    font_family: "'Courier New', Courier, monospace", 
+                    bold: false, 
+                    italic: false 
+                },
+                items: { 
                     font_size: 12, 
                     font_family: "'Courier New', Courier, monospace", 
                     bold: false, 

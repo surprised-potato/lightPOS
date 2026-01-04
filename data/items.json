@@ -20828,9 +20828,11 @@
         "cost_price": 39.14999999999999857891452847979962825775146484375,
         "selling_price": 45,
         "min_stock": 2,
-        "stock_level": 0,
+        "stock_level": 100,
         "base_unit": "Unit",
-        "supplier_id": ""
+        "supplier_id": "894ccedc-10d1-4aad-8645-c20c1c8ea7a6",
+        "updatedAt": "2026-01-04T16:58:54.373Z",
+        "sync_status": 1
     },
     {
         "id": "1f149d4c-0a16-4f03-a5e4-f0c2940509fc",
@@ -22724,9 +22726,11 @@
         "cost_price": 21.78999999999999914734871708787977695465087890625,
         "selling_price": 26,
         "min_stock": 2,
-        "stock_level": 0,
+        "stock_level": 100,
         "base_unit": "Unit",
-        "supplier_id": ""
+        "supplier_id": "894ccedc-10d1-4aad-8645-c20c1c8ea7a6",
+        "updatedAt": "2026-01-04T17:02:32.936Z",
+        "sync_status": 1
     },
     {
         "id": "619b8851-3de3-46e7-a4eb-2f35488ca834",
@@ -39212,9 +39216,10 @@
         "cost_price": 91,
         "selling_price": 104,
         "min_stock": 2,
-        "stock_level": 0,
+        "stock_level": 900,
         "base_unit": "Unit",
-        "supplier_id": ""
+        "supplier_id": "894ccedc-10d1-4aad-8645-c20c1c8ea7a6",
+        "updatedAt": "2026-01-04T16:50:19.630Z"
     },
     {
         "id": "f75b947e-0877-47df-8d43-375ee2c398a2",

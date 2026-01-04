@@ -39,6 +39,10 @@ document.addEventListener("keydown", (e) => {
         e.preventDefault();
         const btnPrint = document.getElementById("btn-print-last-receipt");
         if (btnPrint) btnPrint.click();
+    } else if (e.key === "Escape") {
+        e.preventDefault();
+        document.getElementById("modal-suspended")?.classList.add("hidden");
+        document.getElementById("modal-pos-history")?.classList.add("hidden");
     }
 });
 
@@ -1567,8 +1571,8 @@ async function requestQuickCustomer(tx) {
 }
 
 async function printReceipt(tx, isReprint = false) {
-    // Request customer info on reprint or if it's a Guest transaction
-    if (isReprint || tx.customer_id === "Guest") {
+    // Request customer info only if it's a Guest transaction
+    if (tx.customer_id === "Guest") {
         const result = await requestQuickCustomer(tx);
         if (result) {
             tx = result;
@@ -1583,6 +1587,7 @@ async function printReceipt(tx, isReprint = false) {
         paper_width: 76, 
         show_dividers: true,
         header: { text: "", font_size: 14, font_family: "'Courier New', Courier, monospace", bold: true, italic: false },
+        items: { font_size: 12, font_family: "'Courier New', Courier, monospace", bold: false, italic: false },
         body: { font_size: 12, font_family: "'Courier New', Courier, monospace", bold: false, italic: false },
         footer: { text: "Thank you for shopping!", font_size: 10, font_family: "'Courier New', Courier, monospace", bold: false, italic: true }
     };
@@ -1601,11 +1606,12 @@ async function printReceipt(tx, isReprint = false) {
     const footerText = p.footer?.text || "THIS IS NOT AN OFFICIAL RECEIPT\nThank you for shopping!";
     
     const printWindow = window.open('', '_blank', 'width=300,height=600');
+    const itemsStyle = p.items ? getStyle(p.items) : getStyle(p.body);
     const itemsHtml = tx.items.map(item => `
-        <tr>
+        <tr style="${itemsStyle}">
             <td colspan="2" style="padding-top: 5px;">${item.name}</td>
         </tr>
-        <tr>
+        <tr style="${itemsStyle}">
             <td style="font-size: 0.9em; opacity: 0.8;">${item.qty} x ${item.selling_price.toFixed(2)}</td>
             <td style="text-align: right;">${(item.qty * item.selling_price).toFixed(2)}</td>
         </tr>
