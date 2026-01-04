@@ -3,6 +3,7 @@ import { getSystemSettings } from "./settings.js";
 import { checkPermission, requestManagerApproval } from "../auth.js";
 import { generateUUID } from "../utils.js";
 import { addNotification } from "../services/notification-service.js";
+import { syncCollection, processQueue } from "../services/sync-service.js";
 
 const API_URL = 'api/router.php';
 
@@ -2024,65 +2025,57 @@ async function voidTransactionFromReports(id) {
         const user = JSON.parse(localStorage.getItem('pos_user'));
 
         // 1. Update Dexie Transaction
-        await db.transactions.update(txId, { 
+        const updatedTx = {
+            ...tx,
             is_voided: true, 
             voided_at: new Date(),
             voided_by: user ? user.email : "System",
             void_reason: reason || "No reason provided",
             sync_status: 0 
-        });
+        };
+        await db.transactions.put(updatedTx);
 
         // 2. Reverse Stock in Dexie
+        const movements = [];
         for (const item of tx.items) {
             const current = await db.items.get(item.id);
             if (current) {
-                await db.items.update(item.id, { stock_level: current.stock_level + item.qty });
+                const newStock = current.stock_level + item.qty;
+                await db.items.update(item.id, { stock_level: newStock });
+                const updatedItem = await db.items.get(item.id);
+                
+                const movement = {
+                    id: generateUUID(),
+                    item_id: item.id,
+                    item_name: item.name,
+                    timestamp: new Date(),
+                    type: 'Void',
+                    qty: item.qty,
+                    user: user ? user.email : "System",
+                    transaction_id: tx.id,
+                    reason: reason || "Transaction Voided",
+                    sync_status: 0
+                };
+                movements.push(movement);
+                await db.stock_movements.add(movement);
+
+                if (navigator.onLine) {
+                    const itemSync = await syncCollection('items', item.id, updatedItem);
+                    if (itemSync) await db.items.update(item.id, { sync_status: 1 });
+                }
             }
         }
 
         // 3. Sync to Server
         if (navigator.onLine) {
-            try {
-                const itemsRes = await fetch(`${API_URL}?file=items`);
-                let serverItems = await itemsRes.json();
-                tx.items.forEach(txItem => {
-                    const idx = serverItems.findIndex(i => i.id === txItem.id);
-                    if (idx !== -1) serverItems[idx].stock_level += txItem.qty;
-                });
-                await fetch(`${API_URL}?file=items`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(serverItems) });
+            const txSuccess = await syncCollection('transactions', tx.id, updatedTx);
+            if (txSuccess) await db.transactions.update(txId, { sync_status: 1 });
 
-                const movementsRes = await fetch(`${API_URL}?file=stock_movements`);
-                let serverMovements = await movementsRes.json();
-                if (!Array.isArray(serverMovements)) serverMovements = [];
-                
-                tx.items.forEach(txItem => {
-                    serverMovements.push({
-                        id: generateUUID(),
-                        item_id: txItem.id,
-                        item_name: txItem.name,
-                        timestamp: new Date(),
-                        type: 'Void',
-                        qty: txItem.qty,
-                        user: user ? user.email : "System",
-                        transaction_id: tx.id,
-                        reason: reason || "Transaction Voided",
-                        sync_status: 1
-                    });
-                });
-                await fetch(`${API_URL}?file=stock_movements`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(serverMovements) });
-
-                const txRes = await fetch(`${API_URL}?file=transactions`);
-                let serverTxs = await txRes.json();
-                const sIdx = serverTxs.findIndex(t => t.id === tx.id);
-                if (sIdx !== -1) {
-                    serverTxs[sIdx].is_voided = true;
-                    serverTxs[sIdx].voided_at = new Date();
-                    serverTxs[sIdx].voided_by = user ? user.email : "System";
-                    serverTxs[sIdx].void_reason = reason || "No reason provided";
-                    await fetch(`${API_URL}?file=transactions`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(serverTxs) });
-                    await db.transactions.update(txId, { sync_status: 1 });
-                }
-            } catch (e) { console.warn("Void sync failed."); }
+            for (const m of movements) {
+                const mSuccess = await syncCollection('stock_movements', m.id, m);
+                if (mSuccess) await db.stock_movements.update(m.id, { sync_status: 1 });
+            }
+            await processQueue();
         }
 
         await addNotification('Void', `Transaction ${txId} was voided by ${user ? user.email : "System"}`);
@@ -2566,13 +2559,8 @@ async function showQuickEditMinStock(id) {
             
             // Sync to server
             if (navigator.onLine) {
-                const res = await fetch(`${API_URL}?file=items`);
-                let items = await res.json();
-                const idx = items.findIndex(i => i.id === id);
-                if (idx !== -1) {
-                    items[idx].min_stock = minVal;
-                    await fetch(`${API_URL}?file=items`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(items) });
-                }
+                const item = await db.items.get(id);
+                await syncCollection('items', id, item);
             }
             
             alert("Min stock updated.");
