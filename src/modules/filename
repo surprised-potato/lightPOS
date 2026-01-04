@@ -1,0 +1,42 @@
+const API_URL = 'api/router.php';
+
+/**
+ * Synchronizes a local change with the remote JSON-based storage.
+ * @param {string} fileName - The name of the file/collection (e.g., 'items').
+ * @param {string} id - The unique identifier of the record.
+ * @param {Object} data - The record data (null for deletes).
+ * @param {boolean} isDelete - Whether this is a deletion.
+ * @returns {Promise<boolean>} - Success status.
+ */
+export async function syncCollection(fileName, id, data, isDelete = false) {
+    if (!navigator.onLine) return false;
+
+    try {
+        const response = await fetch(`${API_URL}?file=${fileName}`);
+        let remoteData = await response.json();
+        if (!Array.isArray(remoteData)) remoteData = [];
+
+        if (isDelete) {
+            remoteData = remoteData.filter(item => item.id !== id);
+        } else {
+            const index = remoteData.findIndex(item => item.id === id);
+            const payload = { ...data, id, sync_status: 1 };
+            if (index !== -1) {
+                remoteData[index] = { ...remoteData[index], ...payload };
+            } else {
+                remoteData.push(payload);
+            }
+        }
+
+        const saveResponse = await fetch(`${API_URL}?file=${fileName}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(remoteData)
+        });
+
+        return saveResponse.ok;
+    } catch (error) {
+        console.error(`Sync error for ${fileName}:`, error);
+        return false;
+    }
+}

@@ -1,7 +1,7 @@
+import { db } from "../db.js";
 import { checkPermission } from "../auth.js";
 import { generateUUID } from "../utils.js";
-
-const API_URL = 'api/router.php';
+import { syncCollection } from "../services/sync-service.js";
 
 let suppliersList = [];
 
@@ -109,9 +109,7 @@ export async function loadExpensesView() {
 
 async function fetchSuppliers() {
     try {
-        const response = await fetch(`${API_URL}?file=suppliers`);
-        const data = await response.json();
-        suppliersList = Array.isArray(data) ? data : [];
+        suppliersList = await db.suppliers.toArray();
 
         const select = document.getElementById("exp-supplier");
         select.innerHTML = '<option value="">None</option>';
@@ -137,28 +135,26 @@ async function saveExpense() {
     const supplierName = supplierId ? suppliersList.find(s => s.id === supplierId)?.name : null;
     const user = JSON.parse(localStorage.getItem('pos_user'))?.email || "Unknown";
 
+    const expenseData = {
+        id: generateUUID(),
+        description: desc,
+        amount: amount,
+        category: category,
+        supplier_id: supplierId,
+        supplier_name: supplierName,
+        date: new Date(dateVal),
+        user_id: user,
+        created_at: new Date(),
+        sync_status: 0
+    };
+
     try {
-        const response = await fetch(`${API_URL}?file=expenses`);
-        let expenses = await response.json();
-        if (!Array.isArray(expenses)) expenses = [];
+        await db.expenses.add(expenseData);
 
-        expenses.push({
-            id: generateUUID(),
-            description: desc,
-            amount: amount,
-            category: category,
-            supplier_id: supplierId,
-            supplier_name: supplierName,
-            date: new Date(dateVal),
-            user_id: user,
-            created_at: new Date()
-        });
-
-        await fetch(`${API_URL}?file=expenses`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(expenses)
-        });
+        if (navigator.onLine) {
+            const success = await syncCollection('expenses', expenseData.id, expenseData);
+            if (success) await db.expenses.update(expenseData.id, { sync_status: 1 });
+        }
         
         document.getElementById("modal-add-expense").classList.add("hidden");
         document.getElementById("form-add-expense").reset();
@@ -183,9 +179,7 @@ async function fetchExpenses() {
     tbody.innerHTML = `<tr><td colspan="7" class="py-3 px-6 text-center">Loading...</td></tr>`;
 
     try {
-        const response = await fetch(`${API_URL}?file=expenses`);
-        let expenses = await response.json();
-        if (!Array.isArray(expenses)) expenses = [];
+        let expenses = await db.expenses.toArray();
 
         // Sort by date desc and limit to 50
         expenses.sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -221,15 +215,11 @@ async function fetchExpenses() {
                 if (confirm("Delete this expense record?")) {
                     const id = e.currentTarget.getAttribute("data-id");
                     
-                    const res = await fetch(`${API_URL}?file=expenses`);
-                    let current = await res.json();
-                    const updated = current.filter(ex => ex.id !== id);
+                    await db.expenses.delete(id);
                     
-                    await fetch(`${API_URL}?file=expenses`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(updated)
-                    });
+                    if (navigator.onLine) {
+                        await syncCollection('expenses', id, null, true);
+                    }
 
                     fetchExpenses();
                 }

@@ -4,6 +4,7 @@ import { checkActiveShift, requireShift, showCloseShiftModal } from "./shift.js"
 import { addNotification } from "../services/notification-service.js";
 import { getSystemSettings } from "./settings.js";
 import { generateUUID } from "../utils.js";
+import { syncCollection, processQueue } from "../services/sync-service.js";
 
 const API_URL = 'api/router.php';
 
@@ -259,7 +260,7 @@ async function renderPosInterface(content) {
     `;
 
     // Load Items from Dexie
-    await Promise.all([fetchItemsFromDexie(), fetchCustomersFromDexie(), syncSuspendedFromServer()]);
+    await Promise.all([fetchItemsFromDexie(), fetchCustomersFromDexie(), processQueue()]);
     
     // Render initial cart state (if persisting between views)
     renderCart();
@@ -857,87 +858,22 @@ async function processTransaction() {
             }
         }
 
-        // 3. Try Online Sync (Best Effort)
-        try {
-            // Fetch Items
-            const itemsRes = await fetch(`${API_URL}?file=items`);
-            let serverItems = await itemsRes.json();
-            if (!Array.isArray(serverItems)) serverItems = [];
-
-            // Update Server Items
-            transaction.items.forEach(txItem => {
-                const idx = serverItems.findIndex(i => i.id === txItem.id);
-                if (idx !== -1) {
-                    serverItems[idx].stock_level -= txItem.qty;
-                }
-            });
-
-            // Save Items
-            await fetch(`${API_URL}?file=items`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(serverItems)
-            });
-
-            // Fetch & Update Transactions
-            const txRes = await fetch(`${API_URL}?file=transactions`);
-            let serverTxs = await txRes.json();
-            if (!Array.isArray(serverTxs)) serverTxs = [];
-            
-            // Add to server transactions
-            serverTxs.push({ ...transaction, sync_status: 1 });
-
-            await fetch(`${API_URL}?file=transactions`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(serverTxs)
-            });
-
-            // Update Stock Movements on Server
-            const movementsRes = await fetch(`${API_URL}?file=stock_movements`);
-            let serverMovements = await movementsRes.json();
-            if (!Array.isArray(serverMovements)) serverMovements = [];
-            
-            transaction.items.forEach(cartItem => {
-                serverMovements.push({
-                    id: `${transaction.id}-${cartItem.id}`,
-                    item_id: cartItem.id,
-                    item_name: cartItem.name,
-                    timestamp: transaction.timestamp,
-                    type: 'Sale',
-                    qty: -cartItem.qty,
-                    user: transaction.user_email || 'Unknown',
-                    transaction_id: transaction.id,
-                    reason: 'Customer Purchase'
-                });
-            });
-            await fetch(`${API_URL}?file=stock_movements`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(serverMovements)
-            });
-
-            // Update Customer Points
-            if (selectedCustomer.id !== "Guest") {
-                const custRes = await fetch(`${API_URL}?file=customers`);
-                let customers = await custRes.json();
-                const cIdx = customers.findIndex(c => c.id === selectedCustomer.id);
-                if (cIdx !== -1) {
-                    customers[cIdx].loyalty_points = (customers[cIdx].loyalty_points || 0) + pointsEarned;
-                    if (paymentMethod === "Points") {
-                        customers[cIdx].loyalty_points -= total;
-                    }
-                    selectedCustomer.loyalty_points = customers[cIdx].loyalty_points; // Update local ref
-                    await fetch(`${API_URL}?file=customers`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(customers) });
-                }
+        // 3. Update Customer Points
+        if (selectedCustomer.id !== "Guest") {
+            selectedCustomer.loyalty_points = (selectedCustomer.loyalty_points || 0) + pointsEarned;
+            if (paymentMethod === "Points") {
+                selectedCustomer.loyalty_points -= total;
             }
+            await db.customers.put(selectedCustomer);
+            
+            if (navigator.onLine) {
+                await syncCollection('customers', selectedCustomer.id, selectedCustomer);
+            }
+        }
 
-            // Mark Local as Synced
-            await db.transactions.update(transaction.id, { sync_status: 1 });
-
-        } catch (serverError) {
-            console.warn("Server sync failed (Offline mode active):", serverError);
-            // Do not alert user, just log. Transaction is safe in Dexie with sync_status=0.
+        // 4. Trigger Background Sync
+        if (navigator.onLine) {
+            processQueue();
         }
 
         lastTransactionData = transaction;
@@ -1049,64 +985,9 @@ async function voidTransaction(id) {
             }
         }
 
-        // 3. Sync to Server
+        // 3. Trigger Background Sync
         if (navigator.onLine) {
-            try {
-                // Update Server Items
-                const itemsRes = await fetch(`${API_URL}?file=items`);
-                let serverItems = await itemsRes.json();
-                tx.items.forEach(txItem => {
-                    const idx = serverItems.findIndex(i => i.id === txItem.id);
-                    if (idx !== -1) serverItems[idx].stock_level += txItem.qty;
-                });
-                await fetch(`${API_URL}?file=items`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(serverItems)
-                });
-
-                // Update Server Movements
-                const movementsRes = await fetch(`${API_URL}?file=stock_movements`);
-                let serverMovements = await movementsRes.json();
-                if (!Array.isArray(serverMovements)) serverMovements = [];
-                
-                tx.items.forEach(txItem => {
-                    serverMovements.push({
-                        id: generateUUID(),
-                        item_id: txItem.id,
-                        item_name: txItem.name,
-                        timestamp: new Date(),
-                        type: 'Void',
-                        qty: txItem.qty,
-                        user: user ? user.email : "System",
-                        transaction_id: tx.id,
-                        reason: reason || "Transaction Voided",
-                        sync_status: 1
-                    });
-                });
-                await fetch(`${API_URL}?file=stock_movements`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(serverMovements)
-                });
-
-                // Update Server Transaction
-                const txRes = await fetch(`${API_URL}?file=transactions`);
-                let serverTxs = await txRes.json();
-                const sIdx = serverTxs.findIndex(t => t.id === tx.id);
-                if (sIdx !== -1) {
-                    serverTxs[sIdx].is_voided = true;
-                    serverTxs[sIdx].voided_at = new Date();
-                    serverTxs[sIdx].voided_by = user ? user.email : "System";
-                    serverTxs[sIdx].void_reason = reason || "No reason provided";
-                    await fetch(`${API_URL}?file=transactions`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(serverTxs)
-                    });
-                    await db.transactions.update(txId, { sync_status: 1 });
-                }
-            } catch (e) { console.warn("Void sync failed, will retry later."); }
+            processQueue();
         }
 
         showToast("Transaction voided and stock reversed.");
@@ -1140,8 +1021,11 @@ async function suspendCurrentTransaction() {
         // 1. Save locally first (Persistence across refreshes)
         await db.suspended_transactions.add(suspendedTx);
         
-        // 2. Trigger background sync (Persistence across devices/sessions)
-        syncSuspendedFromServer();
+        // 2. Sync with server
+        if (navigator.onLine) {
+            const success = await syncCollection('suspended_transactions', suspendedTx.id, suspendedTx);
+            if (success) await db.suspended_transactions.update(suspendedTx.id, { sync_status: 1 });
+        }
 
         cart = [];
         selectedCustomer = { id: "Guest", name: "Guest" };
@@ -1157,12 +1041,8 @@ async function suspendCurrentTransaction() {
 
 async function openSuspendedModal() {
     const container = document.getElementById("suspended-list-container");
-    container.innerHTML = `<div class="text-center p-4">Syncing with server...</div>`;
+    container.innerHTML = `<div class="text-center p-4">Loading...</div>`;
     document.getElementById("modal-suspended").classList.remove("hidden");
-
-    // Sync before showing to ensure cross-device persistence
-    await syncSuspendedFromServer();
-    updateSuspendedCount();
 
     try {
         const suspended = await db.suspended_transactions
@@ -1234,14 +1114,16 @@ async function resumeTransaction(id) {
             cart = tx.items;
             selectedCustomer = tx.customer || { id: "Guest", name: "Guest" };
             
-            // Mark for deletion locally (status 2) and trigger background sync
-            await db.suspended_transactions.update(actualId, { sync_status: 2 });
+            await db.suspended_transactions.delete(actualId);
+            if (navigator.onLine) {
+                await syncCollection('suspended_transactions', actualId, null, true);
+            }
             
             renderCart();
             selectCustomer(selectedCustomer);
             closeSuspendedModal();
             showToast("Transaction resumed.");
-            syncSuspendedFromServer().then(() => updateSuspendedCount());
+            updateSuspendedCount();
         } else {
             showToast("Could not find transaction record.", true);
         }
@@ -1263,12 +1145,14 @@ async function deleteSuspendedTransaction(id) {
             tx = await db.suspended_transactions.get(actualId);
         }
 
-        // Mark for deletion (status 2) so sync service handles server-side removal
-        await db.suspended_transactions.update(actualId, { sync_status: 2 });
+        await db.suspended_transactions.delete(actualId);
+        if (navigator.onLine) {
+            await syncCollection('suspended_transactions', actualId, null, true);
+        }
         
-        showToast("Transaction marked for deletion.");
+        showToast("Transaction deleted.");
         openSuspendedModal(); // Refresh list
-        syncSuspendedFromServer().then(() => updateSuspendedCount());
+        updateSuspendedCount();
     } catch (error) {
         console.error("Error deleting suspended transaction:", error);
         showToast("Failed to delete transaction.", true);
@@ -1292,91 +1176,6 @@ async function updateSuspendedCount() {
     }
 }
 
-async function syncSuspendedFromServer() {
-    const user = JSON.parse(localStorage.getItem('pos_user'));
-
-    if (!navigator.onLine) return;
-
-    // 1. Push local changes (New and Deleted) to server
-    try {
-        const unsynced = await db.suspended_transactions.where('sync_status').equals(0).toArray();
-        const toDelete = await db.suspended_transactions.where('sync_status').equals(2).toArray();
-
-        if (unsynced.length > 0 || toDelete.length > 0) {
-            const res = await fetch(`${API_URL}?file=suspended_transactions`);
-            let serverList = await res.json();
-            if (!Array.isArray(serverList)) serverList = [];
-            
-            let changed = false;
-
-            // Add new ones
-            for (const tx of unsynced) {
-                if (!serverList.find(s => s.id === tx.id)) {
-                    serverList.push(tx);
-                    changed = true;
-                }
-            }
-
-            // Remove deleted ones
-            if (toDelete.length > 0) {
-                const idsToDelete = new Set(toDelete.map(t => t.id));
-                const originalLength = serverList.length;
-                serverList = serverList.filter(s => !idsToDelete.has(s.id));
-                if (serverList.length !== originalLength) changed = true;
-            }
-            
-            if (changed) {
-                await fetch(`${API_URL}?file=suspended_transactions`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(serverList)
-                });
-            }
-            
-            // Update local status
-            for (const tx of unsynced) await db.suspended_transactions.update(tx.id, { sync_status: 1 });
-            for (const tx of toDelete) await db.suspended_transactions.delete(tx.id);
-        }
-    } catch (e) {
-        console.warn("Could not push unsynced suspended transactions:", e);
-    }
-
-    // 2. Pull from server and merge deletions/updates
-    try {
-        const response = await fetch(`${API_URL}?file=suspended_transactions`);
-        if (response.ok) {
-            const serverSuspended = await response.json();
-            if (Array.isArray(serverSuspended)) {
-                const serverIds = new Set(serverSuspended.map(s => s.id));
-                const localPendingDelete = await db.suspended_transactions
-                    .where('sync_status').equals(2)
-                    .toArray();
-                const localPendingDeleteIds = new Set(localPendingDelete.map(t => t.id));
-                
-                // Remove local ones that were resumed/deleted elsewhere (only if they were previously synced)
-                const localSynced = await db.suspended_transactions
-                    .where('sync_status').equals(1)
-                    .toArray();
-                
-                for (const local of localSynced) {
-                    if (!serverIds.has(local.id)) {
-                        await db.suspended_transactions.delete(local.id);
-                    }
-                }
-
-                // Add/Update from server
-                const toPut = serverSuspended
-                    .filter(s => !localPendingDeleteIds.has(s.id)) // Don't pull back what we just resumed
-                    .map(s => ({ ...s, sync_status: 1 }));
-                await db.suspended_transactions.bulkPut(toPut);
-            }
-        }
-    } catch (e) {
-        console.warn("Could not sync suspended transactions from server:", e);
-    }
-    
-    updateSuspendedCount();
-}
 
 async function requestQuickCustomer(tx) {
     return new Promise((resolve) => {

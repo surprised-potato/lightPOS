@@ -4,6 +4,43 @@ import { generateUUID } from "../utils.js";
 const API_URL = 'api/router.php';
 const SYNC_INTERVAL = 30000; // 30 seconds
 
+/**
+ * Synchronizes a local change with the remote JSON-based storage.
+ * Used for simple CRUD entities like items, suppliers, and customers.
+ */
+export async function syncCollection(fileName, id, data, isDelete = false) {
+    if (!navigator.onLine) return false;
+
+    try {
+        const response = await fetch(`${API_URL}?file=${fileName}`);
+        let remoteData = await response.json();
+        if (!Array.isArray(remoteData)) remoteData = [];
+
+        if (isDelete) {
+            remoteData = remoteData.filter(item => item.id !== id);
+        } else {
+            const index = remoteData.findIndex(item => item.id === id);
+            const payload = { ...data, id, sync_status: 1 };
+            if (index !== -1) {
+                remoteData[index] = { ...remoteData[index], ...payload };
+            } else {
+                remoteData.push(payload);
+            }
+        }
+
+        const saveResponse = await fetch(`${API_URL}?file=${fileName}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(remoteData)
+        });
+
+        return saveResponse.ok;
+    } catch (error) {
+        console.error(`Sync error for ${fileName}:`, error);
+        return false;
+    }
+}
+
 export function startRealtimeSync() {
     console.log("Starting sync service...");
     
@@ -18,7 +55,7 @@ export function startRealtimeSync() {
     setInterval(syncTransactionsDown, SYNC_INTERVAL);
 
     // 1b. Additional Downlink entities
-    const extraEntities = ['shifts', 'expenses', 'adjustments', 'returns', 'suppliers', 'settings', 'stock_in_history', 'stock_movements'];
+    const extraEntities = ['shifts', 'expenses', 'adjustments', 'returns', 'suppliers', 'settings', 'stock_in_history', 'stock_movements', 'suspended_transactions'];
     extraEntities.forEach(entity => {
         let table = entity;
         if (entity === 'settings') table = 'sync_metadata';
@@ -307,6 +344,12 @@ export async function processQueue() {
         for (const m of unsyncedMovements) {
             if (!serverMovements.some(sm => sm.id === m.id)) {
                 serverMovements.push({ ...m, sync_status: 1 });
+
+                // Apply movement to server items stock
+                const itemIdx = serverItems.findIndex(i => i.id === m.item_id);
+                if (itemIdx !== -1) {
+                    serverItems[itemIdx].stock_level += m.qty;
+                }
             }
         }
 

@@ -162,6 +162,16 @@ function renderManagerDashboard(content) {
                         Action Center
                         <span class="bg-red-100 text-red-600 text-[10px] px-2 py-0.5 rounded-full" id="total-alerts-badge">0</span>
                     </h3>
+                    
+                    <!-- Recent Transactions -->
+                    <div class="mb-6">
+                        <div class="text-[10px] font-bold text-gray-400 uppercase mb-3">Recent Sales</div>
+                        <div id="recent-tx-list" class="space-y-3">
+                            <div class="text-[10px] text-gray-400 italic">Loading...</div>
+                        </div>
+                    </div>
+                    <div class="h-px bg-gray-100 mb-6"></div>
+
                     <div class="space-y-4 flex-1 overflow-y-auto pr-2">
                         <!-- Low Stock -->
                         <div class="group cursor-pointer p-3 rounded-lg bg-red-50 border border-red-100 hover:bg-red-100 transition">
@@ -366,6 +376,7 @@ async function refreshDashboard() {
         renderVelocityChart(hourlySalesToday, hourlySalesYesterday);
         renderTenderChart(tenderSplit);
         renderTopSellers(itemSales, allItems);
+        renderRecentTransactions(allTxs);
 
         // 5. Action Center
         const lowStockItems = allItems.filter(i => i.stock_level <= (i.min_stock || 10));
@@ -497,6 +508,31 @@ function renderVelocityChart(today, yesterday) {
             }
         }
     });
+}
+
+function renderRecentTransactions(allTxs) {
+    const list = document.getElementById("recent-tx-list");
+    if (!list) return;
+
+    const recent = [...allTxs]
+        .filter(tx => !tx.is_voided)
+        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+        .slice(0, 5);
+
+    if (recent.length === 0) {
+        list.innerHTML = '<div class="text-[10px] text-gray-400 italic">No recent sales</div>';
+        return;
+    }
+
+    list.innerHTML = recent.map(tx => `
+        <div class="flex justify-between items-center text-xs">
+            <div class="flex flex-col">
+                <span class="font-bold text-gray-700">₱${tx.total_amount.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+                <span class="text-[9px] text-gray-400">${new Date(tx.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • ${tx.customer_name}</span>
+            </div>
+            <span class="text-[9px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-bold">${tx.payment_method}</span>
+        </div>
+    `).join('');
 }
 
 function renderTenderChart(data) {

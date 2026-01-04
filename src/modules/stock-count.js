@@ -2,8 +2,7 @@ import { db } from "../db.js";
 import { checkPermission } from "../auth.js";
 import { addNotification } from "../services/notification-service.js";
 import { generateUUID } from "../utils.js";
-
-const API_URL = 'api/router.php';
+import { syncCollection, processQueue } from "../services/sync-service.js";
 
 let itemsData = [];
 let selectedItem = null;
@@ -113,8 +112,7 @@ export async function loadStockCountView() {
 
 async function fetchItems() {
     try {
-        const response = await fetch(`${API_URL}?file=items`);
-        itemsData = await response.json();
+        itemsData = await db.items.toArray();
         if (!Array.isArray(itemsData)) itemsData = [];
     } catch (error) {
         console.error("Error fetching items:", error);
@@ -294,31 +292,14 @@ async function processAdjustment(newStock, reason) {
         const difference = newStock - oldStock;
         const user = JSON.parse(localStorage.getItem('pos_user'))?.email || 'unknown';
 
-        // 1. Fetch current items to ensure we have latest state
-        const itemsResponse = await fetch(`${API_URL}?file=items`);
-        let currentItems = await itemsResponse.json();
-        if (!Array.isArray(currentItems)) currentItems = [];
+        // 1. Update local item stock
+        selectedItem.stock_level = newStock;
+        selectedItem.updatedAt = new Date().toISOString();
+        selectedItem.sync_status = 0;
+        await db.items.put(selectedItem);
 
-        // 2. Update item stock
-        const itemIndex = currentItems.findIndex(i => i.id === selectedItem.id);
-        if (itemIndex !== -1) {
-            currentItems[itemIndex].stock_level = newStock;
-            currentItems[itemIndex].updatedAt = new Date().toISOString();
-        }
-
-        // 3. Save Items
-        await fetch(`${API_URL}?file=items`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(currentItems)
-        });
-
-        // 4. Log to adjustments
-        const adjResponse = await fetch(`${API_URL}?file=adjustments`);
-        let adjustments = await adjResponse.json();
-        if (!Array.isArray(adjustments)) adjustments = [];
-
-        adjustments.push({
+        // 2. Log to adjustments locally
+        const adjustment = {
             id: generateUUID(),
             item_id: selectedItem.id,
             item_name: selectedItem.name,
@@ -327,16 +308,12 @@ async function processAdjustment(newStock, reason) {
             difference: difference,
             reason: reason,
             user: user,
-            timestamp: new Date()
-        });
+            timestamp: new Date().toISOString(),
+            sync_status: 0
+        };
+        await db.adjustments.add(adjustment);
 
-        await fetch(`${API_URL}?file=adjustments`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(adjustments)
-        });
-
-        // Record Stock Movement Locally
+        // 3. Record Stock Movement Locally
         const movement = {
             id: generateUUID(),
             item_id: selectedItem.id,
@@ -350,16 +327,15 @@ async function processAdjustment(newStock, reason) {
         };
         await db.stock_movements.add(movement);
 
-        // Sync Movement to Server
-        try {
-            const movementsRes = await fetch(`${API_URL}?file=stock_movements`);
-            let serverMovements = await movementsRes.json();
-            if (!Array.isArray(serverMovements)) serverMovements = [];
-            serverMovements.push({ ...movement, sync_status: 1 });
-            await fetch(`${API_URL}?file=stock_movements`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(serverMovements) });
-            await db.stock_movements.update(movement.id, { sync_status: 1 });
-        } catch (e) {
-            console.warn("Movement sync failed:", e);
+        // 4. Sync with Server
+        if (navigator.onLine) {
+            const itemSync = await syncCollection('items', selectedItem.id, selectedItem);
+            if (itemSync) await db.items.update(selectedItem.id, { sync_status: 1 });
+            
+            const adjSync = await syncCollection('adjustments', adjustment.id, adjustment);
+            if (adjSync) await db.adjustments.update(adjustment.id, { sync_status: 1 });
+            
+            await processQueue(); // Handles movements
         }
 
         await addNotification('Stock Count', `Stock adjustment for ${selectedItem.name}: ${difference > 0 ? '+' : ''}${difference} units by ${user}`);
@@ -385,9 +361,7 @@ async function processAdjustment(newStock, reason) {
 async function fetchAdjustmentLogs() {
     const tbody = document.getElementById("adjustment-logs-table-body");
     try {
-        const response = await fetch(`${API_URL}?file=adjustments`);
-        let logs = await response.json();
-        if (!Array.isArray(logs)) logs = [];
+        let logs = await db.adjustments.toArray();
 
         // Sort by timestamp descending and take top 15 for the sidebar
         logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));

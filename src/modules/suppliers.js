@@ -1,7 +1,7 @@
+import { db } from "../db.js";
 import { checkPermission } from "../auth.js";
 import { generateUUID } from "../utils.js";
-
-const API_URL = 'api/router.php';
+import { syncCollection } from "../services/sync-service.js";
 
 export async function loadSuppliersView() {
     const content = document.getElementById("main-content");
@@ -78,11 +78,11 @@ export async function loadSuppliersView() {
 
 async function fetchSuppliers() {
     const tbody = document.getElementById("suppliers-table-body");
-    const canWrite = checkPermission("items", "write");
+    const canWrite = checkPermission("suppliers", "write");
 
     try {
-        const response = await fetch(`${API_URL}?file=suppliers`);
-        const suppliers = await response.json();
+        const suppliers = await db.suppliers.toArray();
+        const sortedSuppliers = suppliers.sort((a, b) => a.name.localeCompare(b.name));
 
         tbody.innerHTML = "";
 
@@ -91,7 +91,7 @@ async function fetchSuppliers() {
             return;
         }
 
-        suppliers.forEach((sup, index) => {
+        sortedSuppliers.forEach((sup) => {
             const row = document.createElement("tr");
             row.className = "border-b border-gray-200 hover:bg-gray-100";
             row.innerHTML = `
@@ -99,14 +99,14 @@ async function fetchSuppliers() {
                 <td class="py-3 px-6 text-left">${sup.contact || '-'}</td>
                 <td class="py-3 px-6 text-left">${sup.email || '-'}</td>
                 <td class="py-3 px-6 text-center">
-                    <button class="text-red-500 hover:text-red-700 delete-btn ${canWrite ? '' : 'hidden'}" data-index="${index}">
+                    <button class="text-red-500 hover:text-red-700 delete-btn ${canWrite ? '' : 'hidden'}" data-id="${sup.id}">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                     </button>
                 </td>
             `;
             
             if (canWrite) {
-                row.querySelector(".delete-btn").addEventListener("click", () => deleteSupplier(index));
+                row.querySelector(".delete-btn").addEventListener("click", () => deleteSupplier(sup.id));
             }
             tbody.appendChild(row);
         });
@@ -127,19 +127,19 @@ async function handleAddSupplier(e) {
         id: generateUUID(),
         name,
         contact,
-        email
+        email,
+        sync_status: 0
     };
 
     try {
-        const response = await fetch(`${API_URL}?file=suppliers`);
-        const suppliers = await response.json();
-        const updatedSuppliers = Array.isArray(suppliers) ? [...suppliers, newSupplier] : [newSupplier];
+        await db.suppliers.add(newSupplier);
 
-        await fetch(`${API_URL}?file=suppliers`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(updatedSuppliers)
-        });
+        if (navigator.onLine) {
+            const success = await syncCollection('suppliers', newSupplier.id, newSupplier);
+            if (success) {
+                await db.suppliers.update(newSupplier.id, { sync_status: 1 });
+            }
+        }
 
         document.getElementById("modal-add-supplier").classList.add("hidden");
         document.getElementById("form-add-supplier").reset();
@@ -150,24 +150,16 @@ async function handleAddSupplier(e) {
     }
 }
 
-async function deleteSupplier(index) {
+async function deleteSupplier(id) {
     if (!confirm("Are you sure you want to delete this supplier?")) return;
 
     try {
-        const response = await fetch(`${API_URL}?file=suppliers`);
-        const suppliers = await response.json();
-
-        if (Array.isArray(suppliers)) {
-            suppliers.splice(index, 1);
-            
-            await fetch(`${API_URL}?file=suppliers`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(suppliers)
-            });
-            
-            fetchSuppliers();
+        await db.suppliers.delete(id);
+        
+        if (navigator.onLine) {
+            await syncCollection('suppliers', id, null, true);
         }
+        fetchSuppliers();
     } catch (error) {
         console.error("Error deleting supplier:", error);
         alert("Failed to delete supplier.");

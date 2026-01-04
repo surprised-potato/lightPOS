@@ -36,6 +36,7 @@ Use this checklist to track your progress through the development phases.
 - [x] Create `src/modules/suppliers.js`.
 - [x] Implement `loadSuppliersView()` function.
 - [x] Read: Fetch `suppliers.json` and render table.
+- [x] Modularize: Refactor to use `syncCollection` service.
 - [x] Create: Build "Add Supplier" Modal (Name, Contact, Email).
 - [x] Delete: Implement delete functionality for suppliers.
 
@@ -44,6 +45,7 @@ Use this checklist to track your progress through the development phases.
 - [x] Implement `loadItemsView()` function.
 - [x] Read: Fetch `items.json` and render table.
 - [x] Create/Update: Build "Item Form" Modal.
+- [x] Modularize: Refactor to use `syncCollection` service.
 - [x] Link: Populate "Supplier" dropdown in the form.
 - [x] Add `min_stock` field for low stock alerts.
 
@@ -59,6 +61,7 @@ Use this checklist to track your progress through the development phases.
 - [x] Implement `loadCustomersView()` function.
 - [x] Read: Fetch `customers.json`.
 - [x] Create/Update: Build "Customer Form" Modal.
+- [x] Modularize: Refactor to use `syncCollection` service.
 - [x] Search: Implement customer search by name or phone.
 
 ### 2.5 Migration Module
@@ -74,6 +77,7 @@ Use this checklist to track your progress through the development phases.
  - [x] UI: Add "Stock In Cart" table to list multiple items.
  - [x] UI: Add "Total Invoice Value" display.
  - [x] Logic: Implement "Add to Stock In Cart" from search.
+ - [x] Modularize: Refactor to use `syncQueue` for batch synchronization.
  - [ ] UI/Logic: Add Landed Cost inputs (Freight, Duties, Insurance) and allocation logic.
  - [x] Logic: Compare Input Cost vs. Stored Cost for each item in cart.
  - [x] Modal: Trigger "Price Discrepancy" modal per item.
@@ -87,7 +91,8 @@ Use this checklist to track your progress through the development phases.
 - [x] UI: Display Item + Current System Stock.
 - [x] UI: Input field for "Actual Count".
 - [x] Logic: Calculate difference (Actual - System).
- - [ ] UI/Write: Append to `adjustments.json` with mandatory reason (Theft, Admin Error, Vendor Fraud).
+ - [x] Modularize: Refactor to use `syncCollection` for adjustments.
+ - [x] UI/Write: Append to `adjustments.json` with mandatory reason (Theft, Admin Error, Vendor Fraud).
  - [x] Write: Update `stock_level` in `items.json`.
 
 ## Phase 4: The Offline Layer (Dexie.js)
@@ -101,17 +106,17 @@ Use this checklist to track your progress through the development phases.
 ### 4.2 Realtime Sync (Downlink)
 - [x] Create `src/services/sync-service.js`.
 - [x] Implement `startRealtimeSync()`.
-- [ ] Logic: Poll `items.json` every X seconds (or manual refresh).
+ - [x] Logic: Poll `items.json` every X seconds (or manual refresh).
 - [x] Logic: On change, run `db.items.bulkPut()` to update IndexedDB.
 - [x] Initialize this service in `main.js`.
 
 ## Phase 5: Point of Sale (POS)
 ### 5.1 POS UI & Layout
 - [x] Create `src/modules/pos.js`.
-- [ ] Update Split Layout: Item Grid (Left) vs. Cart + Customer Selection (Right).
+- [x] Update Split Layout: Item Grid (Left) vs. Cart + Customer Selection (Right).
 - [x] Read: Fetch items from Dexie (not Server).
 - [x] Search: Implement local search filtering on Dexie results.
-- [ ] UI: Add Customer Search/Selection in POS.
+- [x] UI: Add Customer Search/Selection in POS.
 
 ### 5.2 Cart Logic
 - [x] Create cart state array.
@@ -132,8 +137,8 @@ Use this checklist to track your progress through the development phases.
 ### 5.4 Checkout & Queuing
 - [x] Implement "Pay" Button.
 - [x] UI: "Amount Tendered" Modal & Change Calculation.
-- [ ] Write: Create transaction object `{ customerId, pointsEarned, synced: false, ... }`.
-- [ ] Logic: Calculate loyalty points based on total.
+- [x] Write: Create transaction object `{ customerId, pointsEarned, synced: false, ... }`.
+- [x] Logic: Calculate loyalty points based on total.
 - [x] Write: Save to Dexie `transactions` table.
 - [x] Clear Cart and show success message.
 
@@ -188,6 +193,7 @@ Use this checklist to track your progress through the development phases.
 - [x] UI: "Close Shift" Modal (Input: Closing Cash Count).
 - [x] Logic: Calculate Expected Cash (Opening + Total Cash Sales in Shift).
 - [x] Report: Show Overage/Shortage summary upon closing.
+ - [x] Modularize: Refactor to use `syncCollection` for shift records.
 - [x] Report: Generate "Z-Report" on shift close (Final summary).
 - [ ] Write: Save shift records to `shifts.json`.
 
@@ -197,6 +203,7 @@ Use this checklist to track your progress through the development phases.
 - [x] UI: "Add Expense" Modal.
 - [x] Form: Amount, Category (Dropdown), Description, Date.
 - [x] Link: Optional "Supplier" dropdown (reuse `fetchSuppliers`).
+ - [x] Modularize: Refactor to use `syncCollection` for expenses.
 - [ ] Write: Save to `expenses.json`.
 
 ## Phase 9: User Management
@@ -205,6 +212,7 @@ Use this checklist to track your progress through the development phases.
 - [x] UI: User Form Modal (Email, Name, Active Status).
 - [x] UI: Permissions Matrix (Read/Write checkboxes per module).
 - [x] Write: Save user profile and permissions to `users.json`.
+ - [x] Modularize: Refactor to use `syncCollection` for user management.
 - [x] Logic: Update `auth.js` to fetch user profile from `users.json` on login.
 - [x] Logic: Admin must manually create users (or simple registration flow).
 - [x] UI: Create "Pending Approval" view for users with no access.

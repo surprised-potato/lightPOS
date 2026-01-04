@@ -1,4 +1,5 @@
 import { checkPermission } from "../auth.js";
+import { syncCollection } from "../services/sync-service.js";
 
 const API_URL = 'api/router.php';
 const MODULES = ['pos', 'customers', 'shifts', 'items', 'suppliers', 'stockin', 'stock-count', 'expenses', 'reports', 'users', 'migrate', 'returns', 'settings'];
@@ -325,42 +326,30 @@ async function handleUserSubmit(e) {
         permissions[mod][type] = chk.checked;
     });
 
-    try {
-        const response = await fetch(`${API_URL}?file=users`);
-        let users = await response.json();
-        if (!Array.isArray(users)) users = [];
+    const userData = {
+        email,
+        name,
+        phone,
+        is_active: isActive,
+        permissions
+    };
+    if (password) userData.password = md5(password);
 
-        if (isEdit) {
-            // Update existing
-            const index = users.findIndex(u => u.email === email);
-            if (index !== -1) {
-                users[index].name = name;
-                users[index].phone = phone;
-                users[index].is_active = isActive;
-                users[index].permissions = permissions;
-                if (password) users[index].password = md5(password);
-            }
-        } else {
-            // Create new
+    try {
+        if (!isEdit) {
+            const response = await fetch(`${API_URL}?file=users`);
+            const users = await response.json();
             if (users.find(u => u.email === email)) {
                 alert("User already exists.");
                 return;
             }
-            users.push({
-                email,
-                name,
-                phone,
-                password: md5(password),
-                is_active: isActive,
-                permissions
-            });
         }
 
-        await fetch(`${API_URL}?file=users`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(users)
-        });
+        const success = await syncCollection('users', email, userData);
+        
+        if (!success) {
+            throw new Error("Server sync failed");
+        }
         
         closeUserModal();
         fetchAndRenderUsers();

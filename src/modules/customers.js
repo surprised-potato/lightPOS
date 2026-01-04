@@ -1,6 +1,7 @@
 import { db } from "../db.js";
 import { checkPermission } from "../auth.js";
 import { generateUUID } from "../utils.js";
+import { syncCollection } from "../services/sync-service.js";
 
 const API_URL = 'api/router.php';
 let customersData = [];
@@ -196,28 +197,20 @@ async function handleSaveCustomer(e) {
         phone: document.getElementById("cust-phone").value,
         email: document.getElementById("cust-email").value,
         loyalty_points: parseInt(document.getElementById("cust-points").value) || 0,
-        timestamp: new Date()
+        timestamp: new Date(),
+        sync_status: 0
     };
 
     // 1. Save to Dexie
     await db.customers.put(customerData);
 
-    const response = await fetch(`${API_URL}?file=customers`);
-    let customers = await response.json();
-    if (!Array.isArray(customers)) customers = [];
-
-    if (id) {
-        const index = customers.findIndex(c => c.id === id);
-        if (index !== -1) customers[index] = customerData;
-    } else {
-        customers.push(customerData);
+    // 2. Sync with Server
+    if (navigator.onLine) {
+        const success = await syncCollection('customers', customerData.id, customerData);
+        if (success) {
+            await db.customers.update(customerData.id, { sync_status: 1 });
+        }
     }
-
-    await fetch(`${API_URL}?file=customers`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(customers)
-    });
 
     document.getElementById("modal-add-customer").classList.add("hidden");
     fetchCustomers();

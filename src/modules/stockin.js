@@ -1,8 +1,7 @@
 import { checkPermission, getUserProfile } from "../auth.js";
 import { db } from "../db.js";
 import { generateUUID } from "../utils.js";
-
-const API_URL = 'api/router.php';
+import { processQueue } from "../services/sync-service.js";
 
 // Module-level state for the cart
 let stockInCart = [];
@@ -28,8 +27,7 @@ async function loadAllItems() {
 
 async function fetchSuppliers() {
     try {
-        const response = await fetch(`${API_URL}?file=suppliers`);
-        suppliersList = await response.json();
+        suppliersList = await db.suppliers.toArray();
         if (!Array.isArray(suppliersList)) suppliersList = [];
     } catch (error) {
         console.error("Error fetching suppliers:", error);
@@ -395,17 +393,6 @@ async function saveStockIn() {
 
     const user = getUserProfile();
     const supplierId = document.getElementById('stockin-supplier').value;
-    const stockInData = {
-        user_id: user.email,
-        username: user.name,
-        items: stockInCart.map(item => ({ 
-            item_id: item.id, 
-            quantity: item.quantity, 
-            name: item.name,
-            cost_price: item.cost_price,
-            movement_id: generateUUID()
-        }))
-    };
 
     try {
         // 1. Update local items DB
@@ -432,7 +419,13 @@ async function saveStockIn() {
             id: generateUUID(), // Use UUID for server
             user_id: user.email,
             username: user.name,
-            items: stockInCart,
+            items: stockInCart.map(item => ({
+                item_id: item.id,
+                name: item.name,
+                quantity: item.quantity,
+                cost_price: item.cost_price,
+                movement_id: generateUUID()
+            })),
             timestamp: new Date().toISOString(),
             item_count: stockInCart.reduce((sum, item) => sum + item.quantity, 0),
             supplier_id_override: supplierId || null,
@@ -441,7 +434,7 @@ async function saveStockIn() {
         await db.stockins.add(historyRecord);
 
         const movements = [];
-        for (const item of stockInData.items) {
+        for (const item of historyRecord.items) {
             const movement = {
                 id: item.movement_id,
                 item_id: item.item_id,
@@ -457,51 +450,11 @@ async function saveStockIn() {
         }
         await db.stock_movements.bulkPut(movements);
 
-        // 3. Sync with server
+        // 3. Add to Sync Queue and process
+        await db.syncQueue.add({ action: 'batch_stock_in', data: historyRecord });
+        
         if (navigator.onLine) {
-            try {
-                // Sync items
-                const serverItemsRes = await fetch(`${API_URL}?file=items`);
-                let serverItems = await serverItemsRes.json();
-                if (!Array.isArray(serverItems)) serverItems = [];
-
-                itemsToUpdate.forEach(localItem => {
-                    const index = serverItems.findIndex(serverItem => serverItem.id === localItem.id);
-                    if (index !== -1) {
-                        serverItems[index] = { ...localItem, sync_status: 1 }; // Overwrite with updated local data
-                    } else {
-                        serverItems.push({ ...localItem, sync_status: 1 });
-                    }
-                });
-                await fetch(`${API_URL}?file=items`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(serverItems) });
-
-                // Mark local items as synced
-                itemsToUpdate.forEach(i => i.sync_status = 1);
-                await db.items.bulkPut(itemsToUpdate);
-
-                // Sync history
-                const serverHistoryRes = await fetch(`${API_URL}?file=stock_in_history`);
-                let serverHistory = await serverHistoryRes.json();
-                if (!Array.isArray(serverHistory)) serverHistory = [];
-                serverHistory.push({ ...historyRecord, sync_status: 1 });
-                await fetch(`${API_URL}?file=stock_in_history`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(serverHistory) });
-
-                await db.stockins.update(historyRecord.id, { sync_status: 1 });
-
-                // Sync movements
-                const serverMovementsRes = await fetch(`${API_URL}?file=stock_movements`);
-                let serverMovements = await serverMovementsRes.json();
-                if (!Array.isArray(serverMovements)) serverMovements = [];
-                const syncedMovements = movements.map(m => ({ ...m, sync_status: 1 }));
-                serverMovements.push(...syncedMovements);
-                await fetch(`${API_URL}?file=stock_movements`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(serverMovements) });
-
-                for (const movement of movements) {
-                    await db.stock_movements.update(movement.id, { sync_status: 1 });
-                }
-            } catch (syncError) {
-                console.warn("Server sync failed, data is saved locally.", syncError);
-            }
+            await processQueue();
         }
 
         alert('Stock-in successful! Data is saved locally and will sync with the server.');
@@ -524,25 +477,7 @@ async function loadStockInHistory() {
     historyContainer.innerHTML = '<p class="text-gray-500">Loading history...</p>';
 
     try {
-        // Fetch from both Server and Local Dexie to ensure immediate visibility
-        const [response, localHistory] = await Promise.all([
-            fetch(`${API_URL}?file=stock_in_history`),
-            db.stockins.toArray()
-        ]);
-        
-        let serverHistory = [];
-        if (response.ok) {
-            serverHistory = await response.json();
-        }
-        
-        if (!Array.isArray(serverHistory)) serverHistory = [];
-
-        // Merge history using a Map to avoid duplicates (keyed by ID)
-        const historyMap = new Map();
-        serverHistory.forEach(entry => historyMap.set(entry.id, entry));
-        localHistory.forEach(entry => historyMap.set(entry.id, entry));
-
-        let history = Array.from(historyMap.values());
+        const history = await db.stockins.toArray();
         historyCache = history;
 
         // Sort by timestamp desc and limit

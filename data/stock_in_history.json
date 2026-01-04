@@ -146,5 +146,22 @@
         "item_count": 100,
         "supplier_id_override": "894ccedc-10d1-4aad-8645-c20c1c8ea7a6",
         "sync_status": 1
+    },
+    {
+        "id": "3c0ecff7-0bdc-4483-9cbe-3cc027a9f785",
+        "user_id": "admin@lightpos.com",
+        "username": "Super Admin",
+        "items": [
+            {
+                "id": "e8ab5e4b-ccec-4b7a-95de-652611fe3411",
+                "name": " Max Staple Wire #10",
+                "quantity": 50,
+                "cost_price": 9.5
+            }
+        ],
+        "timestamp": "2026-01-04T17:51:42.639Z",
+        "item_count": 50,
+        "supplier_id_override": null,
+        "sync_status": 1
     }
 ]

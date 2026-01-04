@@ -1,8 +1,8 @@
 import { checkPermission } from "../auth.js";
 import { generateUUID } from "../utils.js";
 import { db } from "../db.js";
+import { syncCollection } from "../services/sync-service.js";
 
-const API_URL = 'api/router.php';
 let itemsData = [];
 let suppliersList = [];
 let sortState = { key: 'name', dir: 'asc' };
@@ -243,25 +243,11 @@ export async function loadItemsView() {
             }
 
             if (navigator.onLine) {
-                const response = await fetch(`${API_URL}?file=items`);
-                let items = await response.json();
-                if (!Array.isArray(items)) items = [];
-
-                if (itemId) {
-                    const index = items.findIndex(i => i.id === itemId);
-                    if (index !== -1) items[index] = { ...items[index], ...itemData, sync_status: 1 };
-                } else {
-                    items.push({ ...itemData, sync_status: 1 });
+                const syncId = itemId || itemData.id;
+                const success = await syncCollection('items', syncId, itemData);
+                if (success) {
+                    await db.items.update(syncId, { sync_status: 1 });
                 }
-
-                await fetch(`${API_URL}?file=items`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(items)
-                });
-                
-                if (itemId) await db.items.update(itemId, { sync_status: 1 });
-                else await db.items.update(itemData.id, { sync_status: 1 });
             }
 
             modal.classList.add("hidden");
@@ -416,15 +402,7 @@ function renderItems(items) {
                     await db.items.delete(id);
                     
                     if (navigator.onLine) {
-                        const response = await fetch(`${API_URL}?file=items`);
-                        let currentItems = await response.json();
-                        const updatedItems = currentItems.filter(i => i.id !== id);
-                        
-                        await fetch(`${API_URL}?file=items`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(updatedItems)
-                        });
+                        await syncCollection('items', id, null, true);
                     }
                     fetchItems();
                 } catch (error) {

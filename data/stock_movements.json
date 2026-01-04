@@ -1107,5 +1107,16 @@
         "user": "Super Admin",
         "reason": "Supplier Delivery",
         "sync_status": 1
+    },
+    {
+        "id": "953a8b2d-2dd7-4d38-8987-0815f5ee4f7f",
+        "item_id": "e8ab5e4b-ccec-4b7a-95de-652611fe3411",
+        "item_name": " Max Staple Wire #10",
+        "timestamp": "2026-01-04T17:51:42.639Z",
+        "type": "Stock-In",
+        "qty": 50,
+        "user": "Super Admin",
+        "reason": "Supplier Delivery",
+        "sync_status": 1
     }
 ]
