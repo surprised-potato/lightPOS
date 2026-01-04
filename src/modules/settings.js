@@ -94,26 +94,110 @@ export async function loadSettingsView() {
                 <!-- Advanced Tab -->
                 <div id="settings-tab-advanced" class="settings-panel hidden space-y-6">
                     <div class="bg-white p-6 rounded-lg shadow-sm border">
-                        <h3 class="text-lg font-bold mb-4">Print Settings</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-bold text-gray-700 mb-2">Paper Width (mm)</label>
-                                <input type="number" id="set-print-width" step="1" min="40" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="76">
+                        <h3 class="text-lg font-bold mb-6">Receipt Designer</h3>
+                        
+                        <div class="space-y-8">
+                            <!-- General Settings -->
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Paper Width (mm)</label>
+                                    <input type="number" id="set-print-width" step="1" min="40" class="w-full border rounded p-2 text-sm">
+                                </div>
+                                <div class="flex items-center pt-5">
+                                    <label class="inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" id="set-print-show-dividers" class="form-checkbox h-5 w-5 text-blue-600">
+                                        <span class="ml-2 text-sm font-bold text-gray-700">Show Horizontal Dividers</span>
+                                    </label>
+                                </div>
                             </div>
-                            <div>
-                                <label class="block text-sm font-bold text-gray-700 mb-2">Header Font Size (px)</label>
-                                <input type="number" id="set-print-header-size" step="1" min="8" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="14">
+
+                            <!-- Header Section -->
+                            <div class="border rounded-lg p-4">
+                                <h4 class="font-bold text-blue-600 mb-3 flex items-center gap-2">
+                                    <span class="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center text-xs">1</span>
+                                    Header Configuration
+                                </h4>
+                                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                                    <div class="md:col-span-4">
+                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Header Text</label>
+                                        <textarea id="set-print-header-text" rows="2" class="w-full border rounded p-2 text-sm" placeholder="Store Name, Address..."></textarea>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Font Size (px)</label>
+                                        <input type="number" id="set-print-header-size" class="w-full border rounded p-2 text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Font Family</label>
+                                        <select id="set-print-header-font" class="w-full border rounded p-2 text-sm">
+                                            <option value="'Courier New', Courier, monospace">Courier New</option>
+                                            <option value="Arial, sans-serif">Arial</option>
+                                            <option value="'Times New Roman', serif">Times New Roman</option>
+                                        </select>
+                                    </div>
+                                    <div class="flex items-center gap-4 pt-5">
+                                        <label class="inline-flex items-center"><input type="checkbox" id="set-print-header-bold" class="form-checkbox"><span class="ml-1 text-xs">Bold</span></label>
+                                        <label class="inline-flex items-center"><input type="checkbox" id="set-print-header-italic" class="form-checkbox"><span class="ml-1 text-xs">Italic</span></label>
+                                    </div>
+                                </div>
                             </div>
-                            <div>
-                                <label class="block text-sm font-bold text-gray-700 mb-2">Body Font Size (px)</label>
-                                <input type="number" id="set-print-body-size" step="1" min="8" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="12">
+
+                            <!-- Body Section -->
+                            <div class="border rounded-lg p-4">
+                                <h4 class="font-bold text-blue-600 mb-3 flex items-center gap-2">
+                                    <span class="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center text-xs">2</span>
+                                    Body (Transaction Details)
+                                </h4>
+                                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Font Size (px)</label>
+                                        <input type="number" id="set-print-body-size" class="w-full border rounded p-2 text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Font Family</label>
+                                        <select id="set-print-body-font" class="w-full border rounded p-2 text-sm">
+                                            <option value="'Courier New', Courier, monospace">Courier New</option>
+                                            <option value="Arial, sans-serif">Arial</option>
+                                            <option value="'Times New Roman', serif">Times New Roman</option>
+                                        </select>
+                                    </div>
+                                    <div class="flex items-center gap-4 pt-5">
+                                        <label class="inline-flex items-center"><input type="checkbox" id="set-print-body-bold" class="form-checkbox"><span class="ml-1 text-xs">Bold</span></label>
+                                        <label class="inline-flex items-center"><input type="checkbox" id="set-print-body-italic" class="form-checkbox"><span class="ml-1 text-xs">Italic</span></label>
+                                    </div>
+                                </div>
                             </div>
-                            <div>
-                                <label class="block text-sm font-bold text-gray-700 mb-2">Footer Font Size (px)</label>
-                                <input type="number" id="set-print-footer-size" step="1" min="8" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="10">
+
+                            <!-- Footer Section -->
+                            <div class="border rounded-lg p-4">
+                                <h4 class="font-bold text-blue-600 mb-3 flex items-center gap-2">
+                                    <span class="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center text-xs">3</span>
+                                    Footer Configuration
+                                </h4>
+                                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                    <div class="md:col-span-4">
+                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Footer Text</label>
+                                        <textarea id="set-print-footer-text" rows="2" class="w-full border rounded p-2 text-sm" placeholder="Thank you for shopping!"></textarea>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Font Size (px)</label>
+                                        <input type="number" id="set-print-footer-size" class="w-full border rounded p-2 text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Font Family</label>
+                                        <select id="set-print-footer-font" class="w-full border rounded p-2 text-sm">
+                                            <option value="'Courier New', Courier, monospace">Courier New</option>
+                                            <option value="Arial, sans-serif">Arial</option>
+                                            <option value="'Times New Roman', serif">Times New Roman</option>
+                                        </select>
+                                    </div>
+                                    <div class="flex items-center gap-4 pt-5">
+                                        <label class="inline-flex items-center"><input type="checkbox" id="set-print-footer-bold" class="form-checkbox"><span class="ml-1 text-xs">Bold</span></label>
+                                        <label class="inline-flex items-center"><input type="checkbox" id="set-print-footer-italic" class="form-checkbox"><span class="ml-1 text-xs">Italic</span></label>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <p class="text-[10px] text-gray-500 mt-2 italic">Adjust these if the receipt prints outside the paper boundaries or if text is too small for your printer (e.g. Epson TM-U220).</p>
+                        <p class="text-[10px] text-gray-400 mt-6 italic">Adjust these settings to customize your receipt layout for printers like the Epson TM-U220.</p>
                     </div>
 
                     <div class="bg-white p-6 rounded-lg shadow-sm border">
@@ -363,10 +447,26 @@ async function loadSettings() {
                 document.getElementById("set-auto-print").checked = settings.pos.auto_print || false;
             }
             if (settings.print) {
-                document.getElementById("set-print-width").value = settings.print.paper_width || 76;
-                document.getElementById("set-print-header-size").value = settings.print.header_font_size || 14;
-                document.getElementById("set-print-body-size").value = settings.print.body_font_size || 12;
-                document.getElementById("set-print-footer-size").value = settings.print.footer_font_size || 10;
+                const p = settings.print;
+                document.getElementById("set-print-width").value = p.paper_width || 76;
+                document.getElementById("set-print-show-dividers").checked = p.show_dividers !== false;
+                
+                document.getElementById("set-print-header-text").value = p.header?.text || "";
+                document.getElementById("set-print-header-size").value = p.header?.font_size || 14;
+                document.getElementById("set-print-header-font").value = p.header?.font_family || "'Courier New', Courier, monospace";
+                document.getElementById("set-print-header-bold").checked = p.header?.bold || false;
+                document.getElementById("set-print-header-italic").checked = p.header?.italic || false;
+
+                document.getElementById("set-print-body-size").value = p.body?.font_size || 12;
+                document.getElementById("set-print-body-font").value = p.body?.font_family || "'Courier New', Courier, monospace";
+                document.getElementById("set-print-body-bold").checked = p.body?.bold || false;
+                document.getElementById("set-print-body-italic").checked = p.body?.italic || false;
+
+                document.getElementById("set-print-footer-text").value = p.footer?.text || "";
+                document.getElementById("set-print-footer-size").value = p.footer?.font_size || 10;
+                document.getElementById("set-print-footer-font").value = p.footer?.font_family || "'Courier New', Courier, monospace";
+                document.getElementById("set-print-footer-bold").checked = p.footer?.bold || false;
+                document.getElementById("set-print-footer-italic").checked = p.footer?.italic || false;
             }
             await renderSyncHistory();
         }
@@ -421,9 +521,27 @@ async function handleSave(e) {
         },
         print: {
             paper_width: parseInt(document.getElementById("set-print-width").value) || 76,
-            header_font_size: parseInt(document.getElementById("set-print-header-size").value) || 14,
-            body_font_size: parseInt(document.getElementById("set-print-body-size").value) || 12,
-            footer_font_size: parseInt(document.getElementById("set-print-footer-size").value) || 10
+            show_dividers: document.getElementById("set-print-show-dividers").checked,
+            header: {
+                text: document.getElementById("set-print-header-text").value.trim(),
+                font_size: parseInt(document.getElementById("set-print-header-size").value) || 14,
+                font_family: document.getElementById("set-print-header-font").value,
+                bold: document.getElementById("set-print-header-bold").checked,
+                italic: document.getElementById("set-print-header-italic").checked
+            },
+            body: {
+                font_size: parseInt(document.getElementById("set-print-body-size").value) || 12,
+                font_family: document.getElementById("set-print-body-font").value,
+                bold: document.getElementById("set-print-body-bold").checked,
+                italic: document.getElementById("set-print-body-italic").checked
+            },
+            footer: {
+                text: document.getElementById("set-print-footer-text").value.trim(),
+                font_size: parseInt(document.getElementById("set-print-footer-size").value) || 10,
+                font_family: document.getElementById("set-print-footer-font").value,
+                bold: document.getElementById("set-print-footer-bold").checked,
+                italic: document.getElementById("set-print-footer-italic").checked
+            }
         }
     };
 
@@ -455,7 +573,30 @@ export async function getSystemSettings() {
             rewards: { ratio: 100 },
             shift: { threshold: 0 },
             pos: { auto_print: false },
-            print: { paper_width: 76, header_font_size: 14, body_font_size: 12, footer_font_size: 10 }
+            print: { 
+                paper_width: 76, 
+                show_dividers: true,
+                header: { 
+                    text: "", 
+                    font_size: 14, 
+                    font_family: "'Courier New', Courier, monospace", 
+                    bold: true, 
+                    italic: false 
+                },
+                body: { 
+                    font_size: 12, 
+                    font_family: "'Courier New', Courier, monospace", 
+                    bold: false, 
+                    italic: false 
+                },
+                footer: { 
+                    text: "Thank you for shopping!", 
+                    font_size: 10, 
+                    font_family: "'Courier New', Courier, monospace", 
+                    bold: false, 
+                    italic: true 
+                }
+            }
         };
     } catch (e) {
         return {
@@ -464,7 +605,30 @@ export async function getSystemSettings() {
             rewards: { ratio: 100 },
             shift: { threshold: 0 },
             pos: { auto_print: false },
-            print: { paper_width: 76, header_font_size: 14, body_font_size: 12, footer_font_size: 10 }
+            print: { 
+                paper_width: 76, 
+                show_dividers: true,
+                header: { 
+                    text: "", 
+                    font_size: 14, 
+                    font_family: "'Courier New', Courier, monospace", 
+                    bold: true, 
+                    italic: false 
+                },
+                body: { 
+                    font_size: 12, 
+                    font_family: "'Courier New', Courier, monospace", 
+                    bold: false, 
+                    italic: false 
+                },
+                footer: { 
+                    text: "Thank you for shopping!", 
+                    font_size: 10, 
+                    font_family: "'Courier New', Courier, monospace", 
+                    bold: false, 
+                    italic: true 
+                }
+            }
         };
     }
 }

@@ -18,8 +18,26 @@
     },
     "print": {
         "paper_width": 76,
-        "header_font_size": 20,
-        "body_font_size": 12,
-        "footer_font_size": 10
+        "show_dividers": true,
+        "header": {
+            "text": "POLLENMART\nBrgy. ALIJIS - BACOLOD CITY\n(034) 703-5345",
+            "font_size": 16,
+            "font_family": "'Courier New', Courier, monospace",
+            "bold": false,
+            "italic": false
+        },
+        "body": {
+            "font_size": 18,
+            "font_family": "'Courier New', Courier, monospace",
+            "bold": false,
+            "italic": false
+        },
+        "footer": {
+            "text": "This is not an official Receipt\nThank you for Shopping!",
+            "font_size": 14,
+            "font_family": "'Courier New', Courier, monospace",
+            "bold": false,
+            "italic": false
+        }
     }
 }

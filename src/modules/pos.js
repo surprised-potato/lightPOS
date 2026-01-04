@@ -982,9 +982,10 @@ async function openHistoryModal() {
         tbody.innerHTML = txs.map(tx => `
             <tr class="border-b ${tx.is_voided ? 'bg-red-50 opacity-60' : ''}">
                 <td class="p-2 text-xs">${new Date(tx.timestamp).toLocaleString()}</td>
-                <td class="p-2">${tx.customer_name}</td>
+                <td class="p-2 text-xs">${tx.customer_name}</td>
                 <td class="p-2 text-right font-bold">₱${tx.total_amount.toFixed(2)}</td>
-                <td class="p-2 text-center">
+                <td class="p-2 text-center flex justify-center gap-2">
+                    <button class="bg-gray-100 text-gray-700 hover:bg-gray-200 px-2 py-1 rounded text-xs font-bold btn-print-tx" data-id="${tx.id}">Print</button>
                     ${tx.is_voided 
                         ? '<span class="text-red-600 font-bold text-xs uppercase">Voided</span>' 
                         : `<button class="bg-red-100 text-red-600 hover:bg-red-200 px-2 py-1 rounded text-xs font-bold btn-void-tx" data-id="${tx.id}">Void</button>`
@@ -995,6 +996,12 @@ async function openHistoryModal() {
 
         tbody.querySelectorAll(".btn-void-tx").forEach(btn => {
             btn.addEventListener("click", () => voidTransaction(btn.dataset.id));
+        });
+        tbody.querySelectorAll(".btn-print-tx").forEach(btn => {
+            btn.addEventListener("click", async () => {
+                const tx = txs.find(t => t.id === btn.dataset.id);
+                if (tx) await printReceipt(tx, true);
+            });
         });
     } catch (error) {
         tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-red-500">Error loading history.</td></tr>`;
@@ -1382,9 +1389,11 @@ async function requestQuickCustomer(tx) {
             return;
         }
 
-        nameInput.value = "";
+        // Pre-populate if already assigned
+        nameInput.value = tx.customer_id !== "Guest" ? tx.customer_name : "";
         phoneInput.value = "";
-        selectedId = null;
+        selectedId = tx.customer_id !== "Guest" ? tx.customer_id : null;
+
         resultsDiv.innerHTML = "";
         resultsDiv.classList.add("hidden");
         modal.classList.remove("hidden");
@@ -1405,12 +1414,39 @@ async function requestQuickCustomer(tx) {
         };
 
         const updateTxAndResolve = async (customer) => {
+            // 1. Update Local Dexie
             await db.transactions.update(tx.id, {
                 customer_id: customer.id,
-                customer_name: customer.name
+                customer_name: customer.name,
+                sync_status: 0 // Mark for re-sync
             });
+            
             tx.customer_id = customer.id;
             tx.customer_name = customer.name;
+
+            // 2. Immediate Server Sync if online
+            if (navigator.onLine) {
+                try {
+                    const txRes = await fetch(`${API_URL}?file=transactions`);
+                    let serverTxs = await txRes.json();
+                    if (Array.isArray(serverTxs)) {
+                        const sIdx = serverTxs.findIndex(t => t.id === tx.id);
+                        if (sIdx !== -1) {
+                            serverTxs[sIdx].customer_id = customer.id;
+                            serverTxs[sIdx].customer_name = customer.name;
+                            await fetch(`${API_URL}?file=transactions`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(serverTxs)
+                            });
+                            await db.transactions.update(tx.id, { sync_status: 1 });
+                        }
+                    }
+                } catch (e) {
+                    console.warn("Failed to sync transaction update to server:", e);
+                }
+            }
+
             cleanup();
             resolve(tx);
         };
@@ -1492,6 +1528,13 @@ async function requestQuickCustomer(tx) {
                 return;
             }
 
+            // If they didn't change anything and it was already assigned, just proceed
+            if (selectedId && name === tx.customer_name && tx.customer_id !== "Guest") {
+                cleanup();
+                resolve(tx);
+                return;
+            }
+
             if (selectedId) {
                 await updateTxAndResolve({ id: selectedId, name });
                 return;
@@ -1524,20 +1567,38 @@ async function requestQuickCustomer(tx) {
 }
 
 async function printReceipt(tx, isReprint = false) {
-    if (tx.customer_id === "Guest") {
+    // Request customer info on reprint or if it's a Guest transaction
+    if (isReprint || tx.customer_id === "Guest") {
         const result = await requestQuickCustomer(tx);
-        if (!result) return; // Abort printing if cancelled
-        tx = result;
+        if (result) {
+            tx = result;
+        } else if (!isReprint) {
+            // If it's the initial print and they cancel, abort the print
+            return;
+        }
     }
     const settings = await getSystemSettings();
     const store = settings.store || { name: "LightPOS", data: "" };
-    const printSet = settings.print || {
-        paper_width: 76,
-        header_font_size: 14,
-        body_font_size: 12,
-        footer_font_size: 10
+    const p = settings.print || {
+        paper_width: 76, 
+        show_dividers: true,
+        header: { text: "", font_size: 14, font_family: "'Courier New', Courier, monospace", bold: true, italic: false },
+        body: { font_size: 12, font_family: "'Courier New', Courier, monospace", bold: false, italic: false },
+        footer: { text: "Thank you for shopping!", font_size: 10, font_family: "'Courier New', Courier, monospace", bold: false, italic: true }
     };
-    const pWidth = printSet.paper_width || 76;
+    
+    const pWidth = p.paper_width || 76;
+    const showHR = p.show_dividers !== false;
+
+    const getStyle = (s) => `
+        font-size: ${s.font_size}px; 
+        font-family: ${s.font_family}; 
+        font-weight: ${s.bold ? 'bold' : 'normal'}; 
+        font-style: ${s.italic ? 'italic' : 'normal'};
+    `;
+
+    const headerText = p.header?.text || `${store.name}\n${store.data}`;
+    const footerText = p.footer?.text || "THIS IS NOT AN OFFICIAL RECEIPT\nThank you for shopping!";
     
     const printWindow = window.open('', '_blank', 'width=300,height=600');
     const itemsHtml = tx.items.map(item => `
@@ -1545,7 +1606,7 @@ async function printReceipt(tx, isReprint = false) {
             <td colspan="2" style="padding-top: 5px;">${item.name}</td>
         </tr>
         <tr>
-            <td style="font-size: ${printSet.footer_font_size}px;">${item.qty} x ${item.selling_price.toFixed(2)}</td>
+            <td style="font-size: 0.9em; opacity: 0.8;">${item.qty} x ${item.selling_price.toFixed(2)}</td>
             <td style="text-align: right;">${(item.qty * item.selling_price).toFixed(2)}</td>
         </tr>
     `).join('');
@@ -1557,9 +1618,8 @@ async function printReceipt(tx, isReprint = false) {
             <style>
                 @page { margin: 0; }
                 body { 
-                    width: ${pWidth}mm; 
-                    font-family: 'Courier New', Courier, monospace; 
-                    font-size: ${printSet.body_font_size}px; 
+                    width: ${pWidth}mm;
+                    ${getStyle(p.body)}
                     padding: 5mm;
                     margin: 0;
                     color: #000;
@@ -1568,8 +1628,10 @@ async function printReceipt(tx, isReprint = false) {
                 .text-right { text-align: right; }
                 .bold { font-weight: bold; }
                 .hr { border-bottom: 1px dashed #000; margin: 5px 0; }
-                table { width: 100%; border-collapse: collapse; font-size: ${printSet.body_font_size}px; }
-                .footer { margin-top: 20px; font-size: ${printSet.footer_font_size}px; }
+                table { width: 100%; border-collapse: collapse; }
+                .header-sec { ${getStyle(p.header)} }
+                .body-sec { ${getStyle(p.body)} }
+                .footer-sec { margin-top: 20px; ${getStyle(p.footer)} }
                 .watermark {
                     position: fixed;
                     top: 50%;
@@ -1586,31 +1648,29 @@ async function printReceipt(tx, isReprint = false) {
         </head>
         <body onload="window.print(); window.close();">
             ${isReprint ? '<div class="watermark">REPRINT</div>' : ''}
-            <div class="text-center">
+            <div class="text-center header-sec">
                 ${store.logo ? `<img src="${store.logo}" style="max-width: 40mm; max-height: 20mm; margin-bottom: 5px; filter: grayscale(1);"><br>` : ''}
-                <div class="bold" style="font-size: ${printSet.header_font_size + 2}px;">${store.name}</div>
-                <div style="white-space: pre-wrap; font-size: ${printSet.footer_font_size}px;">${store.data}</div>
+                <div style="white-space: pre-wrap;">${headerText}</div>
             </div>
-            <div class="hr"></div>
-            <div style="font-size: ${printSet.header_font_size}px;">
+            ${showHR ? '<div class="hr"></div>' : ''}
+            <div class="body-sec">
                 Date: ${new Date(tx.timestamp).toLocaleString()}<br>
-                Trans: #${tx.id}<br>
+                Trans: #${tx.id.slice(-6)}<br>
                 Cashier: ${tx.user_name || tx.user_email}<br>
                 Customer: ${tx.customer_name}
             </div>
-            <div class="hr"></div>
+            ${showHR ? '<div class="hr"></div>' : ''}
             <table>
                 ${itemsHtml}
             </table>
-            <div class="hr"></div>
+            ${showHR ? '<div class="hr"></div>' : ''}
             <table>
                 <tr><td class="bold">TOTAL</td><td class="text-right bold">₱${tx.total_amount.toFixed(2)}</td></tr>
                 <tr><td>Payment (${tx.payment_method})</td><td class="text-right">₱${tx.amount_tendered.toFixed(2)}</td></tr>
                 <tr><td>Change</td><td class="text-right">₱${tx.change.toFixed(2)}</td></tr>
             </table>
-            <div class="footer text-center">
-                THIS IS NOT AN OFFICIAL RECEIPT<br>
-                Thank you for shopping!
+            <div class="footer-sec text-center">
+                <div style="white-space: pre-wrap;">${footerText}</div>
             </div>
         </body>
         </html>
