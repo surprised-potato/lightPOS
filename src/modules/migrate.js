@@ -15,6 +15,24 @@ export function loadMigrateView() {
         <div class="max-w-4xl mx-auto">
             <h2 class="text-2xl font-bold text-gray-800 mb-6">Data Migration & Sync</h2>
             
+            <!-- Backup & Restore Section -->
+            <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-6">
+                <h3 class="text-lg font-semibold text-gray-700 mb-4">Backup & Restore</h3>
+                <p class="text-sm text-gray-600 mb-4">Download a full backup of your system data (items, transactions, settings, etc.) or restore from a previous backup file.</p>
+                <div class="flex flex-wrap gap-4">
+                    <button id="btn-download-backup" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded focus:outline-none shadow transition">
+                        📥 Download Full Backup
+                    </button>
+                    <div class="flex items-center gap-2">
+                        <input type="file" id="restore-file" class="hidden" accept=".json">
+                        <button id="btn-trigger-restore" class="bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-6 rounded focus:outline-none shadow transition">
+                            📤 Restore from Backup
+                        </button>
+                    </div>
+                </div>
+                <p class="text-[10px] text-red-500 mt-2 font-bold italic">⚠️ Warning: Restoring from a backup will overwrite all current data on the server.</p>
+            </div>
+
             <!-- Bulk Import Section -->
             <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-6">
                 <div class="mb-6">
@@ -120,6 +138,11 @@ function setupEventListeners() {
     btnSampleCsv.addEventListener("click", () => downloadSample("csv"));
 
     document.getElementById("btn-analyze-sync").addEventListener("click", analyzeSync);
+
+    document.getElementById("btn-download-backup").addEventListener("click", downloadFullBackup);
+    const restoreFileInput = document.getElementById("restore-file");
+    document.getElementById("btn-trigger-restore").addEventListener("click", () => restoreFileInput.click());
+    restoreFileInput.addEventListener("change", handleRestoreBackup);
 
     btnImport.addEventListener("click", async () => {
         const file = fileInput.files[0];
@@ -340,6 +363,86 @@ async function analyzeSync() {
     } finally {
         btnAnalyze.disabled = false;
         btnAnalyze.classList.remove("opacity-50");
+    }
+}
+
+async function downloadFullBackup() {
+    const files = [
+        'settings', 'items', 'transactions', 'suppliers', 'customers', 
+        'expenses', 'returns', 'shifts', 'stock_movements', 
+        'adjustments', 'stock_in_history', 'suspended_transactions'
+    ];
+    
+    const backupData = {};
+    const btn = document.getElementById("btn-download-backup");
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = "⌛ Preparing Backup...";
+
+    try {
+        for (const file of files) {
+            const res = await fetch(`${API_URL}?file=${file}`);
+            if (res.ok) {
+                backupData[file] = await res.json();
+            }
+        }
+
+        const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        const date = new Date().toISOString().split('T')[0];
+        a.href = url;
+        a.download = `lightpos-backup-${date}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        alert("Backup downloaded successfully.");
+    } catch (error) {
+        console.error("Backup failed:", error);
+        alert("Failed to generate backup.");
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+    }
+}
+
+async function handleRestoreBackup(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!confirm("RESTORE WARNING: This will overwrite ALL current data on the server with the contents of the backup file. This cannot be undone. Proceed?")) {
+        e.target.value = "";
+        return;
+    }
+
+    const btn = document.getElementById("btn-trigger-restore");
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = "⌛ Restoring...";
+
+    try {
+        const text = await file.text();
+        const backupData = JSON.parse(text);
+
+        for (const [fileName, data] of Object.entries(backupData)) {
+            await fetch(`${API_URL}?file=${fileName}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+        }
+
+        alert("System restored successfully! The app will now reload.");
+        window.location.reload();
+    } catch (error) {
+        console.error("Restore failed:", error);
+        alert("Failed to restore backup: " + error.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+        e.target.value = "";
     }
 }
 
