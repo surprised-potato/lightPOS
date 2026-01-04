@@ -1718,12 +1718,13 @@
         "payment_method": "Cash",
         "user_email": "admin@lightpos.com",
         "user_name": "Super Admin",
-        "customer_id": "Guest",
-        "customer_name": "Guest",
+        "customer_id": "570f0895-eb94-4abe-a513-de461841afe7",
+        "customer_name": "George Carmicheal",
         "points_earned": 2,
         "timestamp": "2026-01-04T07:26:04.558Z",
         "sync_status": 1,
-        "is_voided": false
+        "is_voided": false,
+        "voided_at": null
     },
     {
         "id": "3e8a2719-5e2a-46cd-9579-e2ff721a2f78",
@@ -1856,6 +1857,66 @@
         "customer_name": "john Doe",
         "points_earned": 0,
         "timestamp": "2026-01-04T15:23:00.840Z",
+        "sync_status": 1,
+        "is_voided": false
+    },
+    {
+        "id": "ed8e5aba-d31f-468e-b05d-87836b01c622",
+        "items": [
+            {
+                "id": "002da6b6-5112-44e6-a01b-bc305752f915",
+                "barcode": "4800571160129",
+                "name": "Rain Polish",
+                "category": "PERSONAL HYGIENE",
+                "cost_price": 22,
+                "selling_price": 30,
+                "min_stock": 1,
+                "stock_level": -3,
+                "base_unit": "Unit",
+                "supplier_id": "",
+                "updatedAt": "2026-01-04T18:46:23.868Z",
+                "qty": 1
+            },
+            {
+                "id": "005590b6-62e5-4cbb-8573-5dbcc9354cc1",
+                "barcode": "4806501705224",
+                "name": "Champion Powder Freesia 100g",
+                "category": "TBA",
+                "cost_price": 16,
+                "selling_price": 18,
+                "min_stock": 2,
+                "stock_level": -5,
+                "base_unit": "Unit",
+                "supplier_id": "",
+                "updatedAt": "2026-01-04T18:46:23.867Z",
+                "qty": 1
+            },
+            {
+                "id": "0078db4b-4e64-4601-84ab-d03a7ed782a1",
+                "barcode": "4801958625002",
+                "name": "Sarsaya OySce 156g",
+                "category": "TBA",
+                "cost_price": 27.5,
+                "selling_price": 31,
+                "min_stock": 2,
+                "stock_level": -1,
+                "base_unit": "Unit",
+                "supplier_id": "",
+                "updatedAt": "2026-01-04T18:46:23.866Z",
+                "qty": 1
+            }
+        ],
+        "total_amount": 79,
+        "amount_tendered": 100,
+        "change": 21,
+        "tax_amount": 8.46428571428572240620269440114498138427734375,
+        "payment_method": "Cash",
+        "user_email": "admin@lightpos.com",
+        "user_name": "Super Admin",
+        "customer_id": "423c5956-ba50-4617-b8ef-1dcb36e76a0d",
+        "customer_name": "Jenna Fisher",
+        "points_earned": 0,
+        "timestamp": "2026-01-04T18:46:58.132Z",
         "sync_status": 1,
         "is_voided": false
     }

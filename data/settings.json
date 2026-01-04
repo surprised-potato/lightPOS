@@ -27,13 +27,13 @@
             "italic": false
         },
         "body": {
-            "font_size": 18,
+            "font_size": 16,
             "font_family": "'Courier New', Courier, monospace",
             "bold": false,
             "italic": false
         },
         "items": {
-            "font_size": 12,
+            "font_size": 18,
             "font_family": "'Courier New', Courier, monospace",
             "bold": false,
             "italic": false
