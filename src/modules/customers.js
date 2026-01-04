@@ -206,10 +206,9 @@ async function handleSaveCustomer(e) {
 
     // 2. Sync with Server
     if (navigator.onLine) {
-        const success = await syncCollection('customers', customerData.id, customerData);
-        if (success) {
-            await db.customers.update(customerData.id, { sync_status: 1 });
-        }
+        syncCollection('customers', customerData.id, customerData).then(success => {
+            if (success) db.customers.update(customerData.id, { sync_status: 1 });
+        });
     }
 
     document.getElementById("modal-add-customer").classList.add("hidden");

@@ -370,9 +370,7 @@ async function handleUserSubmit(e) {
     });
 
     // To preserve existing password if not changed during edit, we need the full user list
-    const response = await fetch(`${API_URL}?file=users`);
-    const users = await response.json();
-    const existingUser = users.find(u => u.email === email);
+    const existingUser = await db.users.get(email);
 
     if (!isEdit && existingUser) {
         alert("User already exists.");
@@ -385,7 +383,8 @@ async function handleUserSubmit(e) {
         name,
         phone,
         is_active: isActive,
-        permissions
+        permissions,
+        sync_status: 0
     };
     
     // Only update password if provided
@@ -400,18 +399,16 @@ async function handleUserSubmit(e) {
     }
 
     try {
-        const success = await syncCollection('users', email, userData);
-        
-        if (success) {
-            alert("User saved and synced.");
-        } else {
-            await db.syncQueue.add({
-                action: 'sync_user',
-                data: { id: email, fileName: 'users', payload: userData }
-            });
-            alert("User saved locally. Will sync when online.");
+        // Optimistic UI: save locally first
+        await db.users.put(userData);
+
+        // Let the background sync service handle it
+        if (navigator.onLine) {
+            const { processQueue } = await import("../services/sync-service.js");
+            processQueue();
         }
         
+        alert("User saved. Will sync with server.");
         closeUserModal();
         fetchAndRenderUsers();
     } catch (error) {

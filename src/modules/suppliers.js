@@ -134,12 +134,9 @@ async function handleAddSupplier(e) {
     try {
         await db.suppliers.add(newSupplier);
 
-        if (navigator.onLine) {
-            const success = await syncCollection('suppliers', newSupplier.id, newSupplier);
-            if (success) {
-                await db.suppliers.update(newSupplier.id, { sync_status: 1 });
-            }
-        }
+        syncCollection('suppliers', newSupplier.id, newSupplier).then(success => {
+            if (success) db.suppliers.update(newSupplier.id, { sync_status: 1 });
+        });
 
         document.getElementById("modal-add-supplier").classList.add("hidden");
         document.getElementById("form-add-supplier").reset();
@@ -156,15 +153,14 @@ async function deleteSupplier(id) {
     try {
         await db.suppliers.delete(id);
         
-        if (navigator.onLine) {
-            await syncCollection('suppliers', id, null, true);
-        } else {
-            // Queue deletion
-            await db.syncQueue.add({
-                action: 'delete_item',
-                data: { id, fileName: 'suppliers' }
-            });
-        }
+        syncCollection('suppliers', id, null, true).then(success => {
+            if (!success) {
+                db.syncQueue.add({
+                    action: 'delete_item',
+                    data: { id, fileName: 'suppliers' }
+                });
+            }
+        });
         fetchSuppliers();
     } catch (error) {
         console.error("Error deleting supplier:", error);

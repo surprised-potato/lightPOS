@@ -244,10 +244,9 @@ export async function loadItemsView() {
 
             if (navigator.onLine) {
                 const syncId = itemId || itemData.id;
-                const success = await syncCollection('items', syncId, itemData);
-                if (success) {
-                    await db.items.update(syncId, { sync_status: 1 });
-                }
+                syncCollection('items', syncId, itemData).then(success => {
+                    if (success) db.items.update(syncId, { sync_status: 1 });
+                });
             }
 
             modal.classList.add("hidden");
@@ -402,7 +401,14 @@ function renderItems(items) {
                     await db.items.delete(id);
                     
                     if (navigator.onLine) {
-                        await syncCollection('items', id, null, true);
+                        syncCollection('items', id, null, true).then(success => {
+                            if (!success) {
+                                db.syncQueue.add({
+                                    action: 'delete_item',
+                                    data: { id, fileName: 'items' }
+                                });
+                            }
+                        });
                     } else {
                         // Queue the deletion for later
                         await db.syncQueue.add({

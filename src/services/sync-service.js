@@ -5,6 +5,23 @@ const API_URL = 'api/router.php';
 const SYNC_INTERVAL = 30000; // 30 seconds
 
 /**
+ * Wrapper for fetch with a timeout to prevent hanging requests
+ */
+async function fetchWithTimeout(resource, options = {}) {
+    const { timeout = 5000 } = options; // Default 5s timeout
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeout);
+    try {
+        const response = await fetch(resource, { ...options, signal: controller.signal });
+        clearTimeout(id);
+        return response;
+    } catch (error) {
+        clearTimeout(id);
+        throw error;
+    }
+}
+
+/**
  * Synchronizes a local change with the remote JSON-based storage.
  * Used for simple CRUD entities like items, suppliers, and customers.
  */
@@ -12,7 +29,7 @@ export async function syncCollection(fileName, id, data, isDelete = false) {
     if (!navigator.onLine) return false;
 
     try {
-        const response = await fetch(`${API_URL}?file=${fileName}`);
+        const response = await fetchWithTimeout(`${API_URL}?file=${fileName}`);
         let remoteData = await response.json();
         if (!Array.isArray(remoteData)) remoteData = [];
 
@@ -28,7 +45,7 @@ export async function syncCollection(fileName, id, data, isDelete = false) {
             }
         }
 
-        const saveResponse = await fetch(`${API_URL}?file=${fileName}`, {
+        const saveResponse = await fetchWithTimeout(`${API_URL}?file=${fileName}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(remoteData)
@@ -86,7 +103,7 @@ function updateLastSyncTimestamp(timestamp = null, pushToServer = false) {
     
     // Only push to server if explicitly requested (e.g., after a successful upload)
     if (pushToServer && navigator.onLine) {
-        fetch(`${API_URL}?file=last_sync`, {
+        fetchWithTimeout(`${API_URL}?file=last_sync`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ timestamp: newTs })
@@ -109,7 +126,7 @@ async function updateSyncHistory(entity) {
 async function syncEntityDown(file, table) {
     if (!navigator.onLine) return;
     try {
-        const response = await fetch(`${API_URL}?file=${file}`);
+        const response = await fetchWithTimeout(`${API_URL}?file=${file}`);
         if (!response.ok) return;
         
         let data = await response.json();
@@ -147,10 +164,10 @@ async function syncItemsDown() {
     
     try {
         // Fetch items and global sync metadata
-        const response = await fetch(`${API_URL}?file=items`);
+        const response = await fetchWithTimeout(`${API_URL}?file=items`);
         
         // Fetch metadata separately to avoid blocking or console noise if missing
-        fetch(`${API_URL}?file=last_sync`)
+        fetchWithTimeout(`${API_URL}?file=last_sync`)
             .then(async (res) => {
                 if (res.ok) {
                     const meta = await res.json().catch(() => null);
@@ -183,7 +200,7 @@ async function syncCustomersDown() {
     if (!navigator.onLine) return;
     
     try {
-        const response = await fetch(`${API_URL}?file=customers`);
+        const response = await fetchWithTimeout(`${API_URL}?file=customers`);
         if (!response.ok) return;
         
         let customers = await response.json();
@@ -201,7 +218,7 @@ async function syncTransactionsDown() {
     if (!navigator.onLine) return;
     
     try {
-        const response = await fetch(`${API_URL}?file=transactions`);
+        const response = await fetchWithTimeout(`${API_URL}?file=transactions`);
         if (!response.ok) return;
         
         let transactions = await response.json();
@@ -273,7 +290,7 @@ export async function processQueue() {
 
     try {
         // 1. Get unsynced local data (including items and customers)
-        const [unsyncedTxs, unsyncedMovements, unsyncedStockins, unsyncedAdjustments, unsyncedItems, unsyncedCustomers, unsyncedSuppliers, unsyncedExpenses, unsyncedShifts, syncQueueItems] = await Promise.all([
+        const [unsyncedTxs, unsyncedMovements, unsyncedStockins, unsyncedAdjustments, unsyncedItems, unsyncedCustomers, unsyncedSuppliers, unsyncedExpenses, unsyncedShifts, unsyncedUsers, syncQueueItems] = await Promise.all([
             db.transactions.where("sync_status").equals(0).toArray(),
             db.stock_movements.where("sync_status").equals(0).toArray(),
             db.stockins.where("sync_status").equals(0).toArray(),
@@ -283,6 +300,7 @@ export async function processQueue() {
             db.suppliers.where("sync_status").equals(0).toArray(),
             db.expenses.where("sync_status").equals(0).toArray(),
             db.shifts.where("sync_status").equals(0).toArray(),
+            db.users.where("sync_status").equals(0).toArray(),
             db.syncQueue.toArray()
         ]);
 
@@ -290,22 +308,23 @@ export async function processQueue() {
             unsyncedStockins.length === 0 && unsyncedAdjustments.length === 0 && 
             unsyncedItems.length === 0 && unsyncedCustomers.length === 0 &&
             unsyncedSuppliers.length === 0 && unsyncedExpenses.length === 0 &&
-            unsyncedShifts.length === 0 &&
+            unsyncedShifts.length === 0 && unsyncedUsers.length === 0 &&
             syncQueueItems.length === 0) return;
 
         console.log("Processing background sync for all entities...");
 
         // 2. Fetch Server State
-        const [itemsRes, txRes, movementsRes, stockinsRes, adjustmentsRes, customersRes, suppliersRes, expensesRes, shiftsRes] = await Promise.all([
-            fetch(`${API_URL}?file=items`),
-            fetch(`${API_URL}?file=transactions`),
-            fetch(`${API_URL}?file=stock_movements`),
-            fetch(`${API_URL}?file=stock_in_history`),
-            fetch(`${API_URL}?file=adjustments`),
-            fetch(`${API_URL}?file=customers`),
-            fetch(`${API_URL}?file=suppliers`),
-            fetch(`${API_URL}?file=expenses`),
-            fetch(`${API_URL}?file=shifts`)
+        const [itemsRes, txRes, movementsRes, stockinsRes, adjustmentsRes, customersRes, suppliersRes, expensesRes, shiftsRes, usersRes] = await Promise.all([
+            fetchWithTimeout(`${API_URL}?file=items`),
+            fetchWithTimeout(`${API_URL}?file=transactions`),
+            fetchWithTimeout(`${API_URL}?file=stock_movements`),
+            fetchWithTimeout(`${API_URL}?file=stock_in_history`),
+            fetchWithTimeout(`${API_URL}?file=adjustments`),
+            fetchWithTimeout(`${API_URL}?file=customers`),
+            fetchWithTimeout(`${API_URL}?file=suppliers`),
+            fetchWithTimeout(`${API_URL}?file=expenses`),
+            fetchWithTimeout(`${API_URL}?file=shifts`),
+            fetchWithTimeout(`${API_URL}?file=users`)
         ]);
 
         let serverItems = await itemsRes.json();
@@ -334,6 +353,9 @@ export async function processQueue() {
 
         let serverShifts = await shiftsRes.json();
         if (!Array.isArray(serverShifts)) serverShifts = [];
+
+        let serverUsers = await usersRes.json();
+        if (!Array.isArray(serverUsers)) serverUsers = [];
 
         // 3. Process each unsynced transaction
         for (const tx of unsyncedTxs) {
@@ -437,6 +459,16 @@ export async function processQueue() {
             }
         }
 
+        // k. Process local unsynced users
+        for (const user of unsyncedUsers) {
+            const idx = serverUsers.findIndex(s => s.email === user.email);
+            if (idx !== -1) {
+                serverUsers[idx] = { ...user, sync_status: 1 };
+            } else {
+                serverUsers.push({ ...user, sync_status: 1 });
+            }
+        }
+
         // d. Process local unsynced stock-ins (History logs)
         for (const s of unsyncedStockins) {
             if (!serverStockins.some(ss => ss.id === s.id)) {
@@ -453,55 +485,60 @@ export async function processQueue() {
 
         // 4. Save back to Server
         await Promise.all([
-            fetch(`${API_URL}?file=items`, {
+            fetchWithTimeout(`${API_URL}?file=items`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(serverItems)
             }),
-            fetch(`${API_URL}?file=transactions`, {
+            fetchWithTimeout(`${API_URL}?file=transactions`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(serverTxs)
             }),
-            fetch(`${API_URL}?file=stock_movements`, {
+            fetchWithTimeout(`${API_URL}?file=stock_movements`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(serverMovements)
             }),
-            fetch(`${API_URL}?file=stock_in_history`, {
+            fetchWithTimeout(`${API_URL}?file=stock_in_history`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(serverStockins)
             }),
-            fetch(`${API_URL}?file=adjustments`, {
+            fetchWithTimeout(`${API_URL}?file=adjustments`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(serverAdjustments)
             }),
-            fetch(`${API_URL}?file=customers`, {
+            fetchWithTimeout(`${API_URL}?file=customers`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(serverCustomers)
             }),
-            fetch(`${API_URL}?file=suppliers`, {
+            fetchWithTimeout(`${API_URL}?file=suppliers`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(serverSuppliers)
             }),
-            fetch(`${API_URL}?file=expenses`, {
+            fetchWithTimeout(`${API_URL}?file=expenses`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(serverExpenses)
             }),
-            fetch(`${API_URL}?file=shifts`, {
+            fetchWithTimeout(`${API_URL}?file=shifts`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(serverShifts)
+            }),
+            fetchWithTimeout(`${API_URL}?file=users`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(serverUsers)
             })
         ]);
 
         // 5. Mark local records as synced
-        await db.transaction('rw', [db.transactions, db.stock_movements, db.stockins, db.adjustments, db.items, db.customers, db.suppliers, db.expenses, db.shifts], async () => {
+        await db.transaction('rw', [db.transactions, db.stock_movements, db.stockins, db.adjustments, db.items, db.customers, db.suppliers, db.expenses, db.shifts, db.users], async () => {
             for (const tx of unsyncedTxs) {
                 await db.transactions.update(tx.id, { sync_status: 1 });
             }
@@ -529,6 +566,9 @@ export async function processQueue() {
             for (const s of unsyncedShifts) {
                 await db.shifts.update(s.id, { sync_status: 1 });
             }
+            for (const u of unsyncedUsers) {
+                await db.users.update(u.email, { sync_status: 1 });
+            }
         });
 
         updateLastSyncTimestamp(null, true);
@@ -542,10 +582,10 @@ export async function processQueue() {
                 try {
                     // Handle special actions like deletions
                     if (item.action === 'delete_item') {
-                        const res = await fetch(`${API_URL}?file=${item.data.fileName}`);
+                        const res = await fetchWithTimeout(`${API_URL}?file=${item.data.fileName}`);
                         let remoteData = await res.json();
                         remoteData = remoteData.filter(r => r.id !== item.data.id);
-                        await fetch(`${API_URL}?file=${item.data.fileName}`, {
+                        await fetchWithTimeout(`${API_URL}?file=${item.data.fileName}`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify(remoteData)
@@ -555,7 +595,7 @@ export async function processQueue() {
                     }
 
                     if (item.action === 'update_settings') {
-                        await fetch(`${API_URL}?file=settings`, {
+                        await fetchWithTimeout(`${API_URL}?file=settings`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify(item.data)
@@ -565,14 +605,14 @@ export async function processQueue() {
                     }
 
                     if (item.action === 'sync_user') {
-                        const res = await fetch(`${API_URL}?file=${item.data.fileName}`);
+                        const res = await fetchWithTimeout(`${API_URL}?file=${item.data.fileName}`);
                         let remoteData = await res.json();
                         if (!Array.isArray(remoteData)) remoteData = [];
                         const idx = remoteData.findIndex(u => u.email === item.data.id);
                         if (idx !== -1) remoteData[idx] = item.data.payload;
                         else remoteData.push(item.data.payload);
                         
-                        await fetch(`${API_URL}?file=${item.data.fileName}`, {
+                        await fetchWithTimeout(`${API_URL}?file=${item.data.fileName}`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify(remoteData)
@@ -581,7 +621,7 @@ export async function processQueue() {
                         continue;
                     }
 
-                    const res = await fetch(`${API_URL}?action=${item.action}`, {
+                    const res = await fetchWithTimeout(`${API_URL}?action=${item.action}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ data: item.data })

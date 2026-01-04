@@ -1023,8 +1023,9 @@ async function suspendCurrentTransaction() {
         
         // 2. Sync with server
         if (navigator.onLine) {
-            const success = await syncCollection('suspended_transactions', suspendedTx.id, suspendedTx);
-            if (success) await db.suspended_transactions.update(suspendedTx.id, { sync_status: 1 });
+            syncCollection('suspended_transactions', suspendedTx.id, suspendedTx).then(success => {
+                if (success) db.suspended_transactions.update(suspendedTx.id, { sync_status: 1 });
+            });
         }
 
         cart = [];
@@ -1116,7 +1117,7 @@ async function resumeTransaction(id) {
             
             await db.suspended_transactions.delete(actualId);
             if (navigator.onLine) {
-                await syncCollection('suspended_transactions', actualId, null, true);
+                syncCollection('suspended_transactions', actualId, null, true);
             }
             
             renderCart();
@@ -1147,7 +1148,7 @@ async function deleteSuspendedTransaction(id) {
 
         await db.suspended_transactions.delete(actualId);
         if (navigator.onLine) {
-            await syncCollection('suspended_transactions', actualId, null, true);
+            syncCollection('suspended_transactions', actualId, null, true);
         }
         
         showToast("Transaction deleted.");
@@ -1229,8 +1230,9 @@ async function requestQuickCustomer(tx) {
 
             // 2. Immediate Server Sync if online
             if (navigator.onLine) {
-                const success = await syncCollection('transactions', tx.id, tx);
-                if (success) await db.transactions.update(tx.id, { sync_status: 1 });
+                syncCollection('transactions', tx.id, tx).then(success => {
+                    if (success) db.transactions.update(tx.id, { sync_status: 1 });
+                });
             }
 
             cleanup();
@@ -1330,7 +1332,7 @@ async function requestQuickCustomer(tx) {
                 const newCustomer = { id: generateUUID(), name, phone, email: "", loyalty_points: 0, timestamp: new Date() };
                 await db.customers.add(newCustomer);
                 if (navigator.onLine) {
-                    await syncCollection('customers', newCustomer.id, newCustomer);
+                    syncCollection('customers', newCustomer.id, newCustomer);
                 }
                 fetchCustomersFromDexie();
                 await updateTxAndResolve(newCustomer);

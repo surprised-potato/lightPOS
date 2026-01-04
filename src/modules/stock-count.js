@@ -328,18 +328,15 @@ async function processAdjustment(newStock, reason) {
         await db.stock_movements.add(movement);
 
         // 4. Sync with Server
-        if (navigator.onLine) {
-            const itemSync = await syncCollection('items', selectedItem.id, selectedItem);
-            if (itemSync) await db.items.update(selectedItem.id, { sync_status: 1 });
-            
-            const adjSync = await syncCollection('adjustments', adjustment.id, adjustment);
-            if (adjSync) await db.adjustments.update(adjustment.id, { sync_status: 1 });
-            
-            const mSync = await syncCollection('stock_movements', movement.id, movement);
-            if (mSync) await db.stock_movements.update(movement.id, { sync_status: 1 });
-
-            await processQueue(); // Handles movements
-        }
+        syncCollection('items', selectedItem.id, selectedItem).then(success => {
+            if (success) db.items.update(selectedItem.id, { sync_status: 1 });
+        });
+        syncCollection('adjustments', adjustment.id, adjustment).then(success => {
+            if (success) db.adjustments.update(adjustment.id, { sync_status: 1 });
+        });
+        syncCollection('stock_movements', movement.id, movement).then(success => {
+            if (success) db.stock_movements.update(movement.id, { sync_status: 1 });
+        });
 
         await addNotification('Stock Count', `Stock adjustment for ${selectedItem.name}: ${difference > 0 ? '+' : ''}${difference} units by ${user}`);
 

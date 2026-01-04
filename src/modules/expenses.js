@@ -153,11 +153,10 @@ async function saveExpense() {
     try {
         await db.expenses.add(expenseData);
 
-        if (navigator.onLine) {
-            const success = await syncCollection('expenses', expenseData.id, expenseData);
-            if (success) await db.expenses.update(expenseData.id, { sync_status: 1 });
-        }
-        
+        syncCollection('expenses', expenseData.id, expenseData).then(success => {
+            if (success) db.expenses.update(expenseData.id, { sync_status: 1 });
+        });
+
         document.getElementById("modal-add-expense").classList.add("hidden");
         document.getElementById("form-add-expense").reset();
         
@@ -181,18 +180,7 @@ async function fetchExpenses() {
     tbody.innerHTML = `<tr><td colspan="7" class="py-3 px-6 text-center">Loading...</td></tr>`;
 
     try {
-        // Sync from server to local DB if online
-        if (navigator.onLine) {
-            try {
-                const response = await fetch(`${API_URL}?file=expenses`);
-                const serverExpenses = await response.json();
-                if (Array.isArray(serverExpenses)) {
-                    await db.expenses.bulkPut(serverExpenses);
-                }
-            } catch (error) {
-                console.warn("Could not sync expenses from server, using local data.", error);
-            }
-        }
+        // Data is now synced in the background by sync-service.js
 
         let expenses = await db.expenses.toArray();
 
@@ -232,15 +220,14 @@ async function fetchExpenses() {
                     
                     await db.expenses.delete(id);
                     
-                    if (navigator.onLine) {
-                        await syncCollection('expenses', id, null, true);
-                    } else {
-                        // Queue deletion
-                        await db.syncQueue.add({
-                            action: 'delete_item',
-                            data: { id, fileName: 'expenses' }
-                        });
-                    }
+                    syncCollection('expenses', id, null, true).then(success => {
+                        if (!success) {
+                            db.syncQueue.add({
+                                action: 'delete_item',
+                                data: { id, fileName: 'expenses' }
+                            });
+                        }
+                    });
 
                     fetchExpenses();
                 }

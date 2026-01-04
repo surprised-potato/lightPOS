@@ -85,6 +85,11 @@ export function loadProfileView() {
 
 async function handleUpdateProfile(e) {
     e.preventDefault();
+    if (!navigator.onLine) {
+        showProfileMessage(document.getElementById("profile-update-message"), "You must be online to update your profile.", true);
+        return;
+    }
+
     const name = document.getElementById("profile-name").value.trim();
     const phone = document.getElementById("profile-phone").value.trim();
     const btn = document.getElementById("btn-save-profile");
@@ -127,6 +132,10 @@ async function handleUpdateProfile(e) {
 
 async function handleChangePassword(e) {
     e.preventDefault();
+    if (!navigator.onLine) {
+        showProfileMessage(document.getElementById("password-message"), "You must be online to change your password.", true);
+        return;
+    }
     
     const currentPass = document.getElementById("current-password").value;
     const newPass = document.getElementById("new-password").value;

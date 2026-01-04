@@ -276,17 +276,17 @@ async function handleReturnSubmit(e) {
 
         // 4. Sync to Server using centralized service
         if (navigator.onLine) {
-            await syncCollection('returns', returnRecord.id, returnRecord);
-            await syncCollection('stock_movements', movement.id, movement);
-            await syncCollection('transactions', selectedTransaction.id, selectedTransaction);
+            syncCollection('returns', returnRecord.id, returnRecord).then(success => {
+                if (success) db.returns.update(returnRecord.id, { sync_status: 1 });
+            });
+            syncCollection('stock_movements', movement.id, movement).then(success => {
+                if (success) db.stock_movements.update(movement.id, { sync_status: 1 });
+            });
+            syncCollection('transactions', selectedTransaction.id, selectedTransaction);
             
             if (updatedMasterItem) {
-                await syncCollection('items', updatedMasterItem.id, updatedMasterItem);
+                syncCollection('items', updatedMasterItem.id, updatedMasterItem);
             }
-            
-            // Mark local as synced
-            await db.returns.update(returnRecord.id, { sync_status: 1 });
-            await db.stock_movements.update(movement.id, { sync_status: 1 });
         }
 
         await addNotification('Return', `Refund of ₱${returnRecord.refund_amount.toFixed(2)} processed for ${item.name} (${reason})`);

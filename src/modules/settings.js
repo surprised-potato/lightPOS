@@ -2,6 +2,7 @@ import { checkPermission } from "../auth.js";
 import { renderHeader } from "../layout.js";
 import { db } from "../db.js";
 import { generateUUID } from "../utils.js";
+import { processQueue } from "../services/sync-service.js";
 
 const API_URL = 'api/router.php';
 
@@ -438,8 +439,17 @@ function setupEventListeners() {
 
 async function loadSettings() {
     try {
-        const response = await fetch(`${API_URL}?file=settings`);
-        const settings = await response.json();
+        let settings;
+        const localData = await db.sync_metadata.get('settings');
+        if (localData) {
+            settings = localData.value;
+        } else if (navigator.onLine) {
+            const response = await fetch(`${API_URL}?file=settings`);
+            settings = await response.json();
+            if (settings) {
+                await db.sync_metadata.put({ key: 'settings', value: settings });
+            }
+        }
         
         if (settings) {
             if (settings.store) {
@@ -577,19 +587,18 @@ async function handleSave(e) {
         await db.sync_metadata.put({ key: 'settings', value: settings });
 
         if (navigator.onLine) {
-            await fetch(`${API_URL}?file=settings`, {
+            fetch(`${API_URL}?file=settings`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(settings)
-            });
-            alert("Settings saved and synced!");
+            }).catch(console.error);
         } else {
             await db.syncQueue.add({
                 action: 'update_settings',
                 data: settings
             });
-            alert("Settings saved locally. Will sync when online.");
         }
+        alert("Settings saved.");
         renderHeader(); // Refresh title bar
     } catch (error) {
         console.error("Error saving settings:", error);
@@ -602,8 +611,18 @@ async function handleSave(e) {
  */
 export async function getSystemSettings() {
     try {
-        const response = await fetch(`${API_URL}?file=settings`);
-        const settings = await response.json();
+        const localData = await db.sync_metadata.get('settings');
+        if (localData && localData.value) {
+            return localData.value;
+        }
+
+        let settings = null;
+        if (navigator.onLine) {
+            const response = await fetch(`${API_URL}?file=settings`);
+            settings = await response.json();
+            if (settings) await db.sync_metadata.put({ key: 'settings', value: settings });
+        }
+        
         return settings || {
             store: { name: "LightPOS", logo: "", data: "" },
             tax: { rate: 12 },
@@ -778,10 +797,8 @@ async function processImport(items) {
     const progressBar = document.getElementById("progress-bar");
     const progressText = document.getElementById("progress-text");
     progressBar.style.width = "10%";
-    progressText.textContent = "Fetching current inventory...";
-    const response = await fetch(`${API_URL}?file=items`);
-    let currentItems = await response.json();
-    if (!Array.isArray(currentItems)) currentItems = [];
+    progressText.textContent = "Preparing data...";
+    
     progressBar.style.width = "40%";
     progressText.textContent = "Processing data...";
     const newItems = items.map(item => ({
@@ -791,16 +808,19 @@ async function processImport(items) {
         selling_price: parseFloat(item.selling_price) || 0,
         stock_level: parseFloat(item.stock_level) || 0,
         min_stock: parseFloat(item.min_stock) || 0,
-        supplier_id: item.supplier_id || ""
+        supplier_id: item.supplier_id || "",
+        sync_status: 0
     }));
-    const updatedInventory = [...currentItems, ...newItems];
     progressBar.style.width = "70%";
-    progressText.textContent = "Saving to server...";
-    await fetch(`${API_URL}?file=items`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedInventory)
-    });
+    progressText.textContent = "Saving to local database...";
+    
+    await db.items.bulkAdd(newItems);
+    
+    if (navigator.onLine) {
+        progressText.textContent = "Syncing...";
+        processQueue();
+    }
+    
     progressBar.style.width = "100%";
     progressText.textContent = "Import Complete!";
 }

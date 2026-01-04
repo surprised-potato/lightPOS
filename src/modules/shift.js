@@ -68,8 +68,9 @@ export async function startShift(openingCash) {
         await db.shifts.add(shiftData);
 
         if (navigator.onLine) {
-            const success = await syncCollection('shifts', shiftData.id, shiftData);
-            if (success) await db.shifts.update(shiftData.id, { sync_status: 1 });
+            syncCollection('shifts', shiftData.id, shiftData).then(success => {
+                if (success) db.shifts.update(shiftData.id, { sync_status: 1 });
+            });
         }
 
         currentShift = shiftData;
@@ -149,8 +150,9 @@ export async function closeShift(closingCash) {
     await db.shifts.put(updatedShift);
 
     if (navigator.onLine) {
-        const success = await syncCollection('shifts', updatedShift.id, updatedShift);
-        if (success) await db.shifts.update(updatedShift.id, { sync_status: 1 });
+        syncCollection('shifts', updatedShift.id, updatedShift).then(success => {
+            if (success) db.shifts.update(updatedShift.id, { sync_status: 1 });
+        });
     }
 
     window.dispatchEvent(new CustomEvent('shift-updated'));
@@ -497,31 +499,26 @@ async function adjustCash(shiftId, amount, reason) {
         user: user ? user.email : 'unknown'
     };
     
-    const response = await fetch(`${API_URL}?file=shifts`);
-    let shifts = await response.json();
-    if (!Array.isArray(shifts)) shifts = [];
-
-    const index = shifts.findIndex(s => s.id === shiftId);
-    if (index !== -1) {
-        const shift = shifts[index];
+    // Optimistic update: Update local DB first
+    const shift = await db.shifts.get(shiftId);
+    if (shift) {
         if (!shift.adjustments) shift.adjustments = [];
         shift.adjustments.push(adjustment);
 
-        const isClosed = shift.status === 'closed';
-        if (isClosed) {
+        if (shift.status === 'closed') {
             shift.closing_cash = (shift.closing_cash || 0) + adjustment.amount;
         } else {
             shift.expected_cash = (shift.expected_cash || 0) + adjustment.amount;
         }
-
-        await fetch(`${API_URL}?file=shifts`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(shifts)
-        });
-
-        // Update local DB
+        
+        shift.sync_status = 0;
         await db.shifts.put(shift);
+
+        if (navigator.onLine) {
+            syncCollection('shifts', shift.id, shift).then(success => {
+                if (success) db.shifts.update(shift.id, { sync_status: 1 });
+            });
+        }
     }
 
     await addNotification('Adjustment', `Cash adjustment of ₱${adjustment.amount} for shift ${shiftId} by ${user ? user.email : 'unknown'}`);

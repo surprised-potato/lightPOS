@@ -451,23 +451,26 @@ async function saveStockIn() {
         await db.stock_movements.bulkPut(movements);
 
         // 3. Sync to Server using centralized service
+        // Sync Items
+        for (const item of itemsToUpdate) {
+            syncCollection('items', item.id, item).then(success => {
+                if (success) db.items.update(item.id, { sync_status: 1 });
+            });
+        }
+
+        // Sync History
+        syncCollection('stock_in_history', historyRecord.id, historyRecord).then(success => {
+            if (success) db.stockins.update(historyRecord.id, { sync_status: 1 });
+        });
+
+        // Sync Movements
+        for (const m of movements) {
+            syncCollection('stock_movements', m.id, m).then(success => {
+                if (success) db.stock_movements.update(m.id, { sync_status: 1 });
+            });
+        }
+        
         if (navigator.onLine) {
-            // Sync Items
-            for (const item of itemsToUpdate) {
-                const success = await syncCollection('items', item.id, item);
-                if (success) await db.items.update(item.id, { sync_status: 1 });
-            }
-
-            // Sync History
-            const histSuccess = await syncCollection('stock_in_history', historyRecord.id, historyRecord);
-            if (histSuccess) await db.stockins.update(historyRecord.id, { sync_status: 1 });
-
-            // Sync Movements
-            for (const m of movements) {
-                const mSuccess = await syncCollection('stock_movements', m.id, m);
-                if (mSuccess) await db.stock_movements.update(m.id, { sync_status: 1 });
-            }
-            
             await processQueue();
         }
 
