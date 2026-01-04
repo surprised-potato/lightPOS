@@ -1,15 +1,14 @@
+import { db } from "./db.js";
 import { checkPermission, logout, getUserProfile } from "./auth.js";
 import { checkActiveShift } from "./modules/shift.js";
-import { getRecentNotifications, markAllAsRead } from "./services/notification-service.js";
+import { getRecentNotifications, markAllAsRead, toggleNotificationRead } from "./services/notification-service.js";
 
 export function renderSidebar() {
-    console.log("renderSidebar: Function called.");
     renderHeader();
 
     const sidebar = document.getElementById("sidebar-container");
     
     if (!sidebar) {
-        console.error("renderSidebar: #sidebar-container not found in DOM.");
         return;
     }
 
@@ -71,11 +70,11 @@ export function renderSidebar() {
 
     const menuItems = [
         { section: "Front Office" },
-        { label: "Dashboard", icon: "📊", hash: "#dashboard", permission: "reports", type: "read" },
         { label: "POS", icon: "🛒", hash: "#pos", permission: "pos", type: "read" },
-        { label: "Customers", icon: "👥", hash: "#customers", permission: "customers", type: "read" },
-        { label: "Shifts", icon: "⏱️", hash: "#shifts", permission: "shifts", type: "read" },
         { label: "Returns", icon: "↩️", hash: "#returns", permission: "returns", type: "read" },
+        { label: "Customers", icon: "👥", hash: "#customers", permission: "customers", type: "read" },
+        { label: "Dashboard", icon: "📊", hash: "#dashboard", permission: "reports", type: "read" },
+        { label: "Shifts", icon: "⏱️", hash: "#shifts", permission: "shifts", type: "read" },
         { label: "Profile", icon: "👤", hash: "#profile" },
         
         { section: "Inventory" },
@@ -89,7 +88,6 @@ export function renderSidebar() {
         { label: "Reports", icon: "📈", hash: "#reports", permission: "reports", type: "read" },
         { label: "Users", icon: "👤", hash: "#users", permission: "users", type: "read" },
         { label: "Settings", icon: "⚙️", hash: "#settings", permission: "settings", type: "read" },
-        { label: "Migrate", icon: "🔄", hash: "#migrate", permission: "migrate", type: "write" },
     ];
 
     html += `
@@ -100,6 +98,13 @@ export function renderSidebar() {
             }
             .animate-breathe-green {
                 animation: breathe-green 2s infinite ease-in-out;
+            }
+            @keyframes breathe-blue {
+                0%, 100% { box-shadow: 0 0 2px rgba(59, 130, 246, 0.4); transform: scale(1); }
+                50% { box-shadow: 0 0 8px rgba(59, 130, 246, 0.8); transform: scale(1.1); }
+            }
+            .animate-breathe-blue {
+                animation: breathe-blue 2s infinite ease-in-out;
             }
     </style>
     `;
@@ -117,12 +122,13 @@ export function renderSidebar() {
         } else {
             if (!item.permission || checkPermission(item.permission, item.type)) {
                 const activeClass = currentHash === item.hash ? "bg-blue-100 text-blue-700" : "text-gray-600 hover:bg-gray-100 hover:text-gray-900";
+                const warningBadge = (item.hash === "#settings") ? '<span id="sync-warning-dot" class="hidden absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>' : '';
                 
                 if (isCollapsed) {
-                    html += `<a href="${obfuscate(item.hash)}" class="flex justify-center py-3 my-1 mx-2 rounded-lg transition-colors duration-150 ${activeClass}" title="${item.label}"><span class="text-xl">${item.icon}</span></a>`;
+                    html += `<a href="${obfuscate(item.hash)}" class="relative flex justify-center py-3 my-1 mx-2 rounded-lg transition-colors duration-150 ${activeClass}" title="${item.label}"><span class="text-xl">${item.icon}</span>${warningBadge}</a>`;
                 } else {
                     const activeBorder = currentHash === item.hash ? "border-r-4 border-blue-700" : "";
-                    html += `<a href="${obfuscate(item.hash)}" class="flex items-center px-4 py-2 text-sm font-medium transition-colors duration-150 ${activeClass} ${activeBorder}"><span class="mr-3 text-lg">${item.icon}</span>${item.label}</a>`;
+                    html += `<a href="${obfuscate(item.hash)}" class="relative flex items-center px-4 py-2 text-sm font-medium transition-colors duration-150 ${activeClass} ${activeBorder}"><span class="mr-3 text-lg">${item.icon}</span>${item.label}${warningBadge}</a>`;
                 }
             }
         }
@@ -147,6 +153,7 @@ export function renderSidebar() {
     // Delay slightly to ensure DOM update is processed
     setTimeout(() => {
         updateSidebarShiftStatus(0);
+        updateSidebarSyncWarning();
         updateNotificationUI();
     }, 50);
 }
@@ -188,10 +195,14 @@ export async function renderHeader() {
 
     const canSeeNotifications = checkPermission("reports", "read") || checkPermission("users", "read");
 
-    const titleCenter = document.getElementById("header-title-center");
-    if (titleCenter) {
-        titleCenter.innerHTML = `<div class="flex items-center gap-2">${storeLogo ? `<img src="${storeLogo}" class="h-8 w-auto object-contain">` : ''}<span class="font-bold text-white tracking-tight">${storeName}</span></div>`;
+    const branding = document.getElementById("header-store-branding");
+    if (branding) {
+        branding.innerHTML = `
+            ${storeLogo ? `<img src="${storeLogo}" class="h-8 w-8 object-contain bg-white rounded-md p-0.5 shadow-sm">` : ''}
+            <span class="text-xl font-bold tracking-wide">${storeName}</span>
+        `;
     }
+    document.title = `${storeName} - Point of Sale`;
 
     headerActions.innerHTML = `
         <div class="flex items-center gap-2 mr-4 cursor-pointer group border-r border-blue-600 pr-4 select-none active:opacity-80 active:scale-95 transition-all touch-manipulation" id="btn-manual-sync" title="Click to sync now">
@@ -213,6 +224,13 @@ export async function renderHeader() {
                 <div id="notification-dropdown" class="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-xl overflow-hidden z-[60] hidden border border-blue-200 text-gray-800">
                     <div class="py-2 px-4 bg-blue-700 text-white flex justify-between items-center">
                         <span class="text-xs font-bold uppercase tracking-wider">Notifications</span>
+                        <button id="btn-mark-all-read" class="text-blue-200 hover:text-white transition-colors p-1 rounded hover:bg-blue-800" title="Mark all as read">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7m-6 0l4 4L19 7"></path></svg>
+                        </button>
+                    </div>
+                    <div class="flex border-b border-gray-100 bg-gray-50">
+                        <button id="tab-notif-all" class="flex-1 py-2 text-[10px] font-bold uppercase tracking-tight transition-colors border-b-2 ${localStorage.getItem('notification_filter_unread') !== 'true' ? 'border-blue-600 text-blue-600 bg-white' : 'border-transparent text-gray-500 hover:bg-gray-100'}">All</button>
+                        <button id="tab-notif-unread" class="flex-1 py-2 text-[10px] font-bold uppercase tracking-tight transition-colors border-b-2 ${localStorage.getItem('notification_filter_unread') === 'true' ? 'border-blue-600 text-blue-600 bg-white' : 'border-transparent text-gray-500 hover:bg-gray-100'}">Unread</button>
                     </div>
                     <div id="notification-list" class="max-h-80 overflow-y-auto">
                         <div class="p-4 text-center text-gray-400 text-xs">No notifications</div>
@@ -236,6 +254,7 @@ export async function renderHeader() {
     if (btnSync) {
         btnSync.addEventListener("click", async () => {
             if (!navigator.onLine) return;
+            console.log("Manual sync button clicked.");
             const icon = document.getElementById("sync-icon-svg");
             const dot = document.getElementById("sync-indicator-dot");
             const label = document.getElementById("last-sync-label");
@@ -248,6 +267,7 @@ export async function renderHeader() {
             try {
                 const { syncAll } = await import("./services/sync-service.js");
                 await syncAll();
+                console.log("Manual sync completed.");
             } catch (e) {
                 console.error("Manual sync failed", e);
             } finally {
@@ -263,11 +283,40 @@ export async function renderHeader() {
         if (btnNotif && dropdownNotif) {
             btnNotif.addEventListener("click", (e) => {
                 e.stopPropagation();
-                const isHidden = dropdownNotif.classList.contains("hidden");
                 dropdownNotif.classList.toggle("hidden");
-                if (isHidden) markAllAsRead();
             });
         }
+
+        const setFilter = (unreadOnly) => {
+            localStorage.setItem('notification_filter_unread', unreadOnly.toString());
+            const tabAll = document.getElementById("tab-notif-all");
+            const tabUnread = document.getElementById("tab-notif-unread");
+            if (tabAll && tabUnread) {
+                if (unreadOnly) {
+                    tabUnread.className = "flex-1 py-2 text-[10px] font-bold uppercase tracking-tight transition-colors border-b-2 border-blue-600 text-blue-600 bg-white";
+                    tabAll.className = "flex-1 py-2 text-[10px] font-bold uppercase tracking-tight transition-colors border-b-2 border-transparent text-gray-500 hover:bg-gray-100";
+                } else {
+                    tabAll.className = "flex-1 py-2 text-[10px] font-bold uppercase tracking-tight transition-colors border-b-2 border-blue-600 text-blue-600 bg-white";
+                    tabUnread.className = "flex-1 py-2 text-[10px] font-bold uppercase tracking-tight transition-colors border-b-2 border-transparent text-gray-500 hover:bg-gray-100";
+                }
+            }
+            updateNotificationUI();
+        };
+
+        document.getElementById("tab-notif-all")?.addEventListener("click", (e) => {
+            e.stopPropagation();
+            setFilter(false);
+        });
+
+        document.getElementById("tab-notif-unread")?.addEventListener("click", (e) => {
+            e.stopPropagation();
+            setFilter(true);
+        });
+
+        document.getElementById("btn-mark-all-read")?.addEventListener("click", async (e) => {
+            e.stopPropagation();
+            await markAllAsRead();
+        });
     }
 
     updateSyncUI();
@@ -312,9 +361,11 @@ function updateSyncUI() {
     } else {
         label.textContent = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
+    updateSidebarSyncWarning();
 }
 
 window.addEventListener('notification-updated', updateNotificationUI);
+window.addEventListener('shift-updated', () => updateSidebarShiftStatus(0));
 
 document.addEventListener("click", (e) => {
     const dropdown = document.getElementById("notification-dropdown");
@@ -329,7 +380,8 @@ async function updateNotificationUI() {
     const list = document.getElementById('notification-list');
     if (!badge || !list) return;
 
-    const notifications = await getRecentNotifications(7);
+    const filterUnread = localStorage.getItem('notification_filter_unread') === 'true';
+    let notifications = await getRecentNotifications(20);
     const unreadCount = notifications.filter(n => n.read === 0).length;
 
     if (unreadCount > 0) {
@@ -338,18 +390,44 @@ async function updateNotificationUI() {
         badge.classList.add('hidden');
     }
 
+    if (filterUnread) {
+        notifications = notifications.filter(n => n.read === 0);
+    }
+
     if (notifications.length === 0) {
-        list.innerHTML = '<div class="p-4 text-center text-gray-400 text-xs">No notifications</div>';
+        list.innerHTML = `<div class="p-4 text-center text-gray-400 text-xs">${filterUnread ? 'No unread notifications' : 'No notifications'}</div>`;
     } else {
         list.innerHTML = notifications.map(n => `
-            <div class="px-4 py-3 border-b last:border-0 hover:bg-gray-50 transition-colors">
+            <div class="notification-item px-4 py-3 border-b last:border-0 hover:bg-gray-50 transition-colors group relative cursor-pointer" data-id="${n.id}" data-read="${n.read}">
                 <div class="flex justify-between items-start mb-1">
                     <span class="text-[10px] font-bold uppercase ${n.type === 'Void' ? 'text-red-500' : n.type === 'Adjustment' ? 'text-yellow-600' : 'text-blue-600'}">${n.type}</span>
-                    <span class="text-[9px] text-gray-400">${new Date(n.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[9px] text-gray-400">${new Date(n.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                        <button class="btn-toggle-read p-1 rounded-md hover:bg-gray-200 transition-colors" data-id="${n.id}" data-read="${n.read}" title="${n.read ? 'Mark as unread' : 'Mark as read'}">
+                            <div class="w-4 h-4 flex items-center justify-center rounded border ${n.read ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-gray-300 text-blue-200'} ${n.read === 1 ? 'animate-breathe-blue' : ''}">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                            </div>
+                        </button>
+                    </div>
                 </div>
-                <p class="text-xs text-gray-700 leading-tight">${n.message}</p>
+                <p class="text-xs ${n.read ? 'text-gray-500' : 'text-gray-700 font-medium'} leading-tight">${n.message}</p>
             </div>
         `).join('');
+
+        list.querySelectorAll('.notification-item').forEach(item => {
+            item.addEventListener('click', async (e) => {
+                const toggleBtn = e.target.closest('.btn-toggle-read');
+                const id = parseInt(item.dataset.id);
+                const isRead = parseInt(item.dataset.read) === 1;
+
+                if (toggleBtn) {
+                    e.stopPropagation();
+                    await toggleNotificationRead(id, !isRead);
+                } else if (!isRead) {
+                    await toggleNotificationRead(id, true);
+                }
+            });
+        });
     }
 }
 
@@ -359,10 +437,7 @@ async function updateSidebarShiftStatus(retryCount = 0) {
     const isCollapsed = localStorage.getItem('sidebar_collapsed') === 'true';
     const dotSize = isCollapsed ? "w-3 h-3" : "w-4 h-4";
     
-    console.log(`updateSidebarShiftStatus: Checking status (Attempt ${retryCount + 1})...`);
-
     if (!dot || !text) {
-        console.warn("Sidebar shift status elements not found. Retrying...");
         if (retryCount < 5) {
             setTimeout(() => updateSidebarShiftStatus(retryCount + 1), 500);
         }
@@ -371,23 +446,54 @@ async function updateSidebarShiftStatus(retryCount = 0) {
 
     try {
         const shift = await checkActiveShift();
-        console.log("updateSidebarShiftStatus: Result:", shift);
 
         if (shift) {
-            console.log("updateSidebarShiftStatus: Shift OPEN -> Green");
             dot.className = `${dotSize} rounded-full bg-green-500 border-2 border-white shadow-[0_0_10px_rgba(34,197,94,0.6)] animate-breathe-green`;
             text.textContent = "OPEN";
             text.className = "text-sm font-bold text-green-600";
         } else {
-            console.log("updateSidebarShiftStatus: Shift CLOSED -> Red");
             dot.className = `${dotSize} rounded-full bg-red-500 border-2 border-white shadow-sm`;
             text.textContent = "CLOSED";
             text.className = "text-sm font-bold text-red-600";
         }
     } catch (error) {
-        console.error("updateSidebarShiftStatus: Error:", error);
         dot.className = "w-4 h-4 rounded-full bg-gray-400 border-2 border-white";
         text.textContent = "OFFLINE";
         text.className = "text-sm font-bold text-gray-500";
     }
+}
+
+async function checkSyncFreshness() {
+    const lastSync = localStorage.getItem('last_sync_timestamp');
+    if (!lastSync) return false;
+
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    try {
+        if (!db.isOpen()) await db.open();
+        const history = await db.sync_metadata.filter(m => m.key.startsWith('sync_history_')).toArray();
+        
+        // If no history yet, don't show warning
+        if (history.length === 0) return false;
+
+        // Check critical entities
+        const critical = ['items', 'transactions', 'customers', 'shifts'];
+        for (const entity of critical) {
+            const record = history.find(h => h.key === `sync_history_${entity}`);
+            if (!record || new Date(record.value) < twentyFourHoursAgo) {
+                return true; // Stale data detected
+            }
+        }
+    } catch (e) {
+        return false;
+    }
+    return false;
+}
+
+async function updateSidebarSyncWarning() {
+    const dot = document.getElementById("sync-warning-dot");
+    if (!dot) return;
+    
+    const isStale = await checkSyncFreshness();
+    if (isStale) dot.classList.remove("hidden");
+    else dot.classList.add("hidden");
 }

@@ -10,7 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 $dataDir = __DIR__ . '/../data/';
-$allowedFiles = ['items', 'users', 'suppliers', 'customers', 'transactions', 'shifts', 'expenses', 'stock_in_history', 'adjustments', 'suspended_transactions', 'returns', 'settings', 'last_sync'];
+$allowedFiles = ['items', 'users', 'suppliers', 'customers', 'transactions', 'shifts', 'expenses', 'stock_in_history', 'adjustments', 'suspended_transactions', 'returns', 'settings', 'last_sync', 'stock_movements', 'valuation_history'];
 
 $action = $_GET['action'] ?? null;
 $file = $_GET['file'] ?? null;
@@ -134,9 +134,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($payload) {
             $itemsPath = $dataDir . 'items.json';
             $historyPath = $dataDir . 'stock_in_history.json';
+            $movementsPath = $dataDir . 'stock_movements.json';
             
             initFile($itemsPath);
             initFile($historyPath);
+            initFile($movementsPath);
             
             // 1. Update Items Stock
             $items = json_decode(file_get_contents($itemsPath), true);
@@ -146,6 +148,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             unset($item);
             
+            $movements = json_decode(file_get_contents($movementsPath), true);
+            if (!is_array($movements)) $movements = [];
+
             foreach ($payload['items'] as $cartItem) {
                 if (isset($itemsMap[$cartItem['item_id']])) {
                     $item = &$itemsMap[$cartItem['item_id']];
@@ -155,10 +160,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     if ($supplierOverride && (empty($item['supplier_id']))) {
                         $item['supplier_id'] = $supplierOverride;
                     }
+
+                    // Record movement
+                    $movements[] = [
+                        "id" => $cartItem['movement_id'] ?? uniqid(),
+                        "item_id" => $cartItem['item_id'],
+                        "item_name" => $cartItem['name'],
+                        "timestamp" => $payload['timestamp'],
+                        "type" => "Stock-In",
+                        "qty" => (int)$cartItem['quantity'],
+                        "user" => $payload['username'] ?? $payload['user_id'],
+                        "reason" => "Supplier Delivery"
+                    ];
                 }
             }
             
             file_put_contents($itemsPath, json_encode(array_values($itemsMap), JSON_PRETTY_PRINT));
+            file_put_contents($movementsPath, json_encode($movements, JSON_PRETTY_PRINT));
             
             // 2. Log History
             $history = json_decode(file_get_contents($historyPath), true);

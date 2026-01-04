@@ -1,4 +1,5 @@
 import { checkPermission } from "../auth.js";
+import { generateUUID } from "../utils.js";
 
 const API_URL = 'api/router.php';
 
@@ -142,7 +143,7 @@ async function saveExpense() {
         if (!Array.isArray(expenses)) expenses = [];
 
         expenses.push({
-            id: crypto.randomUUID(),
+            id: generateUUID(),
             description: desc,
             amount: amount,
             category: category,

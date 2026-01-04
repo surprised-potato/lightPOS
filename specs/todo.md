@@ -8,7 +8,7 @@ Use this checklist to track your progress through the development phases.
 - [x] Create `style.css` (Import Tailwind via CDN).
 - [x] Create `src/main.js` (App entry point).
 - [x] Create `api/router.php` (Simple backend handler).
-- [x] Create `data/` directory with empty JSON files (`items.json`, `users.json`, etc.).
+- [x] Create `data/` directory with empty JSON files (`items.json`, `users.json`, `stock_movement.json`, `adjustments.json`, etc.).
 
 ### 1.2 Backend Setup (Apache/PHP 8)
 - [x] Implement `GET` logic in `router.php` to read JSON files.
@@ -74,6 +74,7 @@ Use this checklist to track your progress through the development phases.
  - [x] UI: Add "Stock In Cart" table to list multiple items.
  - [x] UI: Add "Total Invoice Value" display.
  - [x] Logic: Implement "Add to Stock In Cart" from search.
+ - [ ] UI/Logic: Add Landed Cost inputs (Freight, Duties, Insurance) and allocation logic.
  - [x] Logic: Compare Input Cost vs. Stored Cost for each item in cart.
  - [x] Modal: Trigger "Price Discrepancy" modal per item.
  - [x] Option A: Update Master Cost.
@@ -86,7 +87,7 @@ Use this checklist to track your progress through the development phases.
 - [x] UI: Display Item + Current System Stock.
 - [x] UI: Input field for "Actual Count".
 - [x] Logic: Calculate difference (Actual - System).
- - [x] Write: Append to `adjustments.json`.
+ - [ ] UI/Write: Append to `adjustments.json` with mandatory reason (Theft, Admin Error, Vendor Fraud).
  - [x] Write: Update `stock_level` in `items.json`.
 
 ## Phase 4: The Offline Layer (Dexie.js)
@@ -165,10 +166,19 @@ Use this checklist to track your progress through the development phases.
 - [x] Report: Void & Return Log (Audit trail).
 - [x] Report: Product Performance (Product Mix/Ranking).
 - [x] Report: Advanced Product Metrics (STR, Turnover, GMROI).
-- [ ] Report: Risk Metrics (Return Rate, Shrinkage %).
+- [x] Report: Risk Metrics (Return Rate, Shrinkage %).
 - [x] Report: Strategic Metrics (Basket Penetration, Affinity).
 - [x] Report: Slow Moving Items (zero sales in period).
 - [x] Report: Retailer's Matrix Visualization.
+
+## Phase 10: Enterprise Features (Valuation & Audit)
+- [ ] Logic: Implement FIFO/LIFO/Weighted Average valuation logic.
+- [ ] Logic: Implement Landed Cost allocation in Stock In module.
+- [x] Write: Implement `stock_movement.json` logging for all inventory events (Sales, Receives, Adjustments).
+- [x] Report: Inventory Ledger with historical snapshotting.
+- [ ] Report: Advanced COGS Analysis (including Landed Costs).
+- [x] Report: Detailed Stock Movement / Transaction Log (User ID + Timestamp).
+- [x] Report: Shrinkage / Variance Analysis with categorization (Theft, Admin Error, Vendor Fraud).
 
 ## Phase 7: Shift Management
 - [x] Create `src/modules/shift.js`.

@@ -1,1 +1,24 @@
-[]
+[
+    {
+        "id": "local_1767502116183",
+        "user_id": "admin@lightpos.com",
+        "username": "Super Admin",
+        "items": [
+            {
+                "id": "02fdf7c5-ae04-4ad1-b67b-57019cc4613d",
+                "name": "Good Life Sesame Oil 420ml",
+                "quantity": 10,
+                "cost_price": 230.80000000000001136868377216160297393798828125
+            },
+            {
+                "id": "00dc06e9-6389-422f-bbc3-79f148b561f0",
+                "name": "Chiz Curls 55g",
+                "quantity": 24,
+                "cost_price": 18.5
+            }
+        ],
+        "timestamp": "2026-01-04T04:48:36.183Z",
+        "item_count": 34,
+        "supplier_id_override": null
+    }
+]

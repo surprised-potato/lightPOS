@@ -1,4 +1,5 @@
 import { db } from "../db.js";
+import { generateUUID } from "../utils.js";
 
 const API_URL = 'api/router.php';
 const SYNC_INTERVAL = 30000; // 30 seconds
@@ -17,7 +18,7 @@ export function startRealtimeSync() {
     setInterval(syncTransactionsDown, SYNC_INTERVAL);
 
     // 1b. Additional Downlink entities
-    const extraEntities = ['shifts', 'expenses', 'adjustments', 'returns', 'suppliers', 'settings', 'stock_in_history'];
+    const extraEntities = ['shifts', 'expenses', 'adjustments', 'returns', 'suppliers', 'settings', 'stock_in_history', 'stock_movements'];
     extraEntities.forEach(entity => {
         let table = entity;
         if (entity === 'settings') table = 'sync_metadata';
@@ -56,6 +57,15 @@ function updateLastSyncTimestamp(timestamp = null, pushToServer = false) {
     }
 }
 
+async function updateSyncHistory(entity) {
+    if (db.isOpen()) {
+        await db.sync_metadata.put({ 
+            key: `sync_history_${entity}`, 
+            value: new Date().toISOString() 
+        });
+    }
+}
+
 /**
  * Generic helper to sync data down from server to local Dexie
  */
@@ -88,6 +98,7 @@ async function syncEntityDown(file, table) {
             } else {
                 await db[table].bulkPut(data);
             }
+            await updateSyncHistory(file);
         }
     } catch (error) {
         console.error(`Error syncing ${file} down:`, error);
@@ -124,6 +135,7 @@ async function syncItemsDown() {
         // Bulk put updates existing items by ID and adds new ones
         await db.items.bulkPut(items);
         updateLastSyncTimestamp();
+        await updateSyncHistory('items');
         console.log(`Synced ${items.length} items from Server.`);
     } catch (error) {
         console.error("Error syncing items down:", error);
@@ -142,6 +154,7 @@ async function syncCustomersDown() {
 
         await db.customers.bulkPut(customers);
         updateLastSyncTimestamp();
+        await updateSyncHistory('customers');
     } catch (error) {
         console.error("Error syncing customers down:", error);
     }
@@ -159,12 +172,14 @@ async function syncTransactionsDown() {
 
         transactions = transactions.map(tx => ({
             ...tx,
-            timestamp: new Date(tx.timestamp)
+            timestamp: new Date(tx.timestamp),
+            voided_at: tx.voided_at ? new Date(tx.voided_at) : null
         }));
 
         if (db.isOpen()) {
             await db.transactions.bulkPut(transactions);
             updateLastSyncTimestamp();
+            await updateSyncHistory('transactions');
         } else {
             console.warn("Database is closed. Skipping transactions downlink sync.");
         }
@@ -177,18 +192,36 @@ export async function syncAll() {
     if (!navigator.onLine) return;
     console.log("Manual sync triggered...");
     try {
-        await Promise.all([
-            syncItemsDown(),
-            syncCustomersDown(),
-            syncTransactionsDown(),
-            processQueue(),
-            syncEntityDown('shifts', 'shifts'),
-            syncEntityDown('expenses', 'expenses'),
-            syncEntityDown('adjustments', 'adjustments'),
-            syncEntityDown('returns', 'returns'),
-            syncEntityDown('suppliers', 'suppliers')
-        ]);
+        console.log("Starting manual sync of all entities...");
+        
+        console.log("Syncing items...");
+        await syncItemsDown();
+        
+        console.log("Syncing customers...");
+        await syncCustomersDown();
+        
+        console.log("Syncing transactions...");
+        await syncTransactionsDown();
+        
+        console.log("Processing sync queue...");
+        await processQueue();
+        
+        const entities = [
+            { file: 'shifts', table: 'shifts' },
+            { file: 'expenses', table: 'expenses' },
+            { file: 'adjustments', table: 'adjustments' },
+            { file: 'returns', table: 'returns' },
+            { file: 'suppliers', table: 'suppliers' },
+            { file: 'stock_movements', table: 'stock_movements' }
+        ];
+        
+        for (const entity of entities) {
+            console.log(`Syncing ${entity.file}...`);
+            await syncEntityDown(entity.file, entity.table);
+        }
+
         updateLastSyncTimestamp();
+        console.log("Manual sync completed successfully.");
     } catch (e) {
         console.error("Manual sync failed", e);
     }
@@ -201,16 +234,22 @@ export async function processQueue() {
     }
 
     try {
-        // 1. Get unsynced local transactions
-        const unsyncedTxs = await db.transactions.where("sync_status").equals(0).toArray();
-        if (unsyncedTxs.length === 0) return;
+        // 1. Get unsynced local data
+        const [unsyncedTxs, unsyncedMovements, syncQueueItems] = await Promise.all([
+            db.transactions.where("sync_status").equals(0).toArray(),
+            db.stock_movements.where("sync_status").equals(0).toArray(),
+            db.syncQueue.toArray()
+        ]);
 
-        console.log(`Syncing ${unsyncedTxs.length} transactions to Server...`);
+        if (unsyncedTxs.length === 0 && unsyncedMovements.length === 0 && syncQueueItems.length === 0) return;
 
-        // 2. Fetch Server State (Items & Transactions)
-        const [itemsRes, txRes] = await Promise.all([
+        console.log(`Syncing ${unsyncedTxs.length} transactions and ${unsyncedMovements.length} movements to Server...`);
+
+        // 2. Fetch Server State (Items, Transactions & Movements)
+        const [itemsRes, txRes, movementsRes] = await Promise.all([
             fetch(`${API_URL}?file=items`),
-            fetch(`${API_URL}?file=transactions`)
+            fetch(`${API_URL}?file=transactions`),
+            fetch(`${API_URL}?file=stock_movements`)
         ]);
 
         let serverItems = await itemsRes.json();
@@ -219,24 +258,55 @@ export async function processQueue() {
         let serverTxs = await txRes.json();
         if (!Array.isArray(serverTxs)) serverTxs = [];
 
+        let serverMovements = await movementsRes.json();
+        if (!Array.isArray(serverMovements)) serverMovements = [];
+
         // 3. Process each unsynced transaction
         for (const tx of unsyncedTxs) {
-            // a. Prepare server transaction object (already has UUID)
-            if (serverTxs.some(s => s.id === tx.id)) {
-                continue;
+            const serverIdx = serverTxs.findIndex(s => s.id === tx.id);
+            
+            if (serverIdx !== -1) {
+                // Update existing transaction (e.g. Void status)
+                serverTxs[serverIdx] = { ...tx, sync_status: 1 };
+            } else {
+                // Add new transaction
+                const serverTx = { ...tx, sync_status: 1 };
+                serverTxs.push(serverTx);
             }
 
-            const serverTx = { ...tx, sync_status: 1 };
-            serverTxs.push(serverTx);
-
-            // b. Update Server Stock
-            if (tx.items && Array.isArray(tx.items)) {
+            // b. Update Server Stock & Record Movements (Only for active sales)
+            if (!tx.is_voided && tx.items && Array.isArray(tx.items)) {
                 tx.items.forEach(cartItem => {
                     const itemIndex = serverItems.findIndex(i => i.id === cartItem.id);
                     if (itemIndex !== -1) {
                         serverItems[itemIndex].stock_level -= cartItem.qty;
+
+                        // Record movement for the sale
+                        const mRecord = {
+                            id: `${tx.id}-${cartItem.id}`, // Deterministic ID to prevent duplicates
+                            item_id: cartItem.id,
+                            item_name: cartItem.name,
+                            timestamp: tx.timestamp,
+                            type: 'Sale',
+                            qty: -cartItem.qty,
+                            user: tx.user_email || 'Unknown',
+                            transaction_id: tx.id,
+                            reason: 'Customer Purchase',
+                            sync_status: 1
+                        };
+                        serverMovements.push(mRecord);
+                        
+                        // Also save locally so reports are instant
+                        db.stock_movements.put(mRecord).catch(() => {});
                     }
                 });
+            }
+        }
+
+        // c. Process local unsynced movements (Returns, Adjustments, etc.)
+        for (const m of unsyncedMovements) {
+            if (!serverMovements.some(sm => sm.id === m.id)) {
+                serverMovements.push({ ...m, sync_status: 1 });
             }
         }
 
@@ -251,20 +321,28 @@ export async function processQueue() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(serverTxs)
+            }),
+            fetch(`${API_URL}?file=stock_movements`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(serverMovements)
             })
         ]);
 
-        // 5. Mark local transactions as synced
-        await db.transaction('rw', db.transactions, async () => {
+        // 5. Mark local transactions and movements as synced
+        await db.transaction('rw', [db.transactions, db.stock_movements], async () => {
             for (const tx of unsyncedTxs) {
                 await db.transactions.update(tx.id, { sync_status: 1 });
+            }
+            for (const m of unsyncedMovements) {
+                await db.stock_movements.update(m.id, { sync_status: 1 });
             }
         });
 
         updateLastSyncTimestamp(null, true);
+        await updateSyncHistory('uplink_queue');
 
         // 6. Process Generic Sync Queue (e.g., Stock In)
-        const syncQueueItems = await db.syncQueue.toArray();
         if (syncQueueItems.length > 0) {
             console.log(`Processing ${syncQueueItems.length} queued actions...`);
             

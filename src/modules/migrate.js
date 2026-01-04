@@ -1,5 +1,6 @@
 import { checkPermission } from "../auth.js";
 import { db } from "../db.js";
+import { generateUUID } from "../utils.js";
 
 const API_URL = 'api/router.php';
 
@@ -212,7 +213,7 @@ async function processImport(items) {
 
     // 2. Prepare new items
     const newItems = items.map(item => ({
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         ...item,
         cost_price: parseFloat(item.cost_price) || 0,
         selling_price: parseFloat(item.selling_price) || 0,

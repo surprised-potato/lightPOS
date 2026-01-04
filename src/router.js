@@ -8,7 +8,6 @@ import { loadPosView } from "./modules/pos.js";
 import { loadReportsView } from "./modules/reports.js";
 import { loadExpensesView } from "./modules/expenses.js";
 import { loadUsersView } from "./modules/users.js";
-import { loadMigrateView } from "./modules/migrate.js";
 import { loadProfileView } from "./modules/profile.js";
 import { loadShiftsView } from "./modules/shift.js";
 import { loadSettingsView } from "./modules/settings.js";
@@ -48,7 +47,6 @@ async function handleRoute() {
         "#expenses": { module: "expenses", type: "read" },
         "#reports": { module: "reports", type: "read" },
         "#users": { module: "users", type: "read" },
-        "#migrate": { module: "migrate", type: "write" },
         "#shifts": { module: "shifts", type: "read" },
         "#returns": { module: "returns", type: "read" },
         "#settings": { module: "settings", type: "read" }
@@ -86,7 +84,6 @@ async function handleRoute() {
         case "#expenses": await loadExpensesView(); break;
         case "#reports": await loadReportsView(); break;
         case "#users": await loadUsersView(); break;
-        case "#migrate": await loadMigrateView(); break;
         case "#profile": await loadProfileView(); break;
         case "#shifts": await loadShiftsView(); break;
         case "#returns": await loadReturnsView(); break;

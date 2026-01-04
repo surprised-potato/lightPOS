@@ -1,5 +1,5 @@
 import { login, logout, monitorAuthState } from "./auth.js";
-import { renderSidebar } from "./layout.js";
+import { renderSidebar, renderLoginBranding } from "./layout.js";
 import { initRouter } from "./router.js";
 import { startRealtimeSync } from "./services/sync-service.js";
 
@@ -26,6 +26,7 @@ function showLogin() {
     console.log("User signed out");
     appContainer.classList.add("hidden");
     loginView.classList.remove("hidden");
+    renderLoginBranding();
 }
 
 // 1. Monitor Auth State on initial load

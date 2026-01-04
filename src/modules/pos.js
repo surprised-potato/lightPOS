@@ -3,6 +3,7 @@ import { checkPermission, requestManagerApproval } from "../auth.js";
 import { checkActiveShift, requireShift, showCloseShiftModal } from "./shift.js";
 import { addNotification } from "../services/notification-service.js";
 import { getSystemSettings } from "./settings.js";
+import { generateUUID } from "../utils.js";
 
 const API_URL = 'api/router.php';
 
@@ -228,6 +229,29 @@ async function renderPosInterface(content) {
                 </div>
             </div>
         </div>
+
+        <!-- Quick Customer Modal -->
+        <div id="modal-quick-customer" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center z-[60]">
+            <div class="bg-white rounded-lg shadow-lg p-6 w-96">
+                <h3 class="text-xl font-bold mb-2 text-gray-800">Customer Details</h3>
+                <p class="text-xs text-gray-600 mb-4">Provide customer information for this receipt.</p>
+                
+                <div class="mb-3 relative">
+                    <label class="block text-gray-700 text-xs font-bold mb-1">Name</label>
+                    <input type="text" id="quick-cust-name" placeholder="Search or enter name..." class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" autocomplete="off">
+                    <div id="quick-cust-results" class="hidden absolute z-[70] w-full bg-white shadow-lg border rounded-b-md max-h-40 overflow-y-auto mt-1"></div>
+                </div>
+                <div class="mb-6">
+                    <label class="block text-gray-700 text-xs font-bold mb-1">Phone Number</label>
+                    <input type="text" id="quick-cust-phone" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" autocomplete="off">
+                </div>
+
+                <div class="flex gap-2">
+                    <button id="btn-cancel-quick-customer" class="w-1/2 bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-4 rounded shadow-md transition">Cancel</button>
+                    <button id="btn-save-quick-customer" class="w-1/2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded shadow-md transition">Save & Print</button>
+                </div>
+            </div>
+        </div>
     `;
 
     // Load Items from Dexie
@@ -280,9 +304,10 @@ async function renderPosInterface(content) {
         }
     });
     
-    document.getElementById("btn-print-last-receipt").addEventListener("click", () => {
+    document.getElementById("btn-print-last-receipt").addEventListener("click", async () => {
         if (lastTransactionData) {
-            printReceipt(lastTransactionData);
+            const isReprint = !!lastTransactionData.was_printed;
+            await printReceipt(lastTransactionData, isReprint);
         }
     });
 
@@ -635,6 +660,7 @@ function renderCart() {
     const totalEl = document.getElementById("cart-total");
     const btnCheckout = document.getElementById("btn-checkout");
     
+    if (!cartContainer) return;
     cartContainer.innerHTML = "";
     let total = 0;
 
@@ -798,7 +824,7 @@ async function processTransaction() {
     const pointsEarned = Math.floor(total / rewardRatio);
     
     const transaction = {
-        id: (self.crypto?.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).substring(2)),
+        id: generateUUID(),
         items: JSON.parse(JSON.stringify(cart)), // Deep copy
         total_amount: total,
         amount_tendered: tendered,
@@ -806,6 +832,7 @@ async function processTransaction() {
         tax_amount: taxAmount,
         payment_method: paymentMethod,
         user_email: user ? user.email : "Guest",
+        user_name: user ? user.name : "Guest",
         customer_id: selectedCustomer.id,
         customer_name: selectedCustomer.name,
         points_earned: pointsEarned,
@@ -862,6 +889,30 @@ async function processTransaction() {
                 body: JSON.stringify(serverTxs)
             });
 
+            // Update Stock Movements on Server
+            const movementsRes = await fetch(`${API_URL}?file=stock_movements`);
+            let serverMovements = await movementsRes.json();
+            if (!Array.isArray(serverMovements)) serverMovements = [];
+            
+            transaction.items.forEach(cartItem => {
+                serverMovements.push({
+                    id: `${transaction.id}-${cartItem.id}`,
+                    item_id: cartItem.id,
+                    item_name: cartItem.name,
+                    timestamp: transaction.timestamp,
+                    type: 'Sale',
+                    qty: -cartItem.qty,
+                    user: transaction.user_email || 'Unknown',
+                    transaction_id: transaction.id,
+                    reason: 'Customer Purchase'
+                });
+            });
+            await fetch(`${API_URL}?file=stock_movements`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(serverMovements)
+            });
+
             // Update Customer Points
             if (selectedCustomer.id !== "Guest") {
                 const custRes = await fetch(`${API_URL}?file=customers`);
@@ -902,7 +953,10 @@ async function processTransaction() {
         document.getElementById("last-total").textContent = `₱${transaction.total_amount.toFixed(2)}`;
         document.getElementById("last-tendered").textContent = `₱${transaction.amount_tendered.toFixed(2)}`;
         lastTxDiv.classList.remove("hidden");
-        printReceipt(lastTransactionData); // Auto-print
+        
+        if (settings.pos?.auto_print) {
+            printReceipt(lastTransactionData);
+        }
         
         // Focus back on search input for next sale
         document.getElementById("pos-search").focus();
@@ -957,6 +1011,9 @@ async function voidTransaction(id) {
 
     if (!(await requestManagerApproval())) return;
 
+    const reason = prompt("Please enter the reason for voiding this transaction:");
+    if (reason === null) return; // User cancelled
+
     try {
         const txId = isNaN(id) ? id : parseInt(id);
         const tx = await db.transactions.get(txId);
@@ -969,6 +1026,7 @@ async function voidTransaction(id) {
             is_voided: true, 
             voided_at: new Date(),
             voided_by: user ? user.email : "System",
+            void_reason: reason || "No reason provided",
             sync_status: 0 
         });
 
@@ -996,14 +1054,40 @@ async function voidTransaction(id) {
                     body: JSON.stringify(serverItems)
                 });
 
+                // Update Server Movements
+                const movementsRes = await fetch(`${API_URL}?file=stock_movements`);
+                let serverMovements = await movementsRes.json();
+                if (!Array.isArray(serverMovements)) serverMovements = [];
+                
+                tx.items.forEach(txItem => {
+                    serverMovements.push({
+                        id: generateUUID(),
+                        item_id: txItem.id,
+                        item_name: txItem.name,
+                        timestamp: new Date(),
+                        type: 'Void',
+                        qty: txItem.qty,
+                        user: user ? user.email : "System",
+                        transaction_id: tx.id,
+                        reason: reason || "Transaction Voided",
+                        sync_status: 1
+                    });
+                });
+                await fetch(`${API_URL}?file=stock_movements`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(serverMovements)
+                });
+
                 // Update Server Transaction
                 const txRes = await fetch(`${API_URL}?file=transactions`);
                 let serverTxs = await txRes.json();
-                const sIdx = serverTxs.findIndex(t => t.timestamp === tx.timestamp && t.total_amount === tx.total_amount);
+                const sIdx = serverTxs.findIndex(t => t.id === tx.id);
                 if (sIdx !== -1) {
                     serverTxs[sIdx].is_voided = true;
                     serverTxs[sIdx].voided_at = new Date();
                     serverTxs[sIdx].voided_by = user ? user.email : "System";
+                    serverTxs[sIdx].void_reason = reason || "No reason provided";
                     await fetch(`${API_URL}?file=transactions`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -1032,7 +1116,7 @@ async function suspendCurrentTransaction() {
 
     const user = JSON.parse(localStorage.getItem('pos_user'));
     const suspendedTx = {
-        id: (self.crypto?.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).substring(2)),
+        id: generateUUID(),
         items: JSON.parse(JSON.stringify(cart)),
         customer: selectedCustomer,
         user_email: user ? user.email : "Guest",
@@ -1283,7 +1367,168 @@ async function syncSuspendedFromServer() {
     updateSuspendedCount();
 }
 
-async function printReceipt(tx) {
+async function requestQuickCustomer(tx) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById("modal-quick-customer");
+        const nameInput = document.getElementById("quick-cust-name");
+        const resultsDiv = document.getElementById("quick-cust-results");
+        const phoneInput = document.getElementById("quick-cust-phone");
+        const btnSave = document.getElementById("btn-save-quick-customer");
+        const btnCancel = document.getElementById("btn-cancel-quick-customer");
+        let selectedId = null;
+
+        if (!modal) {
+            resolve(tx);
+            return;
+        }
+
+        nameInput.value = "";
+        phoneInput.value = "";
+        selectedId = null;
+        resultsDiv.innerHTML = "";
+        resultsDiv.classList.add("hidden");
+        modal.classList.remove("hidden");
+        nameInput.focus();
+
+        const cleanup = () => {
+            modal.classList.add("hidden");
+            btnSave.onclick = null;
+            btnCancel.onclick = null;
+            nameInput.oninput = null;
+            nameInput.onkeydown = null;
+            phoneInput.onkeydown = null;
+        };
+
+        btnCancel.onclick = () => {
+            cleanup();
+            resolve(null);
+        };
+
+        const updateTxAndResolve = async (customer) => {
+            await db.transactions.update(tx.id, {
+                customer_id: customer.id,
+                customer_name: customer.name
+            });
+            tx.customer_id = customer.id;
+            tx.customer_name = customer.name;
+            cleanup();
+            resolve(tx);
+        };
+
+        nameInput.onkeydown = (e) => {
+            if (e.key === "ArrowDown") {
+                const first = resultsDiv.querySelector("div[tabindex='0']");
+                if (first) {
+                    e.preventDefault();
+                    first.focus();
+                }
+            } else if (e.key === "Enter") {
+                e.preventDefault();
+                phoneInput.focus();
+            }
+        };
+
+        phoneInput.onkeydown = (e) => {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                btnSave.click();
+            }
+        };
+
+        nameInput.oninput = (e) => {
+            const term = e.target.value.toLowerCase();
+            selectedId = null; // Reset if user types
+            if (!term) {
+                resultsDiv.classList.add("hidden");
+                return;
+            }
+            const filtered = allCustomers.filter(c => c.name.toLowerCase().includes(term) || c.phone.includes(term));
+            resultsDiv.innerHTML = "";
+            if (filtered.length > 0) {
+                resultsDiv.classList.remove("hidden");
+                filtered.slice(0, 5).forEach(c => {
+                    const div = document.createElement("div");
+                    div.className = "p-2 hover:bg-blue-50 cursor-pointer text-xs border-b last:border-0 focus:bg-blue-100 focus:outline-none";
+                    div.setAttribute("tabindex", "0");
+                    div.innerHTML = `<strong>${c.name}</strong> - ${c.phone}`;
+                    
+                    const selectAction = () => {
+                        nameInput.value = c.name;
+                        phoneInput.value = c.phone;
+                        selectedId = c.id;
+                        resultsDiv.classList.add("hidden");
+                        phoneInput.focus();
+                    };
+
+                    div.onclick = selectAction;
+                    div.onkeydown = (e) => {
+                        if (e.key === "Enter") {
+                            e.preventDefault();
+                            selectAction();
+                        } else if (e.key === "ArrowDown") {
+                            e.preventDefault();
+                            const next = div.nextElementSibling;
+                            if (next && next.getAttribute("tabindex")) next.focus();
+                        } else if (e.key === "ArrowUp") {
+                            e.preventDefault();
+                            const prev = div.previousElementSibling;
+                            if (prev && prev.getAttribute("tabindex")) prev.focus();
+                            else nameInput.focus();
+                        }
+                    };
+                    resultsDiv.appendChild(div);
+                });
+            } else {
+                resultsDiv.innerHTML = `<div class="p-2 text-xs text-gray-500">No matches</div>`;
+                resultsDiv.classList.remove("hidden");
+            }
+        };
+
+        btnSave.onclick = async () => {
+            const name = nameInput.value.trim();
+            const phone = phoneInput.value.trim();
+            if (!name || !phone) {
+                alert("Please enter both name and phone number or select an existing customer.");
+                return;
+            }
+
+            if (selectedId) {
+                await updateTxAndResolve({ id: selectedId, name });
+                return;
+            }
+
+            try {
+                const newCustomer = { id: generateUUID(), name, phone, email: "", loyalty_points: 0, timestamp: new Date() };
+                await db.customers.add(newCustomer);
+                if (navigator.onLine) {
+                    try {
+                        const res = await fetch(`${API_URL}?file=customers`);
+                        let customers = await res.json();
+                        if (!Array.isArray(customers)) customers = [];
+                        customers.push(newCustomer);
+                        await fetch(`${API_URL}?file=customers`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(customers)
+                        });
+                    } catch (e) { console.warn("Quick customer server sync failed"); }
+                }
+                fetchCustomersFromDexie();
+                await updateTxAndResolve(newCustomer);
+            } catch (error) {
+                console.error("Error saving quick customer:", error);
+                alert("Failed to save customer info.");
+            }
+        };
+    });
+}
+
+async function printReceipt(tx, isReprint = false) {
+    if (tx.customer_id === "Guest") {
+        const result = await requestQuickCustomer(tx);
+        if (!result) return; // Abort printing if cancelled
+        tx = result;
+    }
     const settings = await getSystemSettings();
     const store = settings.store || { name: "LightPOS", data: "" };
     
@@ -1318,10 +1563,24 @@ async function printReceipt(tx) {
                 .hr { border-bottom: 1px dashed #000; margin: 5px 0; }
                 table { width: 100%; border-collapse: collapse; }
                 .footer { margin-top: 20px; font-size: 10px; }
+                .watermark {
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%) rotate(-45deg);
+                    font-size: 40px;
+                    color: rgba(0, 0, 0, 0.1);
+                    white-space: nowrap;
+                    pointer-events: none;
+                    z-index: -1;
+                    font-weight: bold;
+                }
             </style>
         </head>
         <body onload="window.print(); window.close();">
+            ${isReprint ? '<div class="watermark">REPRINT</div>' : ''}
             <div class="text-center">
+                ${store.logo ? `<img src="${store.logo}" style="max-width: 40mm; max-height: 20mm; margin-bottom: 5px; filter: grayscale(1);"><br>` : ''}
                 <div class="bold" style="font-size: 16px;">${store.name}</div>
                 <div style="white-space: pre-wrap; font-size: 10px;">${store.data}</div>
             </div>
@@ -1329,7 +1588,7 @@ async function printReceipt(tx) {
             <div style="font-size: 10px;">
                 Date: ${new Date(tx.timestamp).toLocaleString()}<br>
                 Trans: #${tx.id}<br>
-                Cashier: ${tx.user_email}<br>
+                Cashier: ${tx.user_name || tx.user_email}<br>
                 Customer: ${tx.customer_name}
             </div>
             <div class="hr"></div>
@@ -1351,6 +1610,9 @@ async function printReceipt(tx) {
     `;
     printWindow.document.write(receiptHtml);
     printWindow.document.close();
+
+    // Mark transaction as printed to handle watermark on manual reprints
+    tx.was_printed = true;
 }
 
 // Auto-sync when coming back online

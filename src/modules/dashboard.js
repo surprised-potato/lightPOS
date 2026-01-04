@@ -1,6 +1,6 @@
 import { db } from "../db.js";
 import { getUserProfile } from "../auth.js";
-import { checkActiveShift } from "./shift.js";
+import { checkActiveShift, calculateExpectedCash } from "./shift.js";
 
 export async function loadDashboardView() {
     const user = getUserProfile();
@@ -294,12 +294,13 @@ async function refreshDashboard() {
         await checkActiveShift();
 
         // 1. Fetch Data
-        const [allTxs, allItems, allReturns, allShifts, allCustomers] = await Promise.all([
+        const [allTxs, allItems, allReturns, allShifts, allCustomers, allUsers] = await Promise.all([
             db.transactions.toArray(),
             db.items.toArray(),
             db.returns.toArray(),
             db.shifts.toArray(),
-            db.customers.toArray()
+            db.customers.toArray(),
+            fetch('api/router.php?file=users').then(r => r.json()).catch(() => [])
         ]);
 
         // 2. Filter Data
@@ -342,8 +343,11 @@ async function refreshDashboard() {
         const atv = todayTxs.length > 0 ? (netSalesToday / todayTxs.length).toFixed(2) : 0;
         const openShiftsCount = allShifts.filter(s => s.status === 'open').length;
 
-        // Update KPI DOM
-        document.getElementById("dash-net-sales").textContent = `₱${netSalesToday.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+        // Update KPI DOM (Guard against navigation during async fetch)
+        const netSalesEl = document.getElementById("dash-net-sales");
+        if (!netSalesEl) return;
+
+        netSalesEl.textContent = `₱${netSalesToday.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
         const compareEl = document.getElementById("dash-sales-compare");
         const compareIcon = document.getElementById("dash-sales-compare-icon");
         
@@ -378,21 +382,42 @@ async function refreshDashboard() {
         const newCustToday = allCustomers.filter(c => c.id !== 'Guest' && c.timestamp && new Date(c.timestamp).toLocaleDateString('en-CA') === todayStr).length;
         document.getElementById("dash-new-customers").textContent = newCustToday;
         
-        const expectedCash = tenderSplit.Cash || 0;
-        document.getElementById("dash-expected-cash").textContent = `₱${expectedCash.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+        // Calculate Expected Cash for Today (Per Open Shift)
+        const openShifts = allShifts.filter(s => s.status === 'open');
+        const expectedCashContainer = document.getElementById("dash-expected-cash");
+        
+        if (openShifts.length === 0) {
+            expectedCashContainer.innerHTML = `₱0.00`;
+        } else {
+            let html = "";
+            for (const s of openShifts) {
+                const expected = await calculateExpectedCash(s);
+                const staff = Array.isArray(allUsers) ? allUsers.find(u => u.email === s.user_id) : null;
+                const displayName = staff ? staff.name : s.user_id.split('@')[0];
+                html += `
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-[10px] text-gray-400 font-bold truncate mr-2">${displayName}</span>
+                        <span class="text-sm font-black text-gray-800">₱${expected.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+                    </div>
+                `;
+            }
+            expectedCashContainer.innerHTML = html;
+        }
 
         // Update Active Staff List
         const activeStaffList = document.getElementById("active-staff-list");
-        const openShifts = allShifts.filter(s => s.status === 'open');
         if (openShifts.length === 0) {
             activeStaffList.innerHTML = `<div class="text-[10px] text-gray-400 italic">No active shifts</div>`;
         } else {
-            activeStaffList.innerHTML = openShifts.map(s => `
+            activeStaffList.innerHTML = openShifts.map(s => {
+                const staff = Array.isArray(allUsers) ? allUsers.find(u => u.email === s.user_id) : null;
+                const displayName = staff ? staff.name : s.user_id;
+                return `
                 <div class="flex items-center gap-2 text-[10px] font-bold text-gray-700">
                     <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                    ${s.user_id}
+                    ${displayName}
                 </div>
-            `).join('');
+            `}).join('');
         }
 
     } catch (error) {
@@ -401,7 +426,9 @@ async function refreshDashboard() {
 }
 
 function renderVelocityChart(today, yesterday) {
-    const ctx = document.getElementById('velocityChart').getContext('2d');
+    const canvas = document.getElementById('velocityChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
     if (velocityChartInstance) velocityChartInstance.destroy();
 
     velocityChartInstance = new Chart(ctx, {
@@ -473,7 +500,9 @@ function renderVelocityChart(today, yesterday) {
 }
 
 function renderTenderChart(data) {
-    const ctx = document.getElementById('tenderChart').getContext('2d');
+    const canvas = document.getElementById('tenderChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
     if (tenderChartInstance) tenderChartInstance.destroy();
 
     const values = Object.values(data);
@@ -517,6 +546,7 @@ function renderTenderChart(data) {
 
 function renderTopSellers(salesMap, allItems) {
     const list = document.getElementById("top-sellers-list");
+    if (!list) return;
     list.innerHTML = "";
 
     const sorted = Object.entries(salesMap)

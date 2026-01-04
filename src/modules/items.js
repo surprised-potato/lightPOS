@@ -1,8 +1,11 @@
 import { checkPermission } from "../auth.js";
+import { generateUUID } from "../utils.js";
 
 const API_URL = 'api/router.php';
 let itemsData = [];
 let suppliersList = [];
+let sortState = { key: 'name', dir: 'asc' };
+let filterState = { search: '', lowStock: false };
 
 export async function loadItemsView() {
     const content = document.getElementById("main-content");
@@ -11,8 +14,12 @@ export async function loadItemsView() {
     content.innerHTML = `
         <div class="flex flex-col md:flex-row justify-between items-center mb-6">
             <h2 class="text-2xl font-bold text-gray-800 mb-4 md:mb-0">Items</h2>
-            <div class="flex w-full md:w-auto gap-2">
+            <div class="flex w-full md:w-auto gap-4 items-center">
                 <input type="text" id="search-items" placeholder="Search items..." class="shadow appearance-none border rounded w-full md:w-64 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <label class="inline-flex items-center text-sm text-gray-600 cursor-pointer whitespace-nowrap">
+                    <input type="checkbox" id="filter-low-stock" class="form-checkbox h-4 w-4 text-blue-600">
+                    <span class="ml-2">Low Stock Only</span>
+                </label>
                 <button id="btn-add-item" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-150 whitespace-nowrap ${canWrite ? '' : 'hidden'}">
                     + Add Item
                 </button>
@@ -23,12 +30,12 @@ export async function loadItemsView() {
             <table class="min-w-full table-auto">
                 <thead>
                     <tr class="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
-                        <th class="py-3 px-6 text-left">Barcode</th>
-                        <th class="py-3 px-6 text-left">Name</th>
+                        <th class="py-3 px-6 text-left cursor-pointer hover:bg-gray-300 transition-colors" data-sort="barcode">Barcode</th>
+                        <th class="py-3 px-6 text-left cursor-pointer hover:bg-gray-300 transition-colors" data-sort="name">Name</th>
                         <th class="py-3 px-6 text-left">Base Unit</th>
-                        <th class="py-3 px-6 text-right">Cost</th>
-                        <th class="py-3 px-6 text-right">Price</th>
-                        <th class="py-3 px-6 text-right">Stock</th>
+                        <th class="py-3 px-6 text-right cursor-pointer hover:bg-gray-300 transition-colors" data-sort="cost_price">Cost</th>
+                        <th class="py-3 px-6 text-right cursor-pointer hover:bg-gray-300 transition-colors" data-sort="selling_price">Price</th>
+                        <th class="py-3 px-6 text-right cursor-pointer hover:bg-gray-300 transition-colors" data-sort="stock_level">Stock</th>
                         <th class="py-3 px-6 text-center">Actions</th>
                     </tr>
                 </thead>
@@ -164,14 +171,30 @@ export async function loadItemsView() {
     }
     document.getElementById("btn-cancel-item").addEventListener("click", () => modal.classList.add("hidden"));
 
-    // Search
+    // Search & Filter Listeners
     document.getElementById("search-items").addEventListener("input", (e) => {
-        const term = e.target.value.toLowerCase();
-        const filtered = itemsData.filter(item => 
-            item.name.toLowerCase().includes(term) || 
-            item.barcode.toLowerCase().includes(term)
-        );
-        renderItems(filtered);
+        filterState.search = e.target.value;
+        applyFiltersAndSort();
+    });
+
+    document.getElementById("filter-low-stock").addEventListener("change", (e) => {
+        filterState.lowStock = e.target.checked;
+        applyFiltersAndSort();
+    });
+
+    // Sorting Listener
+    content.addEventListener("click", (e) => {
+        const th = e.target.closest("th[data-sort]");
+        if (th) {
+            const key = th.dataset.sort;
+            if (sortState.key === key) {
+                sortState.dir = sortState.dir === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortState.key = key;
+                sortState.dir = 'asc';
+            }
+            applyFiltersAndSort();
+        }
     });
 
     // Form Submit
@@ -207,8 +230,24 @@ export async function loadItemsView() {
                 }
             } else {
                 // Create new
-                itemData.id = crypto.randomUUID();
+                itemData.id = generateUUID();
                 items.push(itemData);
+
+                // Record Initial Stock Movement
+                if (itemData.stock_level > 0) {
+                    const movement = {
+                        id: generateUUID(),
+                        item_id: itemData.id,
+                        item_name: itemData.name,
+                        timestamp: new Date(),
+                        type: 'Initial Stock',
+                        qty: itemData.stock_level,
+                        user: JSON.parse(localStorage.getItem('pos_user'))?.email || 'unknown',
+                        reason: 'Initial Inventory',
+                        sync_status: 0
+                    };
+                    await db.stock_movements.add(movement);
+                }
             }
 
             await fetch(`${API_URL}?file=items`, {
@@ -229,6 +268,36 @@ export async function loadItemsView() {
 
     // Initial Load
     await Promise.all([fetchItems(), fetchSuppliers()]);
+}
+
+function applyFiltersAndSort() {
+    let filtered = [...itemsData];
+
+    // Filter
+    if (filterState.search) {
+        const term = filterState.search.toLowerCase();
+        filtered = filtered.filter(item => 
+            item.name.toLowerCase().includes(term) || 
+            item.barcode.toLowerCase().includes(term)
+        );
+    }
+    if (filterState.lowStock) {
+        filtered = filtered.filter(item => item.stock_level <= (item.min_stock || 10));
+    }
+
+    // Sort
+    filtered.sort((a, b) => {
+        let valA = a[sortState.key];
+        let valB = b[sortState.key];
+        if (typeof valA === 'string') valA = valA.toLowerCase();
+        if (typeof valB === 'string') valB = valB.toLowerCase();
+
+        if (valA < valB) return sortState.dir === 'asc' ? -1 : 1;
+        if (valA > valB) return sortState.dir === 'asc' ? 1 : -1;
+        return 0;
+    });
+
+    renderItems(filtered);
 }
 
 async function fetchSuppliers() {
@@ -261,7 +330,7 @@ async function fetchItems() {
         const response = await fetch(`${API_URL}?file=items`);
         const data = await response.json();
         itemsData = Array.isArray(data) ? data : [];
-        renderItems(itemsData);
+        applyFiltersAndSort();
     } catch (error) {
         console.error("Error fetching items:", error);
         tbody.innerHTML = `<tr><td colspan="7" class="py-3 px-6 text-center text-red-500">Error loading items.</td></tr>`;

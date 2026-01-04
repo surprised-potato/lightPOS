@@ -1,1 +1,67 @@
-[]
+[
+    {
+        "transaction_id": "ec626234-9023-4d04-815a-100294950efa",
+        "item_id": "c109e5d8-12ae-4269-a078-dc8170ad8c83",
+        "item_name": "Safeguard Lemon fresh 125g",
+        "qty": 1,
+        "refund_amount": 58,
+        "condition": "restockable",
+        "reason": "Changed Mind",
+        "timestamp": "2026-01-04T05:02:00.362Z",
+        "processed_by": "admin@lightpos.com",
+        "sync_status": 1,
+        "id": 2
+    },
+    {
+        "transaction_id": "ec626234-9023-4d04-815a-100294950efa",
+        "item_id": "c113b785-0104-4ada-b163-8adf6510263a",
+        "item_name": "MB Hot Sauce 100g",
+        "qty": 1,
+        "refund_amount": 25,
+        "condition": "restockable",
+        "reason": "Wrong Item",
+        "timestamp": "2026-01-04T05:02:17.061Z",
+        "processed_by": "admin@lightpos.com",
+        "sync_status": 1,
+        "id": 3
+    },
+    {
+        "transaction_id": "98c59af0-a1b6-46e8-822c-7957f968da6f",
+        "item_id": "03e7db2e-c68c-4eb8-945a-c8a5e2203818",
+        "item_name": "ref dalandan w\/ zinc 188mlx10",
+        "qty": 1,
+        "refund_amount": 9,
+        "condition": "restockable",
+        "reason": "Wrong Item",
+        "timestamp": "2026-01-04T05:31:27.287Z",
+        "processed_by": "admin@lightpos.com",
+        "sync_status": 1,
+        "id": 4
+    },
+    {
+        "transaction_id": "ac3c0471-6202-4742-8d62-e79af9245745",
+        "item_id": "02837038-d270-40e3-ac24-b6f1eca34acb",
+        "item_name": "Colgate Total 12 80g",
+        "qty": 1,
+        "refund_amount": 115,
+        "condition": "restockable",
+        "reason": "Wrong Item",
+        "timestamp": "2026-01-04T05:32:14.824Z",
+        "processed_by": "admin@lightpos.com",
+        "sync_status": 1,
+        "id": 5
+    },
+    {
+        "transaction_id": "c7e6c563-909b-4def-ab3e-0f94fcc5f45d",
+        "item_id": "001d06b3-e1e3-4674-87f3-2e469379aa1e",
+        "item_name": "Joy Color Pencils 12 Colors",
+        "qty": 1,
+        "refund_amount": 23,
+        "condition": "restockable",
+        "reason": "Defective",
+        "timestamp": "2026-01-04T05:32:56.059Z",
+        "processed_by": "admin@lightpos.com",
+        "sync_status": 1,
+        "id": 6
+    }
+]

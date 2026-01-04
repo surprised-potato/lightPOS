@@ -1,4 +1,6 @@
+import { db } from "../db.js";
 import { checkPermission } from "../auth.js";
+import { generateUUID } from "../utils.js";
 
 const API_URL = 'api/router.php';
 let customersData = [];
@@ -134,10 +136,10 @@ export async function loadCustomersView() {
 async function fetchCustomers() {
     const tbody = document.getElementById("customers-table-body");
     try {
-        const response = await fetch(`${API_URL}?file=customers`);
-        const data = await response.json();
-        customersData = Array.isArray(data) ? data : [];
+        // Fetch from Dexie for immediate display and offline support
+        customersData = await db.customers.toArray();
         renderCustomers(customersData);
+        // sync-service.js handles background synchronization from server
     } catch (error) {
         console.error("Error fetching customers:", error);
         tbody.innerHTML = `<tr><td colspan="5" class="py-3 px-6 text-center text-red-500">Error loading data.</td></tr>`;
@@ -189,12 +191,16 @@ async function handleSaveCustomer(e) {
     e.preventDefault();
     const id = document.getElementById("cust-id").value;
     const customerData = {
-        id: id || crypto.randomUUID(),
+        id: id || generateUUID(),
         name: document.getElementById("cust-name").value,
         phone: document.getElementById("cust-phone").value,
         email: document.getElementById("cust-email").value,
-        loyalty_points: parseInt(document.getElementById("cust-points").value) || 0
+        loyalty_points: parseInt(document.getElementById("cust-points").value) || 0,
+        timestamp: new Date()
     };
+
+    // 1. Save to Dexie
+    await db.customers.put(customerData);
 
     const response = await fetch(`${API_URL}?file=customers`);
     let customers = await response.json();

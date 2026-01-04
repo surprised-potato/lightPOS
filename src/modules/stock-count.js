@@ -1,5 +1,7 @@
+import { db } from "../db.js";
 import { checkPermission } from "../auth.js";
 import { addNotification } from "../services/notification-service.js";
+import { generateUUID } from "../utils.js";
 
 const API_URL = 'api/router.php';
 
@@ -317,7 +319,7 @@ async function processAdjustment(newStock, reason) {
         if (!Array.isArray(adjustments)) adjustments = [];
 
         adjustments.push({
-            id: crypto.randomUUID(),
+            id: generateUUID(),
             item_id: selectedItem.id,
             item_name: selectedItem.name,
             old_stock: oldStock,
@@ -333,6 +335,32 @@ async function processAdjustment(newStock, reason) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(adjustments)
         });
+
+        // Record Stock Movement Locally
+        const movement = {
+            id: generateUUID(),
+            item_id: selectedItem.id,
+            item_name: selectedItem.name,
+            timestamp: new Date(),
+            type: 'Adjustment',
+            qty: difference,
+            user: user,
+            reason: reason,
+            sync_status: 0
+        };
+        await db.stock_movements.add(movement);
+
+        // Sync Movement to Server
+        try {
+            const movementsRes = await fetch(`${API_URL}?file=stock_movements`);
+            let serverMovements = await movementsRes.json();
+            if (!Array.isArray(serverMovements)) serverMovements = [];
+            serverMovements.push({ ...movement, sync_status: 1 });
+            await fetch(`${API_URL}?file=stock_movements`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(serverMovements) });
+            await db.stock_movements.update(movement.id, { sync_status: 1 });
+        } catch (e) {
+            console.warn("Movement sync failed:", e);
+        }
 
         await addNotification('Stock Count', `Stock adjustment for ${selectedItem.name}: ${difference > 0 ? '+' : ''}${difference} units by ${user}`);
 

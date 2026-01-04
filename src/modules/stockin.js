@@ -1,6 +1,7 @@
 import { checkPermission, getUserProfile } from "../auth.js";
 import { db } from "../db.js";
 import { syncManager } from "../sync-manager.js";
+import { generateUUID } from "../utils.js";
 
 const API_URL = 'api/router.php';
 
@@ -402,7 +403,8 @@ async function saveStockIn() {
             item_id: item.id, 
             quantity: item.quantity, 
             name: item.name,
-            cost_price: item.cost_price
+            cost_price: item.cost_price,
+            movement_id: generateUUID()
         }))
     };
 
@@ -434,6 +436,21 @@ async function saveStockIn() {
             item_count: stockInCart.reduce((sum, item) => sum + item.quantity, 0)
         };
         await db.stockins.add(historyRecord);
+
+        // Record Stock Movements Locally
+        for (const item of stockInData.items) {
+            await db.stock_movements.add({
+                id: item.movement_id,
+                item_id: item.item_id,
+                item_name: item.name,
+                timestamp: historyRecord.timestamp,
+                type: 'Stock-In',
+                qty: item.quantity,
+                user: user.name || user.email,
+                reason: 'Supplier Delivery',
+                sync_status: 1
+            });
+        }
 
         // Queue the stock-in operation for server sync
         await syncManager.enqueue({

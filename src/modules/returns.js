@@ -1,12 +1,25 @@
 import { db } from "../db.js";
 import { checkPermission, requestManagerApproval } from "../auth.js";
 import { addNotification } from "../services/notification-service.js";
+import { generateUUID } from "../utils.js";
+import { checkActiveShift, requireShift } from "./shift.js";
+
+const API_URL = 'api/router.php';
 
 let selectedTransaction = null;
 
 export async function loadReturnsView() {
     const content = document.getElementById("main-content");
-    
+    content.innerHTML = ""; // Clear content while checking
+
+    await checkActiveShift();
+
+    requireShift(async () => {
+        renderReturnsInterface(content);
+    });
+}
+
+function renderReturnsInterface(content) {
     content.innerHTML = `
         <div class="max-w-4xl mx-auto">
             <h2 class="text-2xl font-bold text-gray-800 mb-6">Process Return</h2>
@@ -94,6 +107,13 @@ export async function loadReturnsView() {
     `;
 
     document.getElementById("btn-find-tx").addEventListener("click", findTransaction);
+    document.getElementById("return-search-id").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            findTransaction();
+        }
+    });
+
     document.getElementById("btn-close-return-modal").addEventListener("click", () => document.getElementById("modal-process-return").classList.add("hidden"));
     document.getElementById("form-return-item").addEventListener("submit", handleReturnSubmit);
 }
@@ -229,9 +249,71 @@ async function handleReturnSubmit(e) {
             condition,
             reason,
             timestamp: new Date(),
-            processed_by: JSON.parse(localStorage.getItem('pos_user'))?.email || 'unknown'
+            processed_by: JSON.parse(localStorage.getItem('pos_user'))?.email || 'unknown',
+            sync_status: 0
         };
         await db.returns.add(returnRecord);
+
+        // Record Stock Movement Locally
+        const movement = {
+            id: generateUUID(),
+            item_id: item.id,
+            item_name: item.name,
+            timestamp: new Date(),
+            type: 'Return',
+            qty: condition === 'restockable' ? qty : 0,
+            user: JSON.parse(localStorage.getItem('pos_user'))?.email || 'unknown',
+            transaction_id: selectedTransaction.id,
+            reason: `${reason} (${condition})`,
+            sync_status: 0
+        };
+        await db.stock_movements.add(movement);
+
+        // Sync to Server
+        if (navigator.onLine) {
+            try {
+                // 1. Update Server Items
+                const itemsRes = await fetch(`${API_URL}?file=items`);
+                let serverItems = await itemsRes.json();
+                if (condition === 'restockable') {
+                    const idx = serverItems.findIndex(i => i.id === item.id);
+                    if (idx !== -1) serverItems[idx].stock_level += qty;
+                }
+                await fetch(`${API_URL}?file=items`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(serverItems) });
+
+                // 2. Update Server Transaction (Returned Qty)
+                const txRes = await fetch(`${API_URL}?file=transactions`);
+                let serverTxs = await txRes.json();
+                const sIdx = serverTxs.findIndex(t => t.id === selectedTransaction.id);
+                if (sIdx !== -1) {
+                    const itemIdx = serverTxs[sIdx].items.findIndex(i => i.id === item.id);
+                    if (itemIdx !== -1) {
+                        serverTxs[sIdx].items[itemIdx].returned_qty = (serverTxs[sIdx].items[itemIdx].returned_qty || 0) + qty;
+                    }
+                    await fetch(`${API_URL}?file=transactions`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(serverTxs) });
+                }
+
+                // 3. Update Server Returns Log
+                const returnsRes = await fetch(`${API_URL}?file=returns`);
+                let serverReturns = await returnsRes.json();
+                if (!Array.isArray(serverReturns)) serverReturns = [];
+                serverReturns.push({ ...returnRecord, sync_status: 1 });
+                await fetch(`${API_URL}?file=returns`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(serverReturns) });
+
+                // 4. Update Server Movements
+                const movementsRes = await fetch(`${API_URL}?file=stock_movements`);
+                let serverMovements = await movementsRes.json();
+                if (!Array.isArray(serverMovements)) serverMovements = [];
+                serverMovements.push({ ...movement, sync_status: 1 });
+                await fetch(`${API_URL}?file=stock_movements`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(serverMovements) });
+
+                // Mark local as synced
+                await db.returns.update(returnRecord.id, { sync_status: 1 });
+                await db.stock_movements.update(movement.id, { sync_status: 1 });
+            } catch (e) {
+                console.warn("Server sync failed for return:", e);
+            }
+        }
 
         await addNotification('Return', `Refund of ₱${returnRecord.refund_amount.toFixed(2)} processed for ${item.name} (${reason})`);
         

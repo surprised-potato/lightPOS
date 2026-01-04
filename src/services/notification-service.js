@@ -19,3 +19,8 @@ export async function markAllAsRead() {
     await db.notifications.where('read').equals(0).modify({ read: 1 });
     window.dispatchEvent(new CustomEvent('notification-updated'));
 }
+
+export async function toggleNotificationRead(id, isRead) {
+    await db.notifications.update(id, { read: isRead ? 1 : 0 });
+    window.dispatchEvent(new CustomEvent('notification-updated'));
+}

@@ -53,6 +53,12 @@ This document outlines the step-by-step execution plan for the surprised-potato 
 - **Enforcement:** Update `auth.js` to fetch permissions on login.
 - **UI Logic:** Conditionally render Sidebar links and disable action buttons based on permissions.
 
+## Phase 10: Enterprise Features (Valuation & Audit)
+**Goal:** Advanced financial tracking and forensic auditing.
+- **Valuation Logic:** Implement FIFO/LIFO/Weighted Average costing.
+- **Audit Logging:** Create a comprehensive stock movement log capturing every event with User ID and Timestamp.
+- **Advanced Reporting:** Historical inventory snapshots and shrinkage analysis by category.
+
 ---
 
 # LLM Prompts (Copy & Paste these sequentially)
@@ -226,6 +232,14 @@ Build `src/modules/reports.js`.
    - Strategic: Basket Penetration, Product Affinity.
    - Slow Moving: Items with zero sales in the selected period.
 6. Report: Sales by User (Table: User, Total Sales, Transaction Count).
+
+### Prompt 7.3: Enterprise Financial & Audit Reports
+Build advanced enterprise reports.
+1. **Inventory Ledger**: Implement a report showing total asset value. Add a date picker for "Snapshot Date" to calculate historical value based on `stock_movement.json`.
+2. **Valuation Methods**: Add a toggle to switch between FIFO, LIFO, and Weighted Average for COGS and Inventory Valuation calculations.
+3. **Landed Costs**: Update the Stock In module to allow inputting freight/duties/insurance and allocate them to the unit cost of items.
+4. **Stock Movement Log**: Create a view that renders `stock_movement.json` in a searchable table. Columns: Timestamp, User, Item, Type, Qty, Cost.
+5. **Shrinkage Analysis**: Create a report comparing system stock vs physical counts (from `adjustments.json`). Categorize discrepancies by cause.
 
 ## Prompt Set 8: Shift Management
 

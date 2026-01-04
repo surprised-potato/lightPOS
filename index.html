@@ -17,8 +17,9 @@
 
     <!-- Login View -->
     <div id="login-view" class="hidden flex items-center justify-center h-full w-full">
-        <div class="bg-white p-8 rounded-lg shadow-lg w-96">
-            <h2 class="text-2xl font-bold mb-6 text-center text-blue-600">lightPOS Login</h2>
+        <div class="bg-white p-8 rounded-2xl shadow-2xl w-96">
+            <div id="login-branding"></div>
+            <h2 class="text-xl font-bold mb-6 text-center text-gray-600">Sign in to your account</h2>
             <form id="form-login">
                 <div class="mb-4">
                     <label class="block text-gray-700 text-sm font-bold mb-2" for="email">Email</label>
@@ -51,7 +52,7 @@
     <!-- Main App Container -->
     <div id="app-container" class="hidden h-full flex flex-col">
         <header class="bg-blue-700 text-white p-4 flex justify-between items-center shadow-md z-10">
-            <h1 class="text-xl font-bold tracking-wide">lightPOS</h1>
+            <div id="header-store-branding" class="flex items-center gap-3"></div>
             <div id="header-actions" class="flex items-center gap-4"></div>
         </header>
         

@@ -1,4 +1,5 @@
 import { checkPermission } from "../auth.js";
+import { generateUUID } from "../utils.js";
 
 const API_URL = 'api/router.php';
 
@@ -123,7 +124,7 @@ async function handleAddSupplier(e) {
     const email = document.getElementById("sup-email").value;
 
     const newSupplier = {
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         name,
         contact,
         email

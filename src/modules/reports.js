@@ -1,7 +1,13 @@
 import { db } from "../db.js";
 import { getSystemSettings } from "./settings.js";
+import { checkPermission, requestManagerApproval } from "../auth.js";
+import { generateUUID } from "../utils.js";
+import { addNotification } from "../services/notification-service.js";
+
+const API_URL = 'api/router.php';
 
 let reportData = {};
+let valuationChartInstance = null;
 let sortState = {}; // { tableId: { key, dir } }
 let filterState = {}; // { tableId: term }
 
@@ -104,11 +110,14 @@ export async function loadReportsView() {
                                         <th class="py-3 px-6 text-right cursor-pointer hover:bg-gray-200" data-sort="expected_cash" data-table="variance">Expected</th>
                                         <th class="py-3 px-6 text-right cursor-pointer hover:bg-gray-200" data-sort="closing_cash" data-table="variance">Actual</th>
                                         <th class="py-3 px-6 text-right cursor-pointer hover:bg-gray-200" data-sort="variance" data-table="variance">Variance</th>
+                                        <th class="py-3 px-6 text-right cursor-pointer hover:bg-gray-200" data-sort="totalSales" data-table="variance">Sales</th>
+                                        <th class="py-3 px-6 text-right cursor-pointer hover:bg-gray-200" data-sort="totalCogs" data-table="variance">COGS</th>
+                                        <th class="py-3 px-6 text-right cursor-pointer hover:bg-gray-200" data-sort="grossProfit" data-table="variance">Profit</th>
                                         <th class="py-3 px-6 text-center">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody id="report-variance-body" class="text-gray-600 text-sm font-light">
-                                    <tr><td colspan="6" class="py-3 px-6 text-center">Select dates and click Generate.</td></tr>
+                                    <tr><td colspan="11" class="py-3 px-6 text-center">Select dates and click Generate.</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -120,25 +129,103 @@ export async function loadReportsView() {
                     <!-- Sub Tabs -->
                     <div class="flex gap-4 mb-6 border-b border-gray-100">
                         <button data-subtab="inv-val" class="subtab-btn border-blue-500 text-blue-600 py-2 px-4 border-b-2 text-xs font-bold transition-colors">Valuation</button>
+                        <button data-subtab="inv-ledger" class="subtab-btn border-transparent text-gray-500 hover:text-gray-700 py-2 px-4 border-b-2 text-xs font-bold transition-colors">Inventory Ledger</button>
                         <button data-subtab="inv-history" class="subtab-btn border-transparent text-gray-500 hover:text-gray-700 py-2 px-4 border-b-2 text-xs font-bold transition-colors">Stock-In History</button>
                         <button data-subtab="inv-audit" class="subtab-btn border-transparent text-gray-500 hover:text-gray-700 py-2 px-4 border-b-2 text-xs font-bold transition-colors">Adjustments</button>
+                        <button data-subtab="inv-movement" class="subtab-btn border-transparent text-gray-500 hover:text-gray-700 py-2 px-4 border-b-2 text-xs font-bold transition-colors">Movement Log</button>
+                        <button data-subtab="inv-shrinkage" class="subtab-btn border-transparent text-gray-500 hover:text-gray-700 py-2 px-4 border-b-2 text-xs font-bold transition-colors">Shrinkage</button>
                         <button data-subtab="inv-slow" class="subtab-btn border-transparent text-gray-500 hover:text-gray-700 py-2 px-4 border-b-2 text-xs font-bold transition-colors">Slow Moving</button>
                     </div>
 
                     <div id="subpanel-inv-val" class="sub-panel">
-                        <div class="bg-white shadow-md rounded p-6 max-w-lg">
-                            <h3 class="font-bold text-gray-800 mb-4 border-b pb-2">Inventory Valuation</h3>
+                        <div class="bg-white shadow-md rounded p-6 max-w-lg mb-6">
+                            <h3 class="font-bold text-gray-800 mb-4 border-b pb-2">Inventory Valuation (End of Period)</h3>
                             <div class="flex justify-between mb-2">
                                 <span class="text-gray-600">Total Value (Cost):</span>
-                                <span id="val-cost" class="font-bold">₱0.00</span>
+                                <span id="val-cost" class="font-bold text-lg">₱0.00</span>
                             </div>
                             <div class="flex justify-between mb-2">
                                 <span class="text-gray-600">Total Value (Retail):</span>
-                                <span id="val-retail" class="font-bold">₱0.00</span>
+                                <span id="val-retail" class="font-bold text-lg">₱0.00</span>
                             </div>
                             <div class="flex justify-between border-t pt-2 mt-2">
                                 <span class="text-gray-600">Potential Profit:</span>
-                                <span id="val-profit" class="font-bold text-green-600">₱0.00</span>
+                                <span id="val-profit" class="font-bold text-lg text-green-600">₱0.00</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-white shadow-md rounded p-6 mb-6">
+                            <h3 class="font-bold text-gray-800 mb-4">Historical Valuation (at Cost)</h3>
+                            <canvas id="valuation-chart"></canvas>
+                        </div>
+
+                        <div class="bg-white shadow-md rounded overflow-hidden">
+                            <div class="px-6 py-4 border-b bg-gray-50">
+                                <h3 class="font-bold text-gray-800">Daily Valuation Snapshots</h3>
+                            </div>
+                            <div class="overflow-x-auto max-h-96">
+                                <table class="min-w-full table-auto">
+                                    <thead>
+                                        <tr class="bg-gray-100 text-gray-600 uppercase text-xs leading-normal">
+                                            <th class="py-3 px-6 text-left">Date</th>
+                                            <th class="py-3 px-6 text-right">Total Value (Cost)</th>
+                                            <th class="py-3 px-6 text-right">Total Value (Retail)</th>
+                                            <th class="py-3 px-6 text-right">Daily Change (Cost)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="valuation-history-body" class="text-gray-600 text-sm font-light"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="subpanel-inv-ledger" class="sub-panel hidden">
+                        <div class="bg-white shadow-md rounded p-6 mb-6">
+                            <div class="flex flex-wrap gap-4 items-end">
+                                <div>
+                                    <label class="block text-sm font-bold text-gray-700 mb-1">Snapshot Date</label>
+                                    <input type="date" id="ledger-date" class="border rounded p-2 text-sm bg-white focus:outline-none focus:border-blue-500">
+                                </div>
+                                <button id="btn-generate-ledger" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition">
+                                    Generate Ledger
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div id="ledger-summary" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 hidden">
+                            <div class="bg-white p-4 rounded shadow border-l-4 border-blue-500">
+                                <div class="text-gray-500 text-xs font-bold uppercase">Historical Stock Qty</div>
+                                <div class="text-2xl font-bold text-gray-800" id="ledger-total-qty">0</div>
+                            </div>
+                            <div class="bg-white p-4 rounded shadow border-l-4 border-green-500">
+                                <div class="text-gray-500 text-xs font-bold uppercase">Historical Asset Value</div>
+                                <div class="text-2xl font-bold text-gray-800" id="ledger-total-value">₱0.00</div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white shadow-md rounded overflow-hidden">
+                            <div class="px-6 py-4 border-b bg-gray-50 flex justify-between items-center">
+                                <h3 class="font-bold text-gray-800">Historical Inventory Ledger</h3>
+                                <button class="btn-toggle-filter text-blue-500 hover:text-blue-700" data-target="invLedger">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
+                                </button>
+                            </div>
+                            <div id="filter-invLedger" class="hidden px-6 py-2 bg-gray-100 border-b"><input type="text" placeholder="Filter ledger..." class="filter-input w-full p-1 border rounded text-sm" data-table="invLedger"></div>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full table-auto">
+                                    <thead>
+                                        <tr class="bg-gray-100 text-gray-600 uppercase text-xs leading-normal">
+                                            <th class="py-3 px-6 text-left cursor-pointer hover:bg-gray-200" data-sort="name" data-table="invLedger">Item</th>
+                                            <th class="py-3 px-6 text-left cursor-pointer hover:bg-gray-200" data-sort="barcode" data-table="invLedger">Barcode</th>
+                                            <th class="py-3 px-6 text-right cursor-pointer hover:bg-gray-200" data-sort="cost" data-table="invLedger">Unit Cost (Curr)</th>
+                                            <th class="py-3 px-6 text-right cursor-pointer hover:bg-gray-200" data-sort="qty" data-table="invLedger">Hist. Qty</th>
+                                            <th class="py-3 px-6 text-right cursor-pointer hover:bg-gray-200" data-sort="value" data-table="invLedger">Hist. Value</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="report-inv-ledger-body" class="text-gray-600 text-sm font-light">
+                                        <tr><td colspan="5" class="py-3 px-6 text-center">Select a date to view snapshot.</td></tr>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
@@ -188,6 +275,54 @@ export async function loadReportsView() {
                                 </thead>
                                 <tbody id="report-adjustments-body" class="text-gray-600 text-xs font-light"></tbody>
                             </table>
+                        </div>
+                    </div>
+
+                    <div id="subpanel-inv-movement" class="sub-panel hidden">
+                        <div class="bg-white shadow-md rounded overflow-hidden">
+                            <div class="px-6 py-4 border-b bg-gray-50 flex justify-between items-center">
+                                <h3 class="font-bold text-gray-800">Stock Movement Log</h3>
+                                <button class="btn-toggle-filter text-blue-500 hover:text-blue-700" data-target="movements">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
+                                </button>
+                            </div>
+                            <div id="filter-movements" class="hidden px-6 py-2 bg-gray-100 border-b"><input type="text" placeholder="Filter movements..." class="filter-input w-full p-1 border rounded text-sm" data-table="movements"></div>
+                            <table class="min-w-full table-auto">
+                                <thead>
+                                    <tr class="bg-gray-100 text-gray-600 uppercase text-[10px] leading-normal">
+                                        <th class="py-2 px-4 text-left cursor-pointer hover:bg-gray-200" data-sort="timestamp" data-table="movements">Date</th>
+                                        <th class="py-2 px-4 text-left cursor-pointer hover:bg-gray-200" data-sort="item_name" data-table="movements">Item</th>
+                                        <th class="py-2 px-4 text-left cursor-pointer hover:bg-gray-200" data-sort="type" data-table="movements">Type</th>
+                                        <th class="py-2 px-4 text-right cursor-pointer hover:bg-gray-200" data-sort="qty" data-table="movements">Qty</th>
+                                        <th class="py-2 px-4 text-left cursor-pointer hover:bg-gray-200" data-sort="reason" data-table="movements">Reason</th>
+                                        <th class="py-2 px-4 text-left cursor-pointer hover:bg-gray-200" data-sort="user" data-table="movements">User</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="report-movements-body" class="text-gray-600 text-xs font-light"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div id="subpanel-inv-shrinkage" class="sub-panel hidden">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                            <div class="bg-white shadow-md rounded p-6">
+                                <h3 class="font-bold text-gray-800 mb-4 border-b pb-2">Shrinkage by Category</h3>
+                                <div id="report-shrinkage-summary" class="space-y-2">
+                                    <div class="text-center text-gray-400 py-4">No data</div>
+                                </div>
+                            </div>
+                            <div class="bg-white shadow-md rounded p-6">
+                                <h3 class="font-bold text-gray-800 mb-4 border-b pb-2">Top Shrinkage Items</h3>
+                                <table class="min-w-full text-sm">
+                                    <thead>
+                                        <tr class="text-left text-gray-500 border-b">
+                                            <th class="pb-2">Item</th>
+                                            <th class="pb-2 text-right">Loss Qty</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="report-shrinkage-items-body"></tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
 
@@ -266,21 +401,21 @@ export async function loadReportsView() {
                     <div class="bg-white shadow-md rounded overflow-hidden">
                         <div class="px-6 py-4 border-b bg-gray-50 flex justify-between items-center">
                             <h3 class="font-bold text-gray-800">Customer Ledger / Credit Balance</h3>
-                            <button class="btn-toggle-filter text-blue-500 hover:text-blue-700" data-target="ledger">
+                            <button class="btn-toggle-filter text-blue-500 hover:text-blue-700" data-target="custLedger">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
                             </button>
                         </div>
-                        <div id="filter-ledger" class="hidden px-6 py-2 bg-gray-100 border-b"><input type="text" placeholder="Filter ledger..." class="filter-input w-full p-1 border rounded text-sm" data-table="ledger"></div>
+                        <div id="filter-custLedger" class="hidden px-6 py-2 bg-gray-100 border-b"><input type="text" placeholder="Filter ledger..." class="filter-input w-full p-1 border rounded text-sm" data-table="custLedger"></div>
                         <table class="min-w-full table-auto">
                             <thead>
                                 <tr class="bg-gray-100 text-gray-600 uppercase text-xs leading-normal">
-                                    <th class="py-3 px-6 text-left cursor-pointer hover:bg-gray-200" data-sort="name" data-table="ledger">Customer</th>
-                                    <th class="py-3 px-6 text-right cursor-pointer hover:bg-gray-200" data-sort="totalSpent" data-table="ledger">Total Sales</th>
-                                    <th class="py-3 px-6 text-right cursor-pointer hover:bg-gray-200" data-sort="points" data-table="ledger">Points Balance</th>
-                                    <th class="py-3 px-6 text-right cursor-pointer hover:bg-gray-200" data-sort="lastVisit" data-table="ledger">Last Visit</th>
+                                    <th class="py-3 px-6 text-left cursor-pointer hover:bg-gray-200" data-sort="name" data-table="custLedger">Customer</th>
+                                    <th class="py-3 px-6 text-right cursor-pointer hover:bg-gray-200" data-sort="totalSpent" data-table="custLedger">Total Sales</th>
+                                    <th class="py-3 px-6 text-right cursor-pointer hover:bg-gray-200" data-sort="points" data-table="custLedger">Points Balance</th>
+                                    <th class="py-3 px-6 text-right cursor-pointer hover:bg-gray-200" data-sort="lastVisit" data-table="custLedger">Last Visit</th>
                                 </tr>
                             </thead>
-                            <tbody id="report-ledger-body" class="text-gray-600 text-sm font-light"></tbody>
+                            <tbody id="report-cust-ledger-body" class="text-gray-600 text-sm font-light"></tbody>
                         </table>
                     </div>
                     </div>
@@ -355,7 +490,9 @@ export async function loadReportsView() {
                 <div id="tab-products" class="tab-panel hidden">
                     <div class="flex gap-4 mb-6 border-b border-gray-100">
                         <button data-subtab="prod-perf" class="subtab-btn border-blue-500 text-blue-600 py-2 px-4 border-b-2 text-xs font-bold transition-colors">Performance</button>
+                        <button data-subtab="prod-risk" class="subtab-btn border-transparent text-gray-500 hover:text-gray-700 py-2 px-4 border-b-2 text-xs font-bold transition-colors">Risk Metrics</button>
                         <button data-subtab="prod-affinity" class="subtab-btn border-transparent text-gray-500 hover:text-gray-700 py-2 px-4 border-b-2 text-xs font-bold transition-colors">Product Affinity</button>
+                        <button data-subtab="prod-lowstock" class="subtab-btn border-transparent text-gray-500 hover:text-gray-700 py-2 px-4 border-b-2 text-xs font-bold transition-colors">Low Stock</button>
                     </div>
 
                     <div id="subpanel-prod-perf" class="sub-panel">
@@ -363,33 +500,33 @@ export async function loadReportsView() {
                         <div class="bg-white shadow-md rounded p-6 mb-6">
                             <h3 class="font-bold text-gray-800 mb-6 border-b pb-2">Retailer's Matrix (Product Quadrants)</h3>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div class="p-4 border-2 border-green-200 bg-green-50 rounded-lg">
-                                    <div class="flex justify-between items-center mb-2">
+                                <div class="p-4 border-2 border-green-200 bg-green-50 rounded-lg cursor-pointer hover:bg-green-100 transition btn-matrix-quadrant" data-quadrant="winners">
+                                    <div class="flex justify-between items-center mb-2 pointer-events-none">
                                         <span class="font-bold text-green-800 uppercase text-sm">Winners</span>
                                         <span class="text-[10px] bg-green-200 text-green-800 px-2 py-0.5 rounded">High Sales, High Margin</span>
                                     </div>
-                                    <div id="matrix-winners" class="text-xs space-y-1 text-green-700"></div>
+                                    <div id="matrix-winners" class="text-xs space-y-1 text-green-700 pointer-events-none"></div>
                                 </div>
-                                <div class="p-4 border-2 border-blue-200 bg-blue-50 rounded-lg">
-                                    <div class="flex justify-between items-center mb-2">
+                                <div class="p-4 border-2 border-blue-200 bg-blue-50 rounded-lg cursor-pointer hover:bg-blue-100 transition btn-matrix-quadrant" data-quadrant="cows">
+                                    <div class="flex justify-between items-center mb-2 pointer-events-none">
                                         <span class="font-bold text-blue-800 uppercase text-sm">Cash Cows</span>
                                         <span class="text-[10px] bg-blue-200 text-blue-800 px-2 py-0.5 rounded">High Sales, Low Margin</span>
                                     </div>
-                                    <div id="matrix-cows" class="text-xs space-y-1 text-blue-700"></div>
+                                    <div id="matrix-cows" class="text-xs space-y-1 text-blue-700 pointer-events-none"></div>
                                 </div>
-                                <div class="p-4 border-2 border-orange-200 bg-orange-50 rounded-lg">
-                                    <div class="flex justify-between items-center mb-2">
+                                <div class="p-4 border-2 border-orange-200 bg-orange-50 rounded-lg cursor-pointer hover:bg-orange-100 transition btn-matrix-quadrant" data-quadrant="sleepers">
+                                    <div class="flex justify-between items-center mb-2 pointer-events-none">
                                         <span class="font-bold text-orange-800 uppercase text-sm">Sleepers</span>
                                         <span class="text-[10px] bg-orange-200 text-orange-800 px-2 py-0.5 rounded">Low Sales, High Margin</span>
                                     </div>
-                                    <div id="matrix-sleepers" class="text-xs space-y-1 text-orange-700"></div>
+                                    <div id="matrix-sleepers" class="text-xs space-y-1 text-orange-700 pointer-events-none"></div>
                                 </div>
-                                <div class="p-4 border-2 border-red-200 bg-red-50 rounded-lg">
-                                    <div class="flex justify-between items-center mb-2">
+                                <div class="p-4 border-2 border-red-200 bg-red-50 rounded-lg cursor-pointer hover:bg-red-100 transition btn-matrix-quadrant" data-quadrant="dogs">
+                                    <div class="flex justify-between items-center mb-2 pointer-events-none">
                                         <span class="font-bold text-red-800 uppercase text-sm">Dogs</span>
                                         <span class="text-[10px] bg-red-200 text-red-800 px-2 py-0.5 rounded">Low Sales, Low Margin</span>
                                     </div>
-                                    <div id="matrix-dogs" class="text-xs space-y-1 text-red-700"></div>
+                                    <div id="matrix-dogs" class="text-xs space-y-1 text-red-700 pointer-events-none"></div>
                                 </div>
                             </div>
                         </div>
@@ -421,6 +558,29 @@ export async function loadReportsView() {
                         </div>
                     </div>
 
+                    <div id="subpanel-prod-risk" class="sub-panel hidden">
+                        <div class="bg-white shadow-md rounded overflow-hidden">
+                            <div class="px-6 py-4 border-b bg-gray-50 flex justify-between items-center">
+                                <h3 class="font-bold text-gray-800">Product Risk & Quality Metrics</h3>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full table-auto">
+                                    <thead>
+                                        <tr class="bg-gray-100 text-gray-600 uppercase text-xs leading-normal">
+                                            <th class="py-3 px-6 text-left">Product</th>
+                                            <th class="py-3 px-6 text-center">Sold</th>
+                                            <th class="py-3 px-6 text-center">Returned</th>
+                                            <th class="py-3 px-6 text-center text-red-600">Return Rate %</th>
+                                            <th class="py-3 px-6 text-center">Shrinkage Qty</th>
+                                            <th class="py-3 px-6 text-center text-red-600">Shrinkage %</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="report-risk-body" class="text-gray-600 text-sm font-light"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
                     <div id="subpanel-prod-affinity" class="sub-panel hidden">
                         <div class="bg-white shadow-md rounded overflow-hidden">
                         <div class="px-6 py-4 border-b bg-gray-50 flex justify-between items-center">
@@ -447,6 +607,34 @@ export async function loadReportsView() {
                             </table>
                         </div>
                     </div>
+                    </div>
+
+                    <div id="subpanel-prod-lowstock" class="sub-panel hidden">
+                        <div class="bg-white shadow-md rounded overflow-hidden">
+                            <div class="px-6 py-4 border-b bg-gray-50 flex justify-between items-center">
+                                <h3 class="font-bold text-gray-800">Low Stock Report</h3>
+                                <button class="btn-toggle-filter text-blue-500 hover:text-blue-700" data-target="lowStock">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
+                                </button>
+                            </div>
+                            <div id="filter-lowStock" class="hidden px-6 py-2 bg-gray-100 border-b"><input type="text" placeholder="Filter items..." class="filter-input w-full p-1 border rounded text-sm" data-table="lowStock"></div>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full table-auto">
+                                    <thead>
+                                        <tr class="bg-gray-100 text-gray-600 uppercase text-xs leading-normal">
+                                            <th class="py-3 px-6 text-left cursor-pointer hover:bg-gray-200" data-sort="name" data-table="lowStock">Product</th>
+                                            <th class="py-3 px-6 text-left cursor-pointer hover:bg-gray-200" data-sort="barcode" data-table="lowStock">Barcode</th>
+                                            <th class="py-3 px-6 text-right cursor-pointer hover:bg-gray-200" data-sort="stock_level" data-table="lowStock">Current Stock</th>
+                                            <th class="py-3 px-6 text-right cursor-pointer hover:bg-gray-200" data-sort="min_stock" data-table="lowStock">Min Stock</th>
+                                            <th class="py-3 px-6 text-center">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="report-low-stock-body" class="text-gray-600 text-sm font-light">
+                                        <tr><td colspan="5" class="py-3 px-6 text-center">Generate report to view data.</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -490,12 +678,13 @@ export async function loadReportsView() {
                                         <th class="py-3 px-6 text-left">Date</th>
                                         <th class="py-3 px-6 text-left">Item</th>
                                         <th class="py-3 px-6 text-left">Reason</th>
+                                        <th class="py-3 px-6 text-left">Condition</th>
                                         <th class="py-3 px-6 text-right">Qty</th>
                                         <th class="py-3 px-6 text-right">Refund</th>
                                     </tr>
                                 </thead>
                                 <tbody id="report-returns-log-body" class="text-gray-600 text-sm font-light">
-                                    <tr><td colspan="5" class="py-3 px-6 text-center">No returns found.</td></tr>
+                                    <tr><td colspan="6" class="py-3 px-6 text-center">No returns found.</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -525,10 +714,11 @@ export async function loadReportsView() {
                                     <th class="py-3 px-6 text-left cursor-pointer hover:bg-gray-200" data-sort="timestamp" data-table="audit">Original Time</th>
                                     <th class="py-3 px-6 text-right cursor-pointer hover:bg-gray-200" data-sort="total_amount" data-table="audit">Amount</th>
                                     <th class="py-3 px-6 text-left cursor-pointer hover:bg-gray-200" data-sort="voided_by" data-table="audit">Voided By</th>
+                                    <th class="py-3 px-6 text-left cursor-pointer hover:bg-gray-200" data-sort="void_reason" data-table="audit">Reason</th>
                                 </tr>
                             </thead>
                             <tbody id="report-audit-body" class="text-gray-600 text-sm font-light">
-                                <tr><td colspan="4" class="py-3 px-6 text-center">No voided transactions in this period.</td></tr>
+                                <tr><td colspan="5" class="py-3 px-6 text-center">No voided transactions in this period.</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -570,11 +760,11 @@ export async function loadReportsView() {
             locale: {
                 format: 'YYYY-MM-DD'
             },
-            startDate: moment(),
+            startDate: moment().subtract(29, 'days'),
             endDate: moment(),
             maxDate: moment()
         }, function(start, end) {
-            // Auto-generate report on selection
+            // This callback handles manual date range selection.
             generateReport();
         });
     }
@@ -613,6 +803,23 @@ export async function loadReportsView() {
             generateReport();
         });
     });
+
+    // --- Auto-generate report on load for the last 30 days ---
+    const quickRangeButtons = content.querySelectorAll(".btn-quick-range");
+    quickRangeButtons.forEach(b => {
+        b.classList.remove("bg-blue-100", "text-blue-700");
+        b.classList.add("bg-gray-100", "text-gray-600");
+    });
+    const initialButton = content.querySelector('.btn-quick-range[data-range="30days"]');
+    if (initialButton) {
+        initialButton.classList.remove("bg-gray-100", "text-gray-600");
+        initialButton.classList.add("bg-blue-100", "text-blue-700");
+    }
+    // Trigger the report generation
+    generateReport();
+    // --- End of auto-generation logic ---
+
+    document.getElementById("btn-generate-ledger")?.addEventListener("click", generateInventoryLedger);
 
     document.getElementById("btn-generate-report").addEventListener("click", generateReport);
 
@@ -680,6 +887,11 @@ export async function loadReportsView() {
             }
         }
 
+        const btnMatrix = e.target.closest(".btn-matrix-quadrant");
+        if (btnMatrix) {
+            showQuadrantDetails(btnMatrix.dataset.quadrant);
+        }
+
         const stockInRow = e.target.closest("#report-stockin-body tr");
         if (stockInRow && stockInRow.dataset.id) {
             showStockInDetails(stockInRow.dataset.id);
@@ -725,11 +937,21 @@ async function generateReport() {
 
     try {
         // Query Dexie instead of Firestore
-        const transactions = await db.transactions
+        let transactions = await db.transactions
             .where('timestamp')
             .between(startDate, endDate, true, true)
             .toArray();
         
+        // Also fetch transactions voided in this period but purchased earlier
+        const historicalVoids = await db.transactions
+            .filter(t => t.is_voided && t.voided_at && new Date(t.voided_at) >= startDate && new Date(t.voided_at) <= endDate)
+            .toArray();
+
+        const txMap = new Map();
+        transactions.forEach(t => txMap.set(t.id, t));
+        historicalVoids.forEach(t => txMap.set(t.id, t));
+        transactions = Array.from(txMap.values());
+
         const returns = await db.returns
             .where('timestamp')
             .between(startDate, endDate, true, true)
@@ -739,11 +961,12 @@ async function generateReport() {
         const allItems = await db.items.toArray();
 
         // Fetch supporting data from local Dexie
-        const [shifts, customers, suppliers, adjustments] = await Promise.all([
+        const [shifts, customers, suppliers, adjustments, stockMovements] = await Promise.all([
             db.shifts.toArray(),
             db.customers.toArray(),
             db.suppliers.toArray(),
-            db.adjustments.toArray()
+            db.adjustments.toArray(),
+            db.stock_movements ? db.stock_movements.toArray() : Promise.resolve([])
         ]);
 
         // Merge Stock-In History (Local Dexie already contains synced server data)
@@ -767,6 +990,11 @@ async function generateReport() {
             return d >= startDate && d <= endDate;
         });
 
+        const filteredMovements = stockMovements.filter(m => {
+            const d = new Date(m.timestamp);
+            return d >= startDate && d <= endDate;
+        });
+
         let grossSales = 0;
         let totalTax = 0;
         let cogs = 0;
@@ -777,24 +1005,6 @@ async function generateReport() {
         const paymentStats = {};
         const voidedTxs = [];
         const totalTxCount = transactions.filter(t => !t.is_voided).length;
-
-        if (transactions.length === 0 && returns.length === 0) {
-            reportData = {};
-            usersBody.innerHTML = `<tr><td colspan="3" class="py-3 px-6 text-center">No data found for this period.</td></tr>`;
-            updateFinancials(0, 0, 0);
-            renderUserStats([]);
-            renderInventoryValuation(allItems);
-            renderPaymentStats([]);
-            renderProductStats([]);
-            renderProductAffinity([]);
-            renderSlowMovingItems([]);
-            renderAuditLog([]);
-            renderCashVariance([]);
-            renderCustomerInsights([], []);
-            renderSupplierInsights([], [], []);
-            renderReturnsReport([], [], []);
-            return;
-        }
 
         transactions.forEach(data => {
             if (data.is_voided) {
@@ -882,22 +1092,36 @@ async function generateReport() {
         reportData.users = Object.entries(userStats).map(([user, d]) => ({ user, ...d }));
         reportData.stockIn = filteredStockIn;
         reportData.adjustments = filteredAdjustments;
+        reportData.movements = filteredMovements;
         
         reportData.products = Object.values(productStats).map(p => {
             const itemMaster = allItems.find(i => i.id === p.id);
             const currentStock = itemMaster ? itemMaster.stock_level : 0;
             const costPrice = itemMaster ? itemMaster.cost_price : 0;
             const avgInvCost = Math.max(1, currentStock * costPrice); // Avoid div by zero
+
+            const returnedUnits = returns.filter(r => r.item_id === p.id).reduce((sum, r) => sum + (r.qty || 0), 0);
+            const shrinkageQty = Math.abs(filteredAdjustments.filter(a => a.item_id === p.id && a.difference < 0).reduce((sum, a) => sum + a.difference, 0));
             
             return { 
                 ...p, 
                 margin: p.revenue - p.cost, 
                 marginPct: p.revenue > 0 ? ((p.revenue - p.cost) / p.revenue * 100) : 0,
-                str: (p.qty / (p.qty + currentStock)) * 100,
+                str: (p.qty + currentStock) > 0 ? (p.qty / (p.qty + currentStock)) * 100 : 0,
                 gmroi: (p.revenue - p.cost) / avgInvCost,
-                penetration: totalTxCount > 0 ? (p.txIds.size / totalTxCount * 100) : 0
+                penetration: totalTxCount > 0 ? (p.txIds.size / totalTxCount * 100) : 0,
+                returnedUnits,
+                returnRate: p.qty > 0 ? (returnedUnits / p.qty * 100) : 0,
+                shrinkageQty,
+                shrinkagePct: (p.qty + shrinkageQty) > 0 ? (shrinkageQty / (p.qty + shrinkageQty) * 100) : 0
             };
         });
+
+        const shrinkageStats = { Theft: 0, 'Admin Error': 0, 'Vendor Fraud': 0, Other: 0 };
+        filteredAdjustments.forEach(a => {
+            if (a.difference < 0) shrinkageStats[a.reason || 'Other'] += Math.abs(a.difference);
+        });
+        reportData.shrinkage = Object.entries(shrinkageStats).map(([reason, qty]) => ({ reason, qty }));
 
         reportData.affinity = Object.entries(pairCounts).map(([key, count]) => {
             const [idA, idB] = key.split('|');
@@ -916,9 +1140,34 @@ async function generateReport() {
         const slowDays = parseInt(document.getElementById("slow-moving-threshold").value) || 30;
         await calculateSlowMoving(slowDays, allItems);
 
+        reportData.lowStock = allItems.filter(i => i.stock_level <= (i.min_stock || 10));
+
         reportData.payments = Object.entries(paymentStats).map(([method, total]) => ({ method, total }));
         reportData.audit = voidedTxs;
-        reportData.variance = filteredShifts.map(s => ({ ...s, variance: s.status === 'closed' ? (s.closing_cash || 0) - (s.expected_cash || 0) : null }));
+        
+        reportData.variance = filteredShifts.map(s => {
+            const isClosed = s.status === 'closed';
+            const shiftTxs = transactions.filter(t => t.user_email === s.user_id && new Date(t.timestamp) >= new Date(s.start_time) && (s.end_time ? new Date(t.timestamp) <= new Date(s.end_time) : true));
+            
+            let totalSales = 0;
+            let totalCogs = 0;
+            shiftTxs.forEach(tx => {
+                if (!tx.is_voided) {
+                    totalSales += tx.total_amount;
+                    tx.items.forEach(item => {
+                        totalCogs += (item.cost_price || 0) * (item.qty - (item.returned_qty || 0));
+                    });
+                }
+            });
+
+            return { 
+                ...s, 
+                variance: isClosed ? (s.closing_cash || 0) - (s.expected_cash || 0) : null,
+                totalSales,
+                totalCogs,
+                grossProfit: totalSales - totalCogs
+            };
+        });
         
         // Customer Data
         const custStats = customers.map(c => {
@@ -945,7 +1194,7 @@ async function generateReport() {
 
         // Initial Render
         updateFinancials(grossSales, totalTax, cogs);
-        renderInventoryValuation(allItems);
+        await generateValuationHistory(startDate, endDate, allItems, stockMovements);
         renderInventoryHistory(filteredStockIn, filteredAdjustments);
         renderUserStats(reportData.users);
         renderPaymentStats(reportData.payments);
@@ -956,6 +1205,15 @@ async function generateReport() {
         renderCustomerInsights(reportData.vip, reportData.ledger);
         renderSupplierInsights(reportData.vendorPerf, reportData.purchaseHistory, reportData.landedCost);
         renderReturnsReport(reportData.returnReasons, reportData.defectiveSuppliers, reportData.returns);
+        renderStockMovement(reportData.movements);
+        renderShrinkageAnalysis(reportData.shrinkage, reportData.products);
+        renderRiskMetrics(reportData.products);
+        renderLowStockReport(reportData.lowStock);
+
+        // If no transactions were found, update the users table message
+        if (transactions.length === 0) {
+            usersBody.innerHTML = `<tr><td colspan="3" class="py-3 px-6 text-center">No sales data found for this period.</td></tr>`;
+        }
         
         document.getElementById("report-total-points").textContent = customers.reduce((sum, c) => sum + (c.loyalty_points || 0), 0).toLocaleString();
 
@@ -990,6 +1248,195 @@ async function calculateSlowMoving(days, itemsCache = null) {
         }));
         
     renderSlowMovingItems(reportData.slowMoving);
+}
+
+async function generateValuationHistory(startDate, endDate, allItems, allMovements) {
+    const valuationHistoryBody = document.getElementById("valuation-history-body");
+    if (valuationHistoryBody) {
+        valuationHistoryBody.innerHTML = `<tr><td colspan="4" class="py-3 px-6 text-center">Calculating valuation history...</td></tr>`;
+    }
+
+    // Pre-process items for fast lookup
+    const itemMap = new Map(allItems.map(i => [i.id, i]));
+
+    // 1. Calculate Current Total Valuation (Right Now)
+    let currentCostVal = 0;
+    let currentRetailVal = 0;
+
+    allItems.forEach(item => {
+        const qty = item.stock_level || 0;
+        currentCostVal += qty * (item.cost_price || 0);
+        currentRetailVal += qty * (item.selling_price || 0);
+    });
+
+    // 2. Adjust to get Close value of the End Date (Reverse future movements)
+    const rangeEnd = moment(endDate).endOf('day');
+    const futureMovements = allMovements.filter(m => moment(m.timestamp).isAfter(rangeEnd));
+    
+    futureMovements.forEach(m => {
+        const item = itemMap.get(m.item_id);
+        const cost = m.unit_cost || item?.cost_price || 0;
+        const price = item?.selling_price || 0;
+        // Reverse the movement: if we added stock (+), we subtract value to go back in time
+        currentCostVal -= (m.qty * cost);
+        currentRetailVal -= (m.qty * price);
+    });
+
+    // currentValuation is now the Close of the last day in range
+    const ohlcData = [];
+    let runningCostVal = currentCostVal;
+    let runningRetailVal = currentRetailVal;
+
+    // Generate days array
+    let currentDate = moment(startDate);
+    const days = [];
+    while (currentDate <= moment(endDate)) {
+        days.push(currentDate.clone());
+        currentDate.add(1, 'days');
+    }
+    
+    // Iterate backwards to reconstruct history
+    const daysDesc = days.reverse();
+
+    for (const day of daysDesc) {
+        const dayStart = day.clone().startOf('day');
+        const dayEnd = day.clone().endOf('day');
+
+        const dayMoves = allMovements.filter(m => {
+            const t = moment(m.timestamp);
+            return t.isBetween(dayStart, dayEnd, null, '[]');
+        });
+
+        // Sort descending (latest first) to walk back from Close to Open
+        dayMoves.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+        let closeCost = runningCostVal;
+        let highCost = closeCost;
+        let lowCost = closeCost;
+        let tempCost = closeCost;
+        
+        let closeRetail = runningRetailVal;
+        let tempRetail = closeRetail;
+
+        dayMoves.forEach(m => {
+            const item = itemMap.get(m.item_id);
+            const cost = m.unit_cost || item?.cost_price || 0;
+            const price = item?.selling_price || 0;
+            
+            // Step back: Value Before = Value After - Change
+            // If we received stock (+), value increased. To get previous value, we subtract.
+            tempCost -= (m.qty * cost);
+            tempRetail -= (m.qty * price);
+            
+            if (tempCost > highCost) highCost = tempCost;
+            if (tempCost < lowCost) lowCost = tempCost;
+        });
+
+        let openCost = tempCost;
+
+        ohlcData.push({
+            x: day.format('YYYY-MM-DD'),
+            o: openCost,
+            h: highCost,
+            l: lowCost,
+            c: closeCost,
+            retail: closeRetail
+        });
+
+        // Prepare for next loop (yesterday's close is today's open)
+        runningCostVal = openCost;
+        runningRetailVal = tempRetail;
+    }
+
+    // Reverse back to ascending for chart
+    ohlcData.reverse();
+
+    const lastSnapshot = ohlcData[ohlcData.length - 1];
+    if (lastSnapshot) {
+        document.getElementById("val-cost").textContent = `₱${lastSnapshot.c.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+        document.getElementById("val-retail").textContent = `₱${lastSnapshot.retail.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+        document.getElementById("val-profit").textContent = `₱${(lastSnapshot.retail - lastSnapshot.c).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+    }
+
+    // Save the generated history to the server
+    try {
+        await fetch('api/router.php?file=valuation_history', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(ohlcData)
+        });
+    } catch (error) {
+        console.error("Failed to save valuation history to server:", error);
+    }
+
+    renderValuationHistoryTable(ohlcData);
+    renderValuationCandleChart(ohlcData);
+}
+
+async function generateInventoryLedger() {
+    const dateInput = document.getElementById("ledger-date").value;
+    const tbody = document.getElementById("report-ledger-body");
+    
+    if (!dateInput) {
+        alert("Please select a snapshot date.");
+        return;
+    }
+
+    tbody.innerHTML = `<tr><td colspan="5" class="py-3 px-6 text-center">Calculating historical stock...</td></tr>`;
+
+    try {
+        const snapshotDate = new Date(dateInput);
+        snapshotDate.setHours(23, 59, 59, 999); // End of selected day
+
+        const allItems = await db.items.toArray();
+        // Fetch movements that happened AFTER the snapshot date to reverse them
+        const futureMovements = await db.stock_movements
+            .where('timestamp')
+            .above(snapshotDate)
+            .toArray();
+
+        let totalHistQty = 0;
+        let totalHistValue = 0;
+
+        const ledgerData = allItems.map(item => {
+            // Start with current stock
+            let histQty = item.stock_level || 0;
+
+            // Reverse movements: 
+            // If movement was + (Receive), we subtract. 
+            // If movement was - (Sale), we add.
+            // Assuming movement.qty is signed (positive for add, negative for deduct)
+            const itemMovements = futureMovements.filter(m => m.item_id === item.id);
+            
+            itemMovements.forEach(m => {
+                histQty -= m.qty; // Reverse the operation
+            });
+
+            const value = histQty * (item.cost_price || 0);
+            totalHistQty += histQty;
+            totalHistValue += value;
+
+            return {
+                name: item.name,
+                barcode: item.barcode,
+                cost: item.cost_price || 0,
+                qty: histQty,
+                value: value
+            };
+        });
+
+        reportData.ledgerSnapshot = ledgerData; // Store for sorting/filtering
+        
+        document.getElementById("ledger-summary").classList.remove("hidden");
+        document.getElementById("ledger-total-qty").textContent = totalHistQty.toLocaleString();
+        document.getElementById("ledger-total-value").textContent = `₱${totalHistValue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+
+        renderInventoryLedger(ledgerData);
+
+    } catch (error) {
+        console.error("Error generating ledger:", error);
+        tbody.innerHTML = `<tr><td colspan="5" class="py-3 px-6 text-center text-red-500">Error calculating ledger.</td></tr>`;
+    }
 }
 
 function handleSort(tableId, key) {
@@ -1037,15 +1484,19 @@ function renderTable(tableId) {
         case 'products': renderProductStats(reportData.products); break;
         case 'affinity': renderProductAffinity(reportData.affinity); break;
         case 'slowMoving': renderSlowMovingItems(reportData.slowMoving); break;
+        case 'movements': renderStockMovement(reportData.movements); break;
         case 'payments': renderPaymentStats(reportData.payments); break;
         case 'audit': renderAuditLog(reportData.audit); break;
+        case 'invLedger': renderInventoryLedger(reportData.ledgerSnapshot); break;
+        case 'lowStock': renderLowStockReport(reportData.lowStock); break;
+        case 'quadrantDetails': renderQuadrantDetails(); break;
         case 'variance': renderCashVariance(reportData.variance); break;
         case 'stockIn':
         case 'adjustments':
             renderInventoryHistory(reportData.stockIn, reportData.adjustments);
             break;
         case 'vip': 
-        case 'ledger': 
+        case 'custLedger': 
             renderCustomerInsights(reportData.vip, reportData.ledger); 
             break;
         case 'vendorPerf':
@@ -1113,13 +1564,14 @@ function renderReturnsReport(reasons, defectiveSuppliers, log) {
 
     // Log
     if (log.length === 0) {
-        logBody.innerHTML = `<tr><td colspan="5" class="py-3 px-6 text-center">No returns found.</td></tr>`;
+        logBody.innerHTML = `<tr><td colspan="6" class="py-3 px-6 text-center">No returns found.</td></tr>`;
     } else {
         logBody.innerHTML = log.map(r => `
             <tr class="border-b border-gray-200 hover:bg-gray-100">
                 <td class="py-3 px-6 text-left text-xs">${new Date(r.timestamp).toLocaleString()}</td>
                 <td class="py-3 px-6 text-left font-medium">${r.item_name}</td>
                 <td class="py-3 px-6 text-left">${r.reason}</td>
+                <td class="py-3 px-6 text-left capitalize">${r.condition || '-'}</td>
                 <td class="py-3 px-6 text-right">${r.qty}</td>
                 <td class="py-3 px-6 text-right font-bold text-red-600">₱${r.refund_amount.toFixed(2)}</td>
             </tr>
@@ -1217,12 +1669,15 @@ async function showShiftTransactions(shiftId) {
                             <th class="text-left p-2">Time</th>
                             <th class="text-left p-2">Customer</th>
                             <th class="text-left p-2">Items</th>
-                            <th class="text-right p-2">Total</th>
+                            <th class="text-left p-2">Void Reason</th>
+                            <th class="text-right p-2">Gross</th>
+                            <th class="text-right p-2">Returns</th>
+                            <th class="text-right p-2">Net Total</th>
                             <th class="text-center p-2">Status</th>
                         </tr>
                     </thead>
                     <tbody id="shift-tx-body">
-                        <tr><td colspan="5" class="p-4 text-center">Loading transactions...</td></tr>
+                        <tr><td colspan="8" class="p-4 text-center">Loading transactions...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -1249,35 +1704,350 @@ async function showShiftTransactions(shiftId) {
 
         const tbody = document.getElementById('shift-tx-body');
         if (txs.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-500">No transactions found for this shift.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-gray-500">No transactions found for this shift.</td></tr>`;
             return;
         }
 
-        tbody.innerHTML = txs.map(t => `
-            <tr class="border-b hover:bg-gray-50 ${t.is_voided ? 'bg-red-50 opacity-60' : ''}">
-                <td class="p-2 text-xs">${new Date(t.timestamp).toLocaleTimeString()}</td>
-                <td class="p-2">${t.customer_name || 'Guest'}</td>
-                <td class="p-2 text-xs max-w-xs truncate" title="${t.items.map(i => i.name).join(', ')}">
-                    ${t.items.length} items: ${t.items.map(i => i.name).join(', ')}
-                </td>
-                <td class="p-2 text-right font-bold">₱${t.total_amount.toFixed(2)}</td>
-                <td class="p-2 text-center">
-                    ${t.is_voided ? '<span class="text-red-600 font-bold text-[10px] uppercase">Voided</span>' : '<span class="text-green-600 font-bold text-[10px] uppercase">Success</span>'}
-                </td>
+        let grandGross = 0;
+        let grandReturns = 0;
+        let grandNet = 0;
+
+        tbody.innerHTML = txs.map(t => {
+            const returnsTotal = t.items.reduce((sum, item) => sum + ((item.returned_qty || 0) * item.selling_price), 0);
+            const netTotal = t.is_voided ? 0 : (t.total_amount - returnsTotal);
+            
+            if (!t.is_voided) {
+                grandGross += t.total_amount;
+                grandReturns += returnsTotal;
+                grandNet += netTotal;
+            }
+
+            return `
+                <tr class="border-b hover:bg-gray-50 cursor-pointer btn-view-tx-detail ${t.is_voided ? 'bg-red-50 opacity-60' : ''}" data-id="${t.id}">
+                    <td class="p-2 text-xs">${new Date(t.timestamp).toLocaleTimeString()}</td>
+                    <td class="p-2">${t.customer_name || 'Guest'}</td>
+                    <td class="p-2 text-xs max-w-xs truncate" title="${t.items.map(i => i.name).join(', ')}">
+                        ${t.items.length} items: ${t.items.map(i => i.name).join(', ')}
+                    </td>
+                    <td class="p-2 text-xs italic text-red-500">${t.void_reason || '-'}</td>
+                    <td class="p-2 text-right">₱${t.total_amount.toFixed(2)}</td>
+                    <td class="p-2 text-right text-red-600">₱${returnsTotal.toFixed(2)}</td>
+                    <td class="p-2 text-right font-bold">₱${netTotal.toFixed(2)}</td>
+                    <td class="p-2 text-center">
+                        ${t.is_voided ? '<span class="text-red-600 font-bold text-[10px] uppercase">Voided</span>' : '<span class="text-green-600 font-bold text-[10px] uppercase">Success</span>'}
+                    </td>
+                </tr>
+            `;
+        }).join('');
+
+        tbody.innerHTML += `
+            <tr class="bg-gray-50 font-bold border-t-2 border-gray-200">
+                <td colspan="4" class="p-2 text-right uppercase text-xs">Grand Totals:</td>
+                <td class="p-2 text-right">₱${grandGross.toFixed(2)}</td>
+                <td class="p-2 text-right text-red-600">₱${grandReturns.toFixed(2)}</td>
+                <td class="p-2 text-right text-blue-700">₱${grandNet.toFixed(2)}</td>
+                <td></td>
             </tr>
-        `).join('');
+        `;
+
+        tbody.querySelectorAll(".btn-view-tx-detail").forEach(row => {
+            row.addEventListener("click", () => showTransactionDetail(row.dataset.id));
+        });
     } catch (err) {
         console.error(err);
-        document.getElementById('shift-tx-body').innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">Error loading data.</td></tr>`;
+        document.getElementById('shift-tx-body').innerHTML = `<tr><td colspan="8" class="p-4 text-center text-red-500">Error loading data.</td></tr>`;
     }
+}
+
+async function showTransactionDetail(id) {
+    const txId = isNaN(id) ? id : parseInt(id);
+    const tx = await db.transactions.get(txId);
+    if (!tx) return;
+
+    const hasReturns = tx.items.some(i => (i.returned_qty || 0) > 0);
+    const canVoid = checkPermission("pos", "write") && !tx.is_voided;
+
+    let modal = document.getElementById('report-tx-detail-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'report-tx-detail-modal';
+        modal.className = 'fixed inset-0 bg-gray-900 bg-opacity-75 hidden flex items-center justify-center z-[60]';
+        document.body.appendChild(modal);
+    }
+
+    const itemRows = tx.items.map(item => `
+        <tr class="border-b">
+            <td class="p-2">${item.name}</td>
+            <td class="p-2 text-center">${item.qty}</td>
+            <td class="p-2 text-right">₱${item.selling_price.toFixed(2)}</td>
+            <td class="p-2 text-right">₱${(item.qty * item.selling_price).toFixed(2)}</td>
+        </tr>
+    `).join('');
+
+    modal.innerHTML = `
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-2xl mx-4 flex flex-col max-h-[90vh]">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-gray-800">Transaction Details</h3>
+                <button class="text-gray-500 hover:text-gray-700 text-2xl close-modal">&times;</button>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4 mb-4 text-sm bg-gray-50 p-3 rounded">
+                <div><strong>ID:</strong> ${tx.id}</div>
+                <div><strong>Date:</strong> ${new Date(tx.timestamp).toLocaleString()}</div>
+                <div><strong>Customer:</strong> ${tx.customer_name || 'Guest'}</div>
+                <div><strong>Cashier:</strong> ${tx.user_email}</div>
+                <div><strong>Payment:</strong> ${tx.payment_method}</div>
+                <div><strong>Status:</strong> ${tx.is_voided ? '<span class="text-red-600 font-bold">VOIDED</span>' : '<span class="text-green-600 font-bold">SUCCESS</span>'}</div>
+            </div>
+
+            <div class="overflow-y-auto border rounded flex-1 mb-4">
+                <table class="min-w-full text-sm">
+                    <thead class="bg-gray-100 sticky top-0">
+                        <tr class="border-b">
+                            <th class="text-left p-2">Item</th>
+                            <th class="text-center p-2">Qty</th>
+                            <th class="text-right p-2">Price</th>
+                            <th class="text-right p-2">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>${itemRows}</tbody>
+                </table>
+            </div>
+
+            <div class="flex justify-between items-end">
+                <div class="text-sm">
+                    <div>Subtotal: ₱${(tx.total_amount - (tx.tax_amount || 0)).toFixed(2)}</div>
+                    <div>Tax: ₱${(tx.tax_amount || 0).toFixed(2)}</div>
+                    <div class="text-lg font-bold">Total: ₱${tx.total_amount.toFixed(2)}</div>
+                </div>
+                <div class="flex flex-wrap gap-2 justify-end">
+                    ${canVoid ? `<button class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded shadow btn-void-tx-report">Void Transaction</button>` : ''}
+                    ${hasReturns ? `<button class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded shadow btn-print-replacement">Print Replacement</button>` : ''}
+                    <button class="bg-gray-800 hover:bg-black text-white font-bold py-2 px-6 rounded shadow btn-print-tx">Print Receipt</button>
+                    <button class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded shadow close-modal">Close</button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    modal.classList.remove('hidden');
+    modal.querySelectorAll('.close-modal').forEach(btn => {
+        btn.addEventListener('click', () => modal.classList.add('hidden'));
+    });
+
+    modal.querySelector('.btn-print-tx').addEventListener('click', () => {
+        printTransactionReceipt(tx, false, true);
+    });
+
+    if (canVoid) {
+        modal.querySelector('.btn-void-tx-report').addEventListener('click', () => {
+            voidTransactionFromReports(tx.id);
+        });
+    }
+
+    if (hasReturns) {
+        modal.querySelector('.btn-print-replacement').addEventListener('click', () => {
+            alert("Please ensure you retrieve the original receipt from the customer before providing the replacement.");
+            printTransactionReceipt(tx, true);
+        });
+    }
+}
+
+async function voidTransactionFromReports(id) {
+    if (!confirm("Are you sure you want to VOID this transaction? This will reverse stock levels.")) return;
+    if (!(await requestManagerApproval())) return;
+
+    const reason = prompt("Please enter the reason for voiding this transaction:");
+    if (reason === null) return;
+
+    try {
+        const txId = isNaN(id) ? id : parseInt(id);
+        const tx = await db.transactions.get(txId);
+        if (!tx) return;
+
+        const user = JSON.parse(localStorage.getItem('pos_user'));
+
+        // 1. Update Dexie Transaction
+        await db.transactions.update(txId, { 
+            is_voided: true, 
+            voided_at: new Date(),
+            voided_by: user ? user.email : "System",
+            void_reason: reason || "No reason provided",
+            sync_status: 0 
+        });
+
+        // 2. Reverse Stock in Dexie
+        for (const item of tx.items) {
+            const current = await db.items.get(item.id);
+            if (current) {
+                await db.items.update(item.id, { stock_level: current.stock_level + item.qty });
+            }
+        }
+
+        // 3. Sync to Server
+        if (navigator.onLine) {
+            try {
+                const itemsRes = await fetch(`${API_URL}?file=items`);
+                let serverItems = await itemsRes.json();
+                tx.items.forEach(txItem => {
+                    const idx = serverItems.findIndex(i => i.id === txItem.id);
+                    if (idx !== -1) serverItems[idx].stock_level += txItem.qty;
+                });
+                await fetch(`${API_URL}?file=items`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(serverItems) });
+
+                const movementsRes = await fetch(`${API_URL}?file=stock_movements`);
+                let serverMovements = await movementsRes.json();
+                if (!Array.isArray(serverMovements)) serverMovements = [];
+                
+                tx.items.forEach(txItem => {
+                    serverMovements.push({
+                        id: generateUUID(),
+                        item_id: txItem.id,
+                        item_name: txItem.name,
+                        timestamp: new Date(),
+                        type: 'Void',
+                        qty: txItem.qty,
+                        user: user ? user.email : "System",
+                        transaction_id: tx.id,
+                        reason: reason || "Transaction Voided",
+                        sync_status: 1
+                    });
+                });
+                await fetch(`${API_URL}?file=stock_movements`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(serverMovements) });
+
+                const txRes = await fetch(`${API_URL}?file=transactions`);
+                let serverTxs = await txRes.json();
+                const sIdx = serverTxs.findIndex(t => t.id === tx.id);
+                if (sIdx !== -1) {
+                    serverTxs[sIdx].is_voided = true;
+                    serverTxs[sIdx].voided_at = new Date();
+                    serverTxs[sIdx].voided_by = user ? user.email : "System";
+                    serverTxs[sIdx].void_reason = reason || "No reason provided";
+                    await fetch(`${API_URL}?file=transactions`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(serverTxs) });
+                    await db.transactions.update(txId, { sync_status: 1 });
+                }
+            } catch (e) { console.warn("Void sync failed."); }
+        }
+
+        await addNotification('Void', `Transaction ${txId} was voided by ${user ? user.email : "System"}`);
+        alert("Transaction voided successfully.");
+        
+        // Close modal and refresh report
+        document.getElementById('report-tx-detail-modal').classList.add('hidden');
+        generateReport();
+    } catch (error) {
+        console.error("Void error:", error);
+        alert("Failed to void transaction.");
+    }
+}
+
+async function printTransactionReceipt(tx, isReplacement = false, isReprint = true) {
+    const settings = await getSystemSettings();
+    const store = settings.store || { name: "LightPOS", data: "" };
+    
+    const printWindow = window.open('', '_blank', 'width=300,height=600');
+    
+    let itemsHtml = "";
+    let total = 0;
+
+    tx.items.forEach(item => {
+        const qty = isReplacement ? (item.qty - (item.returned_qty || 0)) : item.qty;
+        if (qty <= 0 && isReplacement) return;
+
+        const lineTotal = qty * item.selling_price;
+        total += lineTotal;
+
+        itemsHtml += `
+            <tr>
+                <td colspan="2" style="padding-top: 5px;">${item.name}</td>
+            </tr>
+            <tr>
+                <td style="font-size: 10px;">${qty} x ${item.selling_price.toFixed(2)}</td>
+                <td style="text-align: right;">${lineTotal.toFixed(2)}</td>
+            </tr>
+        `;
+    });
+
+    const receiptHtml = `
+        <html>
+        <head>
+            <title>Print Receipt</title>
+            <style>
+                @page { margin: 0; }
+                body { 
+                    width: 76mm; 
+                    font-family: 'Courier New', Courier, monospace; 
+                    font-size: 12px; 
+                    padding: 5mm;
+                    margin: 0;
+                    color: #000;
+                }
+                .text-center { text-align: center; }
+                .text-right { text-align: right; }
+                .bold { font-weight: bold; }
+                .hr { border-bottom: 1px dashed #000; margin: 5px 0; }
+                table { width: 100%; border-collapse: collapse; }
+                .footer { margin-top: 20px; font-size: 10px; }
+                .watermark {
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%) rotate(-45deg);
+                    font-size: 40px;
+                    color: rgba(0, 0, 0, 0.1);
+                    white-space: nowrap;
+                    pointer-events: none;
+                    z-index: -1;
+                    font-weight: bold;
+                }
+            </style>
+        </head>
+        <body onload="window.print(); window.close();">
+            ${isReprint && !isReplacement ? '<div class="watermark">REPRINT</div>' : ''}
+            <div class="text-center">
+                ${isReplacement ? '<div class="bold" style="font-size: 14px; border: 1px solid #000; margin-bottom: 5px;">REPLACEMENT RECEIPT</div>' : ''}
+                ${store.logo ? `<img src="${store.logo}" style="max-width: 40mm; max-height: 20mm; margin-bottom: 5px; filter: grayscale(1);"><br>` : ''}
+                <div class="bold" style="font-size: 16px;">${store.name}</div>
+                <div style="white-space: pre-wrap; font-size: 10px;">${store.data}</div>
+            </div>
+            <div class="hr"></div>
+            <div style="font-size: 10px;">
+                Date: ${new Date(tx.timestamp).toLocaleString()}<br>
+                Trans: #${tx.id}<br>
+                Cashier: ${tx.user_email}<br>
+                Customer: ${tx.customer_name}
+            </div>
+            <div class="hr"></div>
+            <table>
+                ${itemsHtml}
+            </table>
+            <div class="hr"></div>
+            <table>
+                <tr><td class="bold">TOTAL</td><td class="text-right bold">₱${total.toFixed(2)}</td></tr>
+                ${!isReplacement ? `
+                    <tr><td>Payment (${tx.payment_method})</td><td class="text-right">₱${tx.amount_tendered.toFixed(2)}</td></tr>
+                    <tr><td>Change</td><td class="text-right">₱${tx.change.toFixed(2)}</td></tr>
+                ` : `
+                    <tr><td colspan="2" style="font-size: 9px; font-style: italic;">* Adjusted for returns</td></tr>
+                `}
+            </table>
+            <div class="footer text-center">
+                THIS IS NOT AN OFFICIAL RECEIPT<br>
+                Thank you for shopping!
+            </div>
+        </body>
+        </html>
+    `;
+    printWindow.document.write(receiptHtml);
+    printWindow.document.close();
 }
 
 function renderCustomerInsights(vip, ledger) {
     const vipBody = document.getElementById("report-vip-body");
-    const ledgerBody = document.getElementById("report-ledger-body");
+    const ledgerBody = document.getElementById("report-cust-ledger-body");
 
     const processedVip = applySortAndFilter(vip, 'vip');
-    const processedLedger = applySortAndFilter(ledger, 'ledger');
+    const processedLedger = applySortAndFilter(ledger, 'custLedger');
 
     // VIP Report
     vipBody.innerHTML = processedVip.map(c => `
@@ -1383,7 +2153,7 @@ function renderCashVariance(shifts) {
     const processed = applySortAndFilter(shifts, 'variance');
 
     if (processed.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="py-3 px-6 text-center">No closed shifts found for this period.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="11" class="py-3 px-6 text-center">No closed shifts found for this period.</td></tr>`;
         return;
     }
 
@@ -1394,7 +2164,8 @@ function renderCashVariance(shifts) {
         const statusClass = s.status === 'open' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700';
         
         const row = document.createElement("tr");
-        row.className = "border-b border-gray-200 hover:bg-gray-100";
+        row.className = "border-b border-gray-200 hover:bg-gray-100 cursor-pointer btn-view-shift-tx";
+        row.dataset.id = s.id;
         row.innerHTML = `
             <td class="py-3 px-6 text-left">${new Date(s.start_time).toLocaleDateString()}</td>
             <td class="py-3 px-6 text-left">${s.user_id}</td>
@@ -1403,25 +2174,15 @@ function renderCashVariance(shifts) {
             <td class="py-3 px-6 text-right">₱${(s.expected_cash || 0).toFixed(2)}</td>
             <td class="py-3 px-6 text-right">${isClosed ? `₱${(s.closing_cash || 0).toFixed(2)}` : '-'}</td>
             <td class="py-3 px-6 text-right ${diffClass}">${isClosed ? `₱${variance.toFixed(2)}` : '-'}</td>
+            <td class="py-3 px-6 text-right">₱${(s.totalSales || 0).toFixed(2)}</td>
+            <td class="py-3 px-6 text-right">₱${(s.totalCogs || 0).toFixed(2)}</td>
+            <td class="py-3 px-6 text-right font-bold text-blue-600">₱${(s.grossProfit || 0).toFixed(2)}</td>
             <td class="py-3 px-6 text-center">
                 <button class="text-blue-600 hover:text-blue-800 font-bold btn-view-shift-tx" data-id="${s.id}">View</button>
             </td>
         `;
         tbody.appendChild(row);
     });
-}
-
-function renderInventoryValuation(items) {
-    let totalCost = 0;
-    let totalRetail = 0;
-    items.forEach(i => {
-        const qty = Math.max(0, i.stock_level || 0);
-        totalCost += (i.cost_price || 0) * qty;
-        totalRetail += (i.selling_price || 0) * qty;
-    });
-    document.getElementById("val-cost").textContent = `₱${totalCost.toFixed(2)}`;
-    document.getElementById("val-retail").textContent = `₱${totalRetail.toFixed(2)}`;
-    document.getElementById("val-profit").textContent = `₱${(totalRetail - totalCost).toFixed(2)}`;
 }
 
 function renderPaymentStats(data) {
@@ -1463,12 +2224,13 @@ function renderProductStats(data) {
         tbody.appendChild(row);
 
         // Categorize for Matrix
-        if (prod.revenue >= avgRev && prod.marginPct >= avgMargin) matrix.winners.push(prod.name);
-        else if (prod.revenue >= avgRev && prod.marginPct < avgMargin) matrix.cows.push(prod.name);
-        else if (prod.revenue < avgRev && prod.marginPct >= avgMargin) matrix.sleepers.push(prod.name);
-        else matrix.dogs.push(prod.name);
+        if (prod.revenue >= avgRev && prod.marginPct >= avgMargin) matrix.winners.push(prod);
+        else if (prod.revenue >= avgRev && prod.marginPct < avgMargin) matrix.cows.push(prod);
+        else if (prod.revenue < avgRev && prod.marginPct >= avgMargin) matrix.sleepers.push(prod);
+        else matrix.dogs.push(prod);
     });
 
+    reportData.matrix = matrix;
     renderRetailerMatrix(matrix);
 }
 
@@ -1481,10 +2243,10 @@ function renderRetailerMatrix(matrix) {
             return;
         }
         // Show top 8 items per quadrant
-        el.innerHTML = items.slice(0, 8).map(name => `
+        el.innerHTML = items.slice(0, 8).map(item => `
             <div class="flex items-center gap-2">
                 <span class="w-1 h-1 rounded-full bg-current"></span>
-                <span class="truncate">${name}</span>
+                <span class="truncate">${item.name}</span>
             </div>
         `).join('') + (items.length > 8 ? `<div class="pl-3 font-bold">... +${items.length - 8} more</div>` : '');
     };
@@ -1493,6 +2255,336 @@ function renderRetailerMatrix(matrix) {
     renderList('matrix-cows', matrix.cows);
     renderList('matrix-sleepers', matrix.sleepers);
     renderList('matrix-dogs', matrix.dogs);
+}
+
+function renderStockMovement(data) {
+    const tbody = document.getElementById("report-movements-body");
+    if (!tbody) return;
+    tbody.innerHTML = "";
+    const processed = applySortAndFilter(data, 'movements');
+
+    if (processed.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="py-3 px-6 text-center">No movements found.</td></tr>`;
+        return;
+    }
+
+    processed.forEach(m => {
+        const row = document.createElement("tr");
+        row.className = "border-b border-gray-200 hover:bg-gray-100";
+        
+        // Determine badge color based on movement type
+        let badgeClass = "bg-blue-100 text-blue-700"; // Default (Sale)
+        const type = m.type?.toLowerCase();
+        if (type === 'void') badgeClass = "bg-red-100 text-red-700";
+        else if (type === 'return') badgeClass = "bg-orange-100 text-orange-700";
+        else if (type === 'adjustment') badgeClass = "bg-yellow-100 text-yellow-700";
+        else if (type === 'stock-in' || type === 'initial stock') badgeClass = "bg-green-100 text-green-700";
+
+        row.innerHTML = `
+            <td class="py-2 px-4">${new Date(m.timestamp).toLocaleString()}</td>
+            <td class="py-2 px-4 font-medium">${m.item_name}</td>
+            <td class="py-2 px-4"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${badgeClass}">${m.type}</span></td>
+            <td class="py-2 px-4 text-right font-bold ${m.qty > 0 ? 'text-green-600' : 'text-red-600'}">${m.qty > 0 ? '+' : ''}${m.qty}</td>
+            <td class="py-2 px-4 text-xs text-gray-500">${m.reason || '-'}</td>
+            <td class="py-2 px-4">${m.user}</td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function renderLowStockReport(data) {
+    const tbody = document.getElementById("report-low-stock-body");
+    if (!tbody) return;
+    tbody.innerHTML = "";
+    const processed = applySortAndFilter(data, 'lowStock');
+
+    if (processed.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="py-3 px-6 text-center">No low stock items found.</td></tr>`;
+        return;
+    }
+
+    processed.forEach(item => {
+        const row = document.createElement("tr");
+        row.className = "border-b border-gray-200 hover:bg-gray-100";
+        const isOut = item.stock_level <= 0;
+        const statusClass = isOut ? "bg-red-100 text-red-700" : "bg-yellow-100 text-yellow-700";
+        const statusText = isOut ? "Out of Stock" : "Low Stock";
+
+        row.innerHTML = `
+            <td class="py-3 px-6 text-left font-medium">${item.name}</td>
+            <td class="py-3 px-6 text-left font-mono text-xs">${item.barcode || '-'}</td>
+            <td class="py-3 px-6 text-right font-bold ${isOut ? 'text-red-600' : 'text-yellow-600'}">${item.stock_level}</td>
+            <td class="py-3 px-6 text-right">${item.min_stock || 0}</td>
+            <td class="py-3 px-6 text-center">
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${statusClass}">${statusText}</span>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function showQuadrantDetails(quadrant) {
+    const data = reportData.matrix ? reportData.matrix[quadrant] : [];
+    const title = quadrant.charAt(0).toUpperCase() + quadrant.slice(1);
+    
+    let modal = document.getElementById('report-quadrant-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'report-quadrant-modal';
+        modal.className = 'fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center z-50';
+        document.getElementById("main-content").appendChild(modal);
+    }
+
+    modal.innerHTML = `
+        <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-4xl mx-4 flex flex-col max-h-[90vh]">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-gray-800">${title} Quadrant Details</h3>
+                <button class="text-gray-500 hover:text-gray-700 text-2xl close-modal">&times;</button>
+            </div>
+            <div class="overflow-y-auto border rounded flex-1">
+                <table class="min-w-full text-sm">
+                    <thead class="bg-gray-100 sticky top-0">
+                        <tr class="border-b">
+                            <th class="text-left p-2 cursor-pointer hover:bg-gray-200" data-sort="name" data-table="quadrantDetails">Product</th>
+                            <th class="text-center p-2 cursor-pointer hover:bg-gray-200" data-sort="qty" data-table="quadrantDetails">Sold</th>
+                            <th class="text-right p-2 cursor-pointer hover:bg-gray-200" data-sort="revenue" data-table="quadrantDetails">Revenue</th>
+                            <th class="text-right p-2 cursor-pointer hover:bg-gray-200" data-sort="marginPct" data-table="quadrantDetails">Margin %</th>
+                        </tr>
+                    </thead>
+                    <tbody id="quadrant-details-body"></tbody>
+                </table>
+            </div>
+            <div class="mt-6 flex justify-end">
+                <button class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded shadow close-modal">Close</button>
+            </div>
+        </div>
+    `;
+
+    modal.classList.remove('hidden');
+    modal.querySelectorAll('.close-modal').forEach(btn => {
+        btn.addEventListener('click', () => modal.classList.add('hidden'));
+    });
+
+    reportData.currentQuadrant = quadrant;
+    renderQuadrantDetails();
+}
+
+function renderQuadrantDetails() {
+    const tbody = document.getElementById("quadrant-details-body");
+    if (!tbody) return;
+    
+    const quadrant = reportData.currentQuadrant;
+    const data = reportData.matrix ? reportData.matrix[quadrant] : [];
+    const processed = applySortAndFilter(data, 'quadrantDetails');
+
+    tbody.innerHTML = processed.map(p => `
+        <tr class="border-b hover:bg-gray-50 cursor-pointer btn-quick-edit-stock" data-id="${p.id}">
+            <td class="p-2 font-medium">${p.name}</td>
+            <td class="p-2 text-center">${p.qty}</td>
+            <td class="p-2 text-right font-bold">₱${p.revenue.toFixed(2)}</td>
+            <td class="p-2 text-right">${p.marginPct.toFixed(1)}%</td>
+        </tr>
+    `).join('');
+
+    tbody.querySelectorAll(".btn-quick-edit-stock").forEach(row => {
+        row.addEventListener("click", () => showQuickEditMinStock(row.dataset.id));
+    });
+}
+
+async function showQuickEditMinStock(id) {
+    const item = await db.items.get(id);
+    if (!item) return;
+
+    const newMin = prompt(`Quick Edit: Min Stock Alert for "${item.name}"\n\nCurrent: ${item.min_stock || 0}`, item.min_stock || 0);
+    
+    if (newMin !== null) {
+        const minVal = parseInt(newMin);
+        if (isNaN(minVal)) {
+            alert("Please enter a valid number.");
+            return;
+        }
+
+        try {
+            // Update local
+            await db.items.update(id, { min_stock: minVal });
+            
+            // Sync to server
+            if (navigator.onLine) {
+                const res = await fetch(`${API_URL}?file=items`);
+                let items = await res.json();
+                const idx = items.findIndex(i => i.id === id);
+                if (idx !== -1) {
+                    items[idx].min_stock = minVal;
+                    await fetch(`${API_URL}?file=items`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(items) });
+                }
+            }
+            
+            alert("Min stock updated.");
+            generateReport(); // Refresh report to update low stock lists etc
+        } catch (e) {
+            console.error(e);
+            alert("Failed to update.");
+        }
+    }
+}
+
+function renderValuationHistoryTable(data) {
+    const tbody = document.getElementById("valuation-history-body");
+    if (!tbody) return;
+    tbody.innerHTML = "";
+    if (!data || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="py-3 px-6 text-center">No valuation data for this period.</td></tr>`;
+        return;
+    }
+    [...data].reverse().forEach(d => {
+        const row = document.createElement("tr");
+        row.className = "border-b border-gray-200 hover:bg-gray-100";
+        const change = d.c - d.o;
+        const colorClass = change >= 0 ? "text-green-600" : "text-red-600";
+        
+        row.innerHTML = `
+            <td class="py-3 px-6 text-left">${d.x}</td>
+            <td class="py-3 px-6 text-right font-bold">₱${d.c.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+            <td class="py-3 px-6 text-right">₱${d.retail.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+            <td class="py-3 px-6 text-right text-xs ${colorClass}">${change >= 0 ? '▲' : '▼'} ₱${Math.abs(change).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function renderValuationCandleChart(ohlcData) {
+    const ctx = document.getElementById('valuation-chart')?.getContext('2d');
+    if (!ctx) return;
+
+    if (valuationChartInstance) {
+        valuationChartInstance.destroy();
+    }
+
+    // Simulate Candlestick using Floating Bars
+    // Dataset 1: Wicks (Low to High) - Thin bar
+    // Dataset 2: Body (Open to Close) - Thicker bar
+    
+    const wickData = ohlcData.map(d => [d.l, d.h]);
+    const bodyData = ohlcData.map(d => [Math.min(d.o, d.c), Math.max(d.o, d.c)]);
+    const colors = ohlcData.map(d => d.c >= d.o ? '#10B981' : '#EF4444'); // Green (Up) / Red (Down)
+
+    valuationChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ohlcData.map(d => moment(d.x).format('MMM D')),
+            datasets: [
+                {
+                    label: 'Range (High/Low)',
+                    data: wickData,
+                    backgroundColor: 'rgba(107, 114, 128, 0.8)', // Gray wicks
+                    barThickness: 2,
+                    order: 2
+                },
+                {
+                    label: 'Valuation (Open/Close)',
+                    data: bodyData,
+                    backgroundColor: colors,
+                    barThickness: 12,
+                    order: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            // Only show tooltip for the body dataset to avoid duplicates
+                            if (context.datasetIndex === 1) {
+                                const idx = context.dataIndex;
+                                const d = ohlcData[idx];
+                                return [
+                                    `Open: ₱${d.o.toLocaleString()}`,
+                                    `Close: ₱${d.c.toLocaleString()}`,
+                                    `High: ₱${d.h.toLocaleString()}`,
+                                    `Low: ₱${d.l.toLocaleString()}`
+                                ];
+                            }
+                            return null;
+                        }
+                    }
+                },
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    ticks: {
+                        callback: value => '₱' + value.toLocaleString()
+                    }
+                }
+            }
+        }
+    });
+}
+
+function renderInventoryLedger(data) {
+    const tbody = document.getElementById("report-inv-ledger-body");
+    if (!tbody) return;
+    tbody.innerHTML = "";
+    const processed = applySortAndFilter(data, 'invLedger');
+
+    processed.forEach(item => {
+        const row = document.createElement("tr");
+        row.className = "border-b border-gray-200 hover:bg-gray-100";
+        row.innerHTML = `
+            <td class="py-3 px-6 text-left font-medium">${item.name}</td>
+            <td class="py-3 px-6 text-left font-mono text-xs">${item.barcode || '-'}</td>
+            <td class="py-3 px-6 text-right">₱${item.cost.toFixed(2)}</td>
+            <td class="py-3 px-6 text-right font-bold">${item.qty}</td>
+            <td class="py-3 px-6 text-right font-bold text-blue-600">₱${item.value.toFixed(2)}</td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function renderShrinkageAnalysis(summary, products) {
+    const summaryContainer = document.getElementById("report-shrinkage-summary");
+    const itemsBody = document.getElementById("report-shrinkage-items-body");
+    if (!summaryContainer || !itemsBody) return;
+
+    summaryContainer.innerHTML = summary.map(s => `
+        <div class="flex justify-between items-center p-2 bg-gray-50 rounded">
+            <span>${s.reason}</span>
+            <span class="font-bold text-red-600">${s.qty} units</span>
+        </div>
+    `).join('');
+
+    const topShrinkage = [...products]
+        .filter(p => p.shrinkageQty > 0)
+        .sort((a, b) => b.shrinkageQty - a.shrinkageQty)
+        .slice(0, 10);
+
+    itemsBody.innerHTML = topShrinkage.length ? topShrinkage.map(p => `
+        <tr class="border-b last:border-0">
+            <td class="py-2">${p.name}</td>
+            <td class="py-2 text-right font-bold text-red-600">${p.shrinkageQty}</td>
+        </tr>
+    `).join('') : `<tr><td colspan="2" class="py-4 text-center text-gray-400">No shrinkage recorded.</td></tr>`;
+}
+
+function renderRiskMetrics(products) {
+    const tbody = document.getElementById("report-risk-body");
+    if (!tbody) return;
+    
+    const processed = [...products].sort((a, b) => b.returnRate - a.returnRate);
+    
+    tbody.innerHTML = processed.length ? processed.map(p => `
+        <tr class="border-b border-gray-200 hover:bg-gray-100">
+            <td class="py-3 px-6 text-left font-medium">${p.name}</td>
+            <td class="py-3 px-6 text-center">${p.qty}</td>
+            <td class="py-3 px-6 text-center">${p.returnedUnits}</td>
+            <td class="py-3 px-6 text-center font-bold ${p.returnRate > 5 ? 'text-red-600' : 'text-gray-600'}">${p.returnRate.toFixed(1)}%</td>
+            <td class="py-3 px-6 text-center">${p.shrinkageQty}</td>
+            <td class="py-3 px-6 text-center font-bold ${p.shrinkagePct > 2 ? 'text-red-600' : 'text-gray-600'}">${p.shrinkagePct.toFixed(1)}%</td>
+        </tr>
+    `).join('') : `<tr><td colspan="6" class="py-3 px-6 text-center">No data available.</td></tr>`;
 }
 
 function renderProductAffinity(data) {
@@ -1550,14 +2642,25 @@ function renderAuditLog(data) {
     tbody.innerHTML = "";
     const processed = applySortAndFilter(data, 'audit');
 
+    if (processed.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="py-3 px-6 text-center">No voided transactions in this period.</td></tr>`;
+        return;
+    }
+
     processed.forEach(v => {
         const row = document.createElement("tr");
         row.className = "border-b border-gray-200 bg-red-50";
+        
+        const vDate = v.voided_at ? new Date(v.voided_at) : null;
+        const voidDateStr = (vDate && !isNaN(vDate)) ? vDate.toLocaleString() : 'Unknown';
+        const origDateStr = new Date(v.timestamp).toLocaleString();
+
         row.innerHTML = `
-            <td class="py-3 px-6 text-left">${new Date(v.voided_at).toLocaleString()}</td>
-            <td class="py-3 px-6 text-left">${new Date(v.timestamp).toLocaleString()}</td>
+            <td class="py-3 px-6 text-left">${voidDateStr}</td>
+            <td class="py-3 px-6 text-left">${origDateStr}</td>
             <td class="py-3 px-6 text-right font-bold">₱${v.total_amount.toFixed(2)}</td>
             <td class="py-3 px-6 text-left">${v.voided_by || 'Unknown'}</td>
+            <td class="py-3 px-6 text-left italic text-xs">${v.void_reason || '-'}</td>
         `;
         tbody.appendChild(row);
     });

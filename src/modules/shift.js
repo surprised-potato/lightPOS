@@ -1,6 +1,7 @@
 import { db } from "../db.js";
 import { checkPermission, requestManagerApproval } from "../auth.js";
 import { addNotification } from "../services/notification-service.js";
+import { generateUUID } from "../utils.js";
 
 const API_URL = 'api/router.php';
 
@@ -49,7 +50,7 @@ export async function startShift(openingCash) {
     if (active) return active;
 
     const shiftData = {
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         user_id: user.email,
         start_time: new Date(),
         end_time: null,
@@ -77,6 +78,7 @@ export async function startShift(openingCash) {
         await db.shifts.add(shiftData);
 
         currentShift = shiftData;
+        window.dispatchEvent(new CustomEvent('shift-updated'));
         return currentShift;
     } catch (error) {
         console.error("Error starting shift:", error);
@@ -92,29 +94,46 @@ export function requireShift(callback) {
     }
 }
 
-export async function calculateExpectedCash() {
-    if (!currentShift) return 0;
+export async function calculateExpectedCash(shift = currentShift) {
+    if (!shift) return 0;
     
     // Query local Dexie transactions for this user since shift start
-    const startTime = new Date(currentShift.start_time);
-    const user = getCurrentUser();
+    const startTime = new Date(shift.start_time);
+    const endTime = shift.end_time ? new Date(shift.end_time) : new Date();
+    const userEmail = shift.user_id;
 
     const transactions = await db.transactions
-        .where('timestamp').aboveOrEqual(startTime)
-        .filter(tx => tx.user_email === user.email)
+        .where('timestamp').between(startTime, endTime, true, true)
+        .filter(tx => tx.user_email === userEmail && !tx.is_voided)
         .toArray();
 
     let totalSales = 0;
     transactions.forEach(tx => {
-        totalSales += tx.total_amount || 0;
+        if (tx.payment_method === 'Cash') {
+            totalSales += tx.total_amount || 0;
+        }
     });
-    
-    let totalAdjustments = 0;
-    if (currentShift.adjustments && Array.isArray(currentShift.adjustments)) {
-        currentShift.adjustments.forEach(adj => totalAdjustments += (adj.amount || 0));
+
+    // Query returns processed during this shift
+    const returns = await db.returns
+        .where('timestamp').between(startTime, endTime, true, true)
+        .filter(r => r.processed_by === userEmail)
+        .toArray();
+
+    let totalRefunds = 0;
+    for (const r of returns) {
+        const originalTx = await db.transactions.get(r.transaction_id);
+        if (originalTx && originalTx.payment_method === 'Cash') {
+            totalRefunds += r.refund_amount || 0;
+        }
     }
     
-    return currentShift.opening_cash + totalSales + totalAdjustments;
+    let totalAdjustments = 0;
+    if (shift.adjustments && Array.isArray(shift.adjustments)) {
+        shift.adjustments.forEach(adj => totalAdjustments += (adj.amount || 0));
+    }
+    
+    return (shift.opening_cash || 0) + totalSales - totalRefunds + totalAdjustments;
 }
 
 export async function closeShift(closingCash) {
@@ -142,6 +161,20 @@ export async function closeShift(closingCash) {
 
         // Update local DB
         await db.shifts.put(shifts[index]);
+    }
+    window.dispatchEvent(new CustomEvent('shift-updated'));
+
+    // Check for discrepancy notification threshold
+    try {
+        const settingsRes = await fetch(`${API_URL}?file=settings`);
+        const settings = await settingsRes.json();
+        const threshold = parseFloat(settings?.shift?.threshold) || 0;
+        
+        if (Math.abs(closing - expected) > threshold) {
+            await addNotification('Discrepancy', `Shift closed with a discrepancy of ₱${(closing - expected).toFixed(2)} (Threshold: ₱${threshold.toFixed(2)})`);
+        }
+    } catch (e) {
+        console.error("Error checking discrepancy threshold:", e);
     }
     
     const summary = {
@@ -217,13 +250,14 @@ async function fetchShifts() {
 
         const canAdjust = checkPermission("shifts", "write");
         
-        userShifts.forEach(data => {
+        for (const data of userShifts) {
             const start = data.start_time ? new Date(data.start_time).toLocaleString() : "-";
             const end = data.end_time ? new Date(data.end_time).toLocaleString() : "-";
             
             const isClosed = data.status === 'closed';
-            const diff = isClosed ? (data.closing_cash || 0) - (data.expected_cash || 0) : 0;
-            const diffClass = isClosed ? (diff < 0 ? "text-red-600" : (diff > 0 ? "text-green-600" : "")) : "";
+            const expected = isClosed ? (data.expected_cash || 0) : await calculateExpectedCash(data);
+            const variance = isClosed ? (data.closing_cash || 0) - expected : 0;
+            const diffClass = isClosed ? (variance < 0 ? "text-red-600" : (variance > 0 ? "text-green-600" : "")) : "";
             
             const row = document.createElement("tr");
             row.className = "border-b border-gray-200 hover:bg-gray-100";
@@ -232,8 +266,8 @@ async function fetchShifts() {
                 <td class="py-3 px-6 text-left whitespace-nowrap">${end}</td>
                 <td class="py-3 px-6 text-right">₱${(data.opening_cash || 0).toFixed(2)}</td>
                 <td class="py-3 px-6 text-right">₱${(data.closing_cash || 0).toFixed(2)}</td>
-                <td class="py-3 px-6 text-right">${isClosed ? `₱${(data.expected_cash || 0).toFixed(2)}` : '-'}</td>
-                <td class="py-3 px-6 text-right font-bold ${diffClass}">${isClosed ? `₱${diff.toFixed(2)}` : '-'}</td>
+                <td class="py-3 px-6 text-right">₱${expected.toFixed(2)}</td>
+                <td class="py-3 px-6 text-right font-bold ${diffClass}">${isClosed ? `₱${variance.toFixed(2)}` : '-'}</td>
                 <td class="py-3 px-6 text-center">
                     <span class="${data.status === 'open' ? 'bg-green-200 text-green-700' : 'bg-gray-200 text-gray-700'} py-1 px-3 rounded-full text-xs uppercase">${data.status}</span>
                 </td>
@@ -253,7 +287,7 @@ async function fetchShifts() {
             row.querySelector(".btn-view-history").addEventListener("click", () => {
                 showShiftHistoryModal(data.adjustments || []);
             });
-        });
+        }
     } catch (error) {
         console.error("Error fetching shifts:", error);
         tbody.innerHTML = `<tr><td colspan="7" class="py-3 px-6 text-center text-red-500">Error loading shifts.</td></tr>`;

@@ -74,11 +74,15 @@
                 "read": true,
                 "write": true
             },
-            "suppliers": {
+            "shifts": {
                 "read": true,
                 "write": true
             },
             "items": {
+                "read": true,
+                "write": true
+            },
+            "suppliers": {
                 "read": true,
                 "write": true
             },
@@ -90,19 +94,15 @@
                 "read": true,
                 "write": true
             },
-            "reports": {
-                "read": true,
-                "write": true
-            },
             "expenses": {
                 "read": true,
                 "write": true
             },
-            "users": {
+            "reports": {
                 "read": true,
                 "write": true
             },
-            "shifts": {
+            "users": {
                 "read": true,
                 "write": true
             },
@@ -113,8 +113,13 @@
             "returns": {
                 "read": true,
                 "write": true
+            },
+            "settings": {
+                "read": true,
+                "write": true
             }
-        }
+        },
+        "phone": ""
     },
     {
         "email": "cashier@lp.com",

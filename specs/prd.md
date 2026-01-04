@@ -12,7 +12,7 @@
 - **Items:** Master list of products with barcode/search focus.
 - **Suppliers:** Management of vendor contact details and procurement history.
 - **Stock In:** Receiving deliveries using an invoice-cart system to verify against supplier invoices with cost-discrepancy alerts.
-- **Stock Count:** Inventory auditing with mandatory adjustment logging.
+- **Stock Count:** Inventory auditing with mandatory adjustment logging, including shrinkage categorization (Theft, Admin Error, Vendor Fraud).
 - **Point of Sale (POS):** Transaction processing with "Quick Add," customer rewards, automatic unit breakdown, and transaction suspension.
 - **Stock Out / Item Change:** Handling spoilage, theft, and manual unit conversions.
 - **Customers:** Data tracking for sales history and PHP-based reward points.
@@ -28,10 +28,16 @@
         - **Tax Liability:** Aggregated VAT/Sales Tax collected for compliance.
         - **Payment Method Breakdown:** Sales by Cash, Card, E-wallet, etc.
         - **Cash Variance:** Comparison of expected vs. actual cash (Short/Over).
+        - **Inventory Ledger / Valuation (Enterprise):** Total value of assets on hand at a specific timestamp. Supports historical "snapshotting" to view inventory value at any past date.
+        - **Valuation Methods:** Support for FIFO (First-In, First-Out), LIFO (Last-In, First-Out), or Weighted Average Costing.
+        - **COGS Analysis (Enterprise):** Detailed breakdown of costs associated with sold items, including **Landed Costs** (freight, duties, insurance) allocated to unit cost.
     - **Inventory:** 
         - **Inventory Valuation:** Total stock value at Cost and Retail prices.
         - **COGS (Cost of Goods Sold):** Cost of items sold to calculate Gross Margin.
         - **Low Stock:** Items below threshold for reordering.
+    - **Audit & Security (Enterprise):**
+        - **Stock Movement / Transaction Log:** Chronological list of every inventory event (Sale, Return, Receive, Adjustment, Transfer, Damage) capturing User ID and Timestamp.
+        - **Shrinkage / Variance Analysis:** Discrepancy between "Book Stock" and "Physical Count," categorized by cause (Theft, Admin Error, Vendor Fraud).
     - **Performance & Audit:**
         - **Product Performance (Advanced Metrics):**
             - **Velocity:** Units Sold, Sell-Through Rate (STR), Inventory Turnover.
@@ -105,6 +111,29 @@
 | `permissions.<module>` | map | `{ read: boolean, write: boolean }` |
 | `is_active` | boolean | Soft delete / Login block |
 
+### File: `data/stock_movement.json` (Array of Objects)
+| Field | Type | Description |
+| :--- | :--- | :--- |
+| `id` | string | UUID |
+| `item_id` | string | Ref to items |
+| `type` | string | Sale, Return, Receive, Adjustment, Transfer, Damage |
+| `qty` | number | Change in quantity |
+| `unit_cost` | number | Cost at time of movement (including landed costs) |
+| `user_id` | string | Who performed the action |
+| `timestamp` | timestamp | When it happened |
+
+### File: `data/adjustments.json` (Array of Objects)
+| Field | Type | Description |
+| :--- | :--- | :--- |
+| `id` | string | UUID |
+| `item_id` | string | Ref to items |
+| `old_stock` | number | System stock before adjustment |
+| `new_stock` | number | Actual count |
+| `difference` | number | Discrepancy |
+| `reason` | string | Theft, Admin Error, Vendor Fraud, etc. |
+| `user_id` | string | Who performed the audit |
+| `timestamp` | timestamp | When it happened |
+
 ### Local Store: `suspended_transactions` (Dexie.js)
 | Field | Type | Description |
 | :--- | :--- | :--- |
@@ -131,6 +160,7 @@
     - For each item, if `entered_cost != stored_cost`:
         - Flag the item and display a "Price Discrepancy" alert.
         - Options per item: `[Update Master Cost]` `[Keep Current Cost]`.
+    - **Landed Costs:** Users can input total freight, duties, and insurance for the invoice. These are distributed proportionally across the items' unit costs.
 
 ### C. Offline-to-Online Sync (Dexie.js)
 - Transactions are saved to IndexedDB immediately.

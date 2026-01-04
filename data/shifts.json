@@ -1,24 +1,35 @@
 [
     {
-        "id": "824ec4b7-e61e-4282-8b07-aebf587777a8",
+        "id": "e01ea87a-435d-4d79-b595-2aa658bee002",
         "user_id": "admin@lightpos.com",
-        "start_time": "2026-01-03T20:28:51.892Z",
-        "end_time": "2026-01-03T20:32:08.788Z",
+        "start_time": "2026-01-04T04:45:44.244Z",
+        "end_time": "2026-01-04T05:17:42.334Z",
         "opening_cash": 1000,
-        "closing_cash": 1600,
-        "expected_cash": 2360,
+        "closing_cash": 2000,
+        "expected_cash": 2281,
         "status": "closed",
         "adjustments": []
     },
     {
-        "id": "0d9a85fd-ff2f-47eb-b2ee-c234d6376a15",
+        "id": "ee929bd4-62be-4d2a-bf4c-4d318db0c94f",
         "user_id": "admin@lightpos.com",
-        "start_time": "2026-01-03T20:38:56.749Z",
-        "end_time": null,
-        "opening_cash": 1000,
-        "closing_cash": 0,
-        "expected_cash": 1000,
-        "status": "open",
+        "start_time": "2026-01-04T05:29:37.729Z",
+        "end_time": "2026-01-04T05:37:39.870Z",
+        "opening_cash": 10000,
+        "closing_cash": 12000,
+        "expected_cash": 10384,
+        "status": "closed",
+        "adjustments": []
+    },
+    {
+        "id": "02d7b0ef-e66c-4d15-9f6f-9694458662bb",
+        "user_id": "admin@lightpos.com",
+        "start_time": "2026-01-04T06:31:54.377Z",
+        "end_time": "2026-01-04T07:45:45.734Z",
+        "opening_cash": 500,
+        "closing_cash": 4000,
+        "expected_cash": 3059,
+        "status": "closed",
         "adjustments": []
     }
 ]
