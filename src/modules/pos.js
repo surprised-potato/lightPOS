@@ -1355,13 +1355,22 @@ async function printReceipt(tx, isReprint = false) {
     }
     const settings = await getSystemSettings();
     const store = settings.store || { name: "LightPOS", data: "" };
-    const p = settings.print || {
+    const defaultPrint = {
         paper_width: 76, 
         show_dividers: true,
         header: { text: "", font_size: 14, font_family: "'Courier New', Courier, monospace", bold: true, italic: false },
         items: { font_size: 12, font_family: "'Courier New', Courier, monospace", bold: false, italic: false },
         body: { font_size: 12, font_family: "'Courier New', Courier, monospace", bold: false, italic: false },
         footer: { text: "Thank you for shopping!", font_size: 10, font_family: "'Courier New', Courier, monospace", bold: false, italic: true }
+    };
+
+    const p = {
+        ...defaultPrint,
+        ...(settings.print || {}),
+        header: { ...defaultPrint.header, ...(settings.print?.header || {}) },
+        items: { ...defaultPrint.items, ...(settings.print?.items || {}) },
+        body: { ...defaultPrint.body, ...(settings.print?.body || {}) },
+        footer: { ...defaultPrint.footer, ...(settings.print?.footer || {}) }
     };
     
     const pWidth = p.paper_width || 76;
@@ -1375,7 +1384,7 @@ async function printReceipt(tx, isReprint = false) {
     `;
 
     const headerText = p.header?.text || `${store.name}\n${store.data}`;
-    const footerText = p.footer?.text || "THIS IS NOT AN OFFICIAL RECEIPT\nThank you for shopping!";
+    const footerText = p.footer?.text || "Thank you for shopping!";
     
     const printWindow = window.open('', '_blank', 'width=300,height=600');
     const itemsStyle = p.items ? getStyle(p.items) : getStyle(p.body);

@@ -93,158 +93,148 @@ export async function loadSettingsView() {
 
                 <!-- Advanced Tab -->
                 <div id="settings-tab-advanced" class="settings-panel hidden space-y-6">
-                    <div class="bg-white p-6 rounded-lg shadow-sm border">
-                        <h3 class="text-lg font-bold mb-6">Receipt Designer</h3>
-                        
-                        <div class="space-y-8">
-                            <!-- General Settings -->
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
-                                <div>
-                                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Paper Width (mm)</label>
-                                    <input type="number" id="set-print-width" step="1" min="40" class="w-full border rounded p-2 text-sm">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div class="lg:col-span-2 space-y-6">
+                            <div class="bg-white p-6 rounded-lg shadow-sm border">
+                                <h3 class="text-lg font-bold mb-4">Receipt Designer</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-700 mb-1">Paper Width (mm)</label>
+                                        <input type="number" id="set-print-width" class="w-full border rounded p-2 text-sm">
+                                    </div>
+                                    <div class="flex items-end pb-2">
+                                        <label class="inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" id="set-print-show-dividers" class="form-checkbox h-4 w-4 text-blue-600">
+                                            <span class="ml-2 text-xs font-bold text-gray-700">Show Dividers (Dashed Lines)</span>
+                                        </label>
+                                    </div>
                                 </div>
-                                <div class="flex items-center pt-5">
+
+                                <!-- Header Section -->
+                                <div class="border-t pt-4 mt-4">
+                                    <h4 class="text-sm font-bold text-blue-600 mb-3 uppercase tracking-wider">Header Section</h4>
+                                    <div class="space-y-3">
+                                        <div>
+                                            <label class="block text-[10px] font-bold text-gray-500 uppercase">Custom Header Text (Overrides Store Info)</label>
+                                            <textarea id="set-print-header-text" rows="2" class="w-full border rounded p-2 text-sm" placeholder="Leave blank to use Store Name & Address"></textarea>
+                                        </div>
+                                        <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-gray-500 uppercase">Size (px)</label>
+                                                <input type="number" id="set-print-header-size" class="w-full border rounded p-1 text-sm">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-gray-500 uppercase">Font</label>
+                                                <select id="set-print-header-font" class="w-full border rounded p-1 text-sm">
+                                                    <option value="'Courier New', Courier, monospace">Courier New</option>
+                                                    <option value="Arial, sans-serif">Arial</option>
+                                                    <option value="'Times New Roman', serif">Times New Roman</option>
+                                                </select>
+                                            </div>
+                                            <div class="flex items-center gap-2 pt-4">
+                                                <label class="inline-flex items-center"><input type="checkbox" id="set-print-header-bold" class="form-checkbox h-3 w-3"><span class="ml-1 text-[10px]">Bold</span></label>
+                                                <label class="inline-flex items-center"><input type="checkbox" id="set-print-header-italic" class="form-checkbox h-3 w-3"><span class="ml-1 text-[10px]">Italic</span></label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Body Section -->
+                                <div class="border-t pt-4 mt-4">
+                                    <h4 class="text-sm font-bold text-blue-600 mb-3 uppercase tracking-wider">Body Section (General Text)</h4>
+                                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                        <div>
+                                            <label class="block text-[10px] font-bold text-gray-500 uppercase">Size (px)</label>
+                                            <input type="number" id="set-print-body-size" class="w-full border rounded p-1 text-sm">
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10px] font-bold text-gray-500 uppercase">Font</label>
+                                            <select id="set-print-body-font" class="w-full border rounded p-1 text-sm">
+                                                <option value="'Courier New', Courier, monospace">Courier New</option>
+                                                <option value="Arial, sans-serif">Arial</option>
+                                            </select>
+                                        </div>
+                                        <div class="flex items-center gap-2 pt-4">
+                                            <label class="inline-flex items-center"><input type="checkbox" id="set-print-body-bold" class="form-checkbox h-3 w-3"><span class="ml-1 text-[10px]">Bold</span></label>
+                                            <label class="inline-flex items-center"><input type="checkbox" id="set-print-body-italic" class="form-checkbox h-3 w-3"><span class="ml-1 text-[10px]">Italic</span></label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Items Section -->
+                                <div class="border-t pt-4 mt-4">
+                                    <h4 class="text-sm font-bold text-blue-600 mb-3 uppercase tracking-wider">Items List Section</h4>
+                                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                        <div>
+                                            <label class="block text-[10px] font-bold text-gray-500 uppercase">Size (px)</label>
+                                            <input type="number" id="set-print-items-size" class="w-full border rounded p-1 text-sm">
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10px] font-bold text-gray-500 uppercase">Font</label>
+                                            <select id="set-print-items-font" class="w-full border rounded p-1 text-sm">
+                                                <option value="'Courier New', Courier, monospace">Courier New</option>
+                                                <option value="Arial, sans-serif">Arial</option>
+                                            </select>
+                                        </div>
+                                        <div class="flex items-center gap-2 pt-4">
+                                            <label class="inline-flex items-center"><input type="checkbox" id="set-print-items-bold" class="form-checkbox h-3 w-3"><span class="ml-1 text-[10px]">Bold</span></label>
+                                            <label class="inline-flex items-center"><input type="checkbox" id="set-print-items-italic" class="form-checkbox h-3 w-3"><span class="ml-1 text-[10px]">Italic</span></label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Footer Section -->
+                                <div class="border-t pt-4 mt-4">
+                                    <h4 class="text-sm font-bold text-blue-600 mb-3 uppercase tracking-wider">Footer Section</h4>
+                                    <div class="space-y-3">
+                                        <div>
+                                            <label class="block text-[10px] font-bold text-gray-500 uppercase">Footer Text</label>
+                                            <textarea id="set-print-footer-text" rows="2" class="w-full border rounded p-2 text-sm"></textarea>
+                                        </div>
+                                        <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-gray-500 uppercase">Size (px)</label>
+                                                <input type="number" id="set-print-footer-size" class="w-full border rounded p-1 text-sm">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-gray-500 uppercase">Font</label>
+                                                <select id="set-print-footer-font" class="w-full border rounded p-1 text-sm">
+                                                    <option value="'Courier New', Courier, monospace">Courier New</option>
+                                                    <option value="Arial, sans-serif">Arial</option>
+                                                </select>
+                                            </div>
+                                            <div class="flex items-center gap-2 pt-4">
+                                                <label class="inline-flex items-center"><input type="checkbox" id="set-print-footer-bold" class="form-checkbox h-3 w-3"><span class="ml-1 text-[10px]">Bold</span></label>
+                                                <label class="inline-flex items-center"><input type="checkbox" id="set-print-footer-italic" class="form-checkbox h-3 w-3"><span class="ml-1 text-[10px]">Italic</span></label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-6">
+                            <div class="bg-white p-6 rounded-lg shadow-sm border">
+                                <h3 class="text-lg font-bold mb-4">Shift Settings</h3>
+                                <div class="max-w-xs">
+                                    <label class="block text-sm font-bold text-gray-700 mb-2">Discrepancy Alert Threshold (₱)</label>
+                                    <input type="number" id="set-shift-threshold" step="0.01" min="0" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="0.00">
+                                    <p class="text-[10px] text-gray-500 mt-1">Triggers a system notification if the closing discrepancy exceeds this amount.</p>
+                                </div>
+                                <div class="mt-4">
                                     <label class="inline-flex items-center cursor-pointer">
-                                        <input type="checkbox" id="set-print-show-dividers" class="form-checkbox h-5 w-5 text-blue-600">
-                                        <span class="ml-2 text-sm font-bold text-gray-700">Show Horizontal Dividers</span>
+                                        <input type="checkbox" id="set-auto-print" class="form-checkbox h-5 w-5 text-blue-600">
+                                        <span class="ml-2 text-sm font-bold text-gray-700">Auto-print receipt after payment</span>
                                     </label>
                                 </div>
                             </div>
 
-                            <!-- Header Section -->
-                            <div class="border rounded-lg p-4">
-                                <h4 class="font-bold text-blue-600 mb-3 flex items-center gap-2">
-                                    <span class="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center text-xs">1</span>
-                                    Header Configuration
-                                </h4>
-                                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                                    <div class="md:col-span-4">
-                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Header Text</label>
-                                        <textarea id="set-print-header-text" rows="2" class="w-full border rounded p-2 text-sm" placeholder="Store Name, Address..."></textarea>
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Font Size (px)</label>
-                                        <input type="number" id="set-print-header-size" class="w-full border rounded p-2 text-sm">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Font Family</label>
-                                        <select id="set-print-header-font" class="w-full border rounded p-2 text-sm">
-                                            <option value="'Courier New', Courier, monospace">Courier New</option>
-                                            <option value="Arial, sans-serif">Arial</option>
-                                            <option value="'Times New Roman', serif">Times New Roman</option>
-                                        </select>
-                                    </div>
-                                    <div class="flex items-center gap-4 pt-5">
-                                        <label class="inline-flex items-center"><input type="checkbox" id="set-print-header-bold" class="form-checkbox"><span class="ml-1 text-xs">Bold</span></label>
-                                        <label class="inline-flex items-center"><input type="checkbox" id="set-print-header-italic" class="form-checkbox"><span class="ml-1 text-xs">Italic</span></label>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Body Section -->
-                            <div class="border rounded-lg p-4">
-                                <h4 class="font-bold text-blue-600 mb-3 flex items-center gap-2">
-                                    <span class="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center text-xs">2</span>
-                                    Body (Transaction Details)
-                                </h4>
-                                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                                    <div>
-                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Font Size (px)</label>
-                                        <input type="number" id="set-print-body-size" class="w-full border rounded p-2 text-sm">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Font Family</label>
-                                        <select id="set-print-body-font" class="w-full border rounded p-2 text-sm">
-                                            <option value="'Courier New', Courier, monospace">Courier New</option>
-                                            <option value="Arial, sans-serif">Arial</option>
-                                            <option value="'Times New Roman', serif">Times New Roman</option>
-                                        </select>
-                                    </div>
-                                    <div class="flex items-center gap-4 pt-5">
-                                        <label class="inline-flex items-center"><input type="checkbox" id="set-print-body-bold" class="form-checkbox"><span class="ml-1 text-xs">Bold</span></label>
-                                        <label class="inline-flex items-center"><input type="checkbox" id="set-print-body-italic" class="form-checkbox"><span class="ml-1 text-xs">Italic</span></label>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Items Section -->
-                            <div class="border rounded-lg p-4">
-                                <h4 class="font-bold text-blue-600 mb-3 flex items-center gap-2">
-                                    <span class="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center text-xs">3</span>
-                                    Items (Sold Products)
-                                </h4>
-                                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                                    <div>
-                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Font Size (px)</label>
-                                        <input type="number" id="set-print-items-size" class="w-full border rounded p-2 text-sm">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Font Family</label>
-                                        <select id="set-print-items-font" class="w-full border rounded p-2 text-sm">
-                                            <option value="'Courier New', Courier, monospace">Courier New</option>
-                                            <option value="Arial, sans-serif">Arial</option>
-                                            <option value="'Times New Roman', serif">Times New Roman</option>
-                                        </select>
-                                    </div>
-                                    <div class="flex items-center gap-4 pt-5">
-                                        <label class="inline-flex items-center"><input type="checkbox" id="set-print-items-bold" class="form-checkbox"><span class="ml-1 text-xs">Bold</span></label>
-                                        <label class="inline-flex items-center"><input type="checkbox" id="set-print-items-italic" class="form-checkbox"><span class="ml-1 text-xs">Italic</span></label>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Footer Section -->
-                            <div class="border rounded-lg p-4">
-                                <h4 class="font-bold text-blue-600 mb-3 flex items-center gap-2">
-                                    <span class="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center text-xs">4</span>
-                                    Footer Configuration
-                                </h4>
-                                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                                    <div class="md:col-span-4">
-                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Footer Text</label>
-                                        <textarea id="set-print-footer-text" rows="2" class="w-full border rounded p-2 text-sm" placeholder="Thank you for shopping!"></textarea>
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Font Size (px)</label>
-                                        <input type="number" id="set-print-footer-size" class="w-full border rounded p-2 text-sm">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Font Family</label>
-                                        <select id="set-print-footer-font" class="w-full border rounded p-2 text-sm">
-                                            <option value="'Courier New', Courier, monospace">Courier New</option>
-                                            <option value="Arial, sans-serif">Arial</option>
-                                            <option value="'Times New Roman', serif">Times New Roman</option>
-                                        </select>
-                                    </div>
-                                    <div class="flex items-center gap-4 pt-5">
-                                        <label class="inline-flex items-center"><input type="checkbox" id="set-print-footer-bold" class="form-checkbox"><span class="ml-1 text-xs">Bold</span></label>
-                                        <label class="inline-flex items-center"><input type="checkbox" id="set-print-footer-italic" class="form-checkbox"><span class="ml-1 text-xs">Italic</span></label>
-                                    </div>
-                                </div>
+                            <div class="bg-white p-6 rounded-lg shadow-sm border border-red-100">
+                                <h3 class="text-lg font-bold mb-4 text-red-600">Danger Zone</h3>
+                                <p class="text-sm text-gray-600 mb-4">This will permanently delete all transactions, items, and history from the server and local database. Users will be preserved.</p>
+                                <button type="button" id="btn-nuclear-reset" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition">Wipe All Data</button>
                             </div>
                         </div>
-                        <p class="text-[10px] text-gray-400 mt-6 italic">Adjust these settings to customize your receipt layout for printers like the Epson TM-U220.</p>
-                    </div>
-
-                    <div class="bg-white p-6 rounded-lg shadow-sm border">
-                        <h3 class="text-lg font-bold mb-4">Shift Settings</h3>
-                        <div class="max-w-xs">
-                            <label class="block text-sm font-bold text-gray-700 mb-2">Discrepancy Alert Threshold (₱)</label>
-                            <input type="number" id="set-shift-threshold" step="0.01" min="0" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="0.00">
-                            <p class="text-[10px] text-gray-500 mt-1">Triggers a system notification if the closing discrepancy exceeds this amount.</p>
-                        </div>
-                        <div class="mt-4">
-                            <label class="inline-flex items-center cursor-pointer">
-                                <input type="checkbox" id="set-auto-print" class="form-checkbox h-5 w-5 text-blue-600">
-                                <span class="ml-2 text-sm font-bold text-gray-700">Auto-print receipt after payment</span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="bg-white p-6 rounded-lg shadow-sm border border-red-100">
-                        <h3 class="text-lg font-bold mb-4 text-red-600">Danger Zone</h3>
-                        <p class="text-sm text-gray-600 mb-4">This will permanently delete all transactions, items, and history from the server and local database. Users will be preserved.</p>
-                        <button type="button" id="btn-nuclear-reset" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition">Wipe All Data</button>
                     </div>
                 </div>
 
