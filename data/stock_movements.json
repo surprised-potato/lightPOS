@@ -1154,5 +1154,16 @@
         "transaction_id": "ed8e5aba-d31f-468e-b05d-87836b01c622",
         "reason": "Customer Purchase",
         "sync_status": 1
+    },
+    {
+        "id": "fe20e6ce-3332-4cd7-af55-1e01b35c7db0",
+        "item_id": "00431c37-af4a-48c8-b299-73378ccea980",
+        "item_name": "Mega Prime Nata Lychee 425g",
+        "timestamp": "2026-01-04T18:57:20.159Z",
+        "type": "Stock-In",
+        "qty": 45,
+        "user": "Super Admin",
+        "reason": "Supplier Delivery",
+        "sync_status": 1
     }
 ]

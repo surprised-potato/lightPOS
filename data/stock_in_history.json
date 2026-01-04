@@ -163,5 +163,23 @@
         "item_count": 50,
         "supplier_id_override": null,
         "sync_status": 1
+    },
+    {
+        "id": "e02a2820-2740-413d-93d0-8417771dd06d",
+        "user_id": "admin@lightpos.com",
+        "username": "Super Admin",
+        "items": [
+            {
+                "item_id": "00431c37-af4a-48c8-b299-73378ccea980",
+                "name": "Mega Prime Nata Lychee 425g",
+                "quantity": 45,
+                "cost_price": 44,
+                "movement_id": "fe20e6ce-3332-4cd7-af55-1e01b35c7db0"
+            }
+        ],
+        "timestamp": "2026-01-04T18:57:20.159Z",
+        "item_count": 45,
+        "supplier_id_override": null,
+        "sync_status": 1
     }
 ]

@@ -55093,9 +55093,11 @@
         "cost_price": 44,
         "selling_price": 49,
         "min_stock": 2,
-        "stock_level": 0,
+        "stock_level": 45,
         "base_unit": "Unit",
-        "supplier_id": ""
+        "supplier_id": "",
+        "updatedAt": "2026-01-04T18:56:59.726Z",
+        "sync_status": 1
     },
     {
         "id": "ecdf8d4d-bdde-41ba-9fe9-7d9e3897794f",
