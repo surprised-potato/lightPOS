@@ -1,50 +1,61 @@
 [
     {
-        "id": "360f4c09-1f2a-4866-a677-e1475077cd43",
+        "id": "8812f70d-5c42-4ff4-b21b-d9208103cdf3",
         "items": [
             {
-                "id": "00j72Gb7NIcZPz5rB7nD",
-                "selling_price": 159,
-                "timestamp": {
-                    "seconds": 1767410307,
-                    "nanoseconds": 282000000
-                },
-                "min_stock": 2,
-                "name": "Big Shot Hotdog Classic King 1K",
-                "barcode": "4800088288347",
-                "category": "FROZEN FOODS",
-                "stock_level": -1,
-                "base_unit": "Unit",
-                "cost_price": 146,
-                "qty": 3
-            }
-        ],
-        "customer": {
-            "id": "Guest",
-            "name": "Guest"
-        },
-        "user_email": "admin@lightpos.com",
-        "timestamp": "2026-01-03T18:44:17.452Z",
-        "total": 477,
-        "sync_status": 0
-    },
-    {
-        "id": "mjypd2o20bhapcw32yh9",
-        "items": [
-            {
-                "id": "02VYfDbphAmBdJa9dBJZ",
-                "stock_level": 0,
+                "id": "0096f256-42ff-431d-b40e-c2d13a47a93f",
+                "barcode": "4800361419963",
+                "name": "Nescafe White 58gx10 Promo",
+                "category": "COFFEE",
+                "cost_price": 110.15,
+                "selling_price": 124,
                 "min_stock": 1,
-                "name": "Butane Refill",
-                "cost_price": 22,
-                "timestamp": {
-                    "seconds": 1767410325,
-                    "nanoseconds": 101000000
-                },
-                "barcode": "NULL",
-                "selling_price": 27,
-                "category": "none",
+                "stock_level": 0,
                 "base_unit": "Unit",
+                "supplier_id": "",
+                "updatedAt": "2026-01-03T20:30:30.277Z",
+                "qty": 1
+            },
+            {
+                "id": "040b1319-1762-4545-be69-c8dc8c02454f",
+                "barcode": "8996001346297",
+                "name": "Fres Cherry Mint Candy 50x3g",
+                "category": "CANDY",
+                "cost_price": 40.15,
+                "selling_price": 46,
+                "min_stock": 2,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "",
+                "updatedAt": "2026-01-03T20:30:30.277Z",
+                "qty": 1
+            },
+            {
+                "id": "04429860-a549-4f62-84bd-2a6775c8dfb2",
+                "barcode": "4800047840548",
+                "name": "Zonrox Bleach Floral 100ml",
+                "category": "DETERGENT",
+                "cost_price": 9.1,
+                "selling_price": 11,
+                "min_stock": 2,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "",
+                "updatedAt": "2026-01-03T20:30:30.275Z",
+                "qty": 1
+            },
+            {
+                "id": "045f8fca-0a31-4744-ae16-99a99eefe6bf",
+                "barcode": "024000010920",
+                "name": "DM Fruit Cocktail 825g",
+                "category": "CANNED GOODS",
+                "cost_price": 179,
+                "selling_price": 199,
+                "min_stock": 1,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "",
+                "updatedAt": "2026-01-03T20:30:30.277Z",
                 "qty": 1
             }
         ],
@@ -53,8 +64,52 @@
             "name": "Guest"
         },
         "user_email": "admin@lightpos.com",
-        "timestamp": "2026-01-03T19:35:24.866Z",
-        "total": 27,
+        "timestamp": "2026-01-03T20:31:26.832Z",
+        "total": 380,
+        "sync_status": 0
+    },
+    {
+        "id": "8bef0ec2-eb61-4cb6-a46e-9e5585e37e83",
+        "items": [
+            {
+                "id": "05977b59-0c01-4deb-9d8c-f0d19d03f87d",
+                "barcode": "NULL",
+                "name": "Liwayway Gawgaw 75g",
+                "category": "BAKING ESSENTIALS",
+                "cost_price": 9.5,
+                "selling_price": 12,
+                "min_stock": 1,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "",
+                "updatedAt": "2026-01-03T20:30:30.277Z",
+                "qty": 1
+            },
+            {
+                "id": "05953c7c-ed13-4f77-9675-47c69b0275cf",
+                "barcode": "6920354811920",
+                "name": "Colgate Optic White 40g",
+                "category": "PERSONAL HYGIENE",
+                "cost_price": 67.5,
+                "selling_price": 73,
+                "min_stock": 1,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "",
+                "updatedAt": "2026-01-03T20:30:30.277Z",
+                "qty": 1
+            }
+        ],
+        "customer": {
+            "id": "f6a9044d-5194-4af0-ad63-540968367c61",
+            "name": "Mike Hawk",
+            "phone": "2i44opi4",
+            "email": "",
+            "loyalty_points": 0
+        },
+        "user_email": "admin@lightpos.com",
+        "timestamp": "2026-01-03T20:31:41.474Z",
+        "total": 85,
         "sync_status": 0
     }
 ]

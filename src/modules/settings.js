@@ -17,6 +17,7 @@ export async function loadSettingsView() {
                     <button data-tab="store" class="settings-tab-btn border-blue-500 text-blue-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Store Info</button>
                     <button data-tab="tax" class="settings-tab-btn border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Tax Settings</button>
                     <button data-tab="rewards" class="settings-tab-btn border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Rewards & Loyalty</button>
+                    <button data-tab="advanced" class="settings-tab-btn border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Advanced</button>
                 </nav>
             </div>
 
@@ -85,6 +86,15 @@ export async function loadSettingsView() {
                     </div>
                 </div>
 
+                <!-- Advanced Tab -->
+                <div id="settings-tab-advanced" class="settings-panel hidden space-y-6">
+                    <div class="bg-white p-6 rounded-lg shadow-sm border border-red-100">
+                        <h3 class="text-lg font-bold mb-4 text-red-600">Danger Zone</h3>
+                        <p class="text-sm text-gray-600 mb-4">This will permanently delete all transactions, items, and history from the server and local database. Users will be preserved.</p>
+                        <button type="button" id="btn-nuclear-reset" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition">Wipe All Data</button>
+                    </div>
+                </div>
+
                 <div class="mt-8 flex justify-end">
                     <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition ${canWrite ? '' : 'hidden'}">
                         Save All Settings
@@ -138,6 +148,24 @@ function setupEventListeners() {
     });
 
     document.getElementById("form-settings").addEventListener("submit", handleSave);
+
+    document.getElementById("btn-nuclear-reset")?.addEventListener("click", async () => {
+        if (confirm("ARE YOU ABSOLUTELY SURE? This cannot be undone. All sales and inventory data will be lost.")) {
+            if (confirm("Final confirmation: Delete everything?")) {
+                try {
+                    const res = await fetch(`${API_URL}?action=reset_all`, { method: 'POST' });
+                    if (res.ok) {
+                        const { db } = await import("../db.js");
+                        await db.delete();
+                        alert("System reset complete. The app will now reload.");
+                        window.location.reload();
+                    }
+                } catch (e) {
+                    alert("Reset failed: " + e.message);
+                }
+            }
+        }
+    });
 }
 
 async function loadSettings() {

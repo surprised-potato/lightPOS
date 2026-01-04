@@ -1,767 +1,294 @@
 [
     {
+        "id": "65905363-74c2-46d5-bc7a-525c184b638d",
         "items": [
             {
-                "id": "01x0ecwBktmEyAyO2RYi",
-                "cost_price": 117.7,
-                "barcode": "4800140001082",
-                "min_stock": 2,
-                "name": "Bactidol 60mL",
-                "stock_level": 0,
-                "base_unit": "Unit",
-                "category": "MEDICINE",
-                "timestamp": {
-                    "seconds": 1767410307,
-                    "nanoseconds": 284000000
-                },
-                "selling_price": 131,
-                "qty": 1
-            },
-            {
-                "id": "02saxS6dA8z2jwEb3YgO",
-                "barcode": "4800086038692",
-                "base_unit": "Unit",
-                "name": "Selecta 2in1 Quezo Buco Salad 1.5L",
-                "stock_level": 0,
-                "timestamp": {
-                    "seconds": 1767410305,
-                    "nanoseconds": 595000000
-                },
-                "selling_price": 250,
-                "min_stock": 2,
-                "cost_price": 222.72,
-                "category": "ICE CREAM",
-                "qty": 1
-            }
-        ],
-        "total_amount": 381,
-        "amount_tendered": 1000,
-        "change": 619,
-        "user_email": "admin@lightpos.com",
-        "timestamp": "2026-01-03T08:52:36.038Z",
-        "sync_status": 1,
-        "id": "98f10bf5-4556-404d-b91d-74245a4d311a"
-    },
-    {
-        "items": [
-            {
-                "id": "00pyyobyPZbSsU00GGHm",
-                "min_stock": 1,
-                "cost_price": 79.5,
-                "stock_level": 0,
-                "barcode": "9556006012086",
-                "timestamp": {
-                    "seconds": 1767410325,
-                    "nanoseconds": 100000000
-                },
+                "id": "00004c0f-3149-4124-90d4-923cd7c98945",
+                "barcode": "00011",
+                "name": "Royal nail Cutter Small",
                 "category": "PERSONAL HYGIENE",
-                "name": "JJ Baby Bath Mild 100ml",
-                "selling_price": 91,
-                "base_unit": "Unit",
-                "qty": 1
-            },
-            {
-                "id": "02saxS6dA8z2jwEb3YgO",
-                "barcode": "4800086038692",
-                "base_unit": "Unit",
-                "name": "Selecta 2in1 Quezo Buco Salad 1.5L",
-                "stock_level": -1,
-                "timestamp": {
-                    "seconds": 1767410305,
-                    "nanoseconds": 595000000
-                },
-                "selling_price": 250,
-                "min_stock": 2,
-                "cost_price": 222.72,
-                "category": "ICE CREAM",
-                "qty": 1
-            },
-            {
-                "id": "04BV4HPTDrLcTFdsa4lk",
-                "timestamp": {
-                    "seconds": 1767410326,
-                    "nanoseconds": 666000000
-                },
-                "barcode": "4806524422665",
-                "category": "CANNED GOODS",
-                "min_stock": 1,
-                "selling_price": 25,
-                "base_unit": "Unit",
-                "stock_level": 0,
-                "name": "Suy  Chick Loaf 150g",
-                "cost_price": 23,
-                "qty": 1
-            }
-        ],
-        "total_amount": 366,
-        "amount_tendered": 500,
-        "change": 134,
-        "user_email": "admin@lightpos.com",
-        "customer_id": "afed138b-bd44-4613-b963-3bca1c0ef750",
-        "customer_name": "New Customer",
-        "timestamp": "2026-01-03T10:08:48.253Z",
-        "sync_status": 1,
-        "id": "77df5ba8-ed57-4be4-94f0-01f1d480691a"
-    },
-    {
-        "items": [
-            {
-                "id": "00URMnlOhNs7ZXRH5ssL",
-                "parent_id": null,
-                "cost_price": 111.38,
-                "barcode": "4902430759267",
-                "min_stock": 1,
-                "timestamp": {
-                    "seconds": 1767410323,
-                    "nanoseconds": 496000000
-                },
-                "category": "CLEANING SOLUTION",
-                "base_unit": "Unit",
-                "name": "Tide Powder 650g GB PF",
-                "stock_level": 0,
-                "conv_factor": 1,
-                "supplier_id": "",
-                "selling_price": 123,
-                "qty": 1
-            },
-            {
-                "id": "00j72Gb7NIcZPz5rB7nD",
-                "selling_price": 159,
-                "timestamp": {
-                    "seconds": 1767410307,
-                    "nanoseconds": 282000000
-                },
-                "min_stock": 2,
-                "name": "Big Shot Hotdog Classic King 1K",
-                "barcode": "4800088288347",
-                "category": "FROZEN FOODS",
-                "stock_level": 0,
-                "base_unit": "Unit",
-                "cost_price": 146,
-                "qty": 1
-            }
-        ],
-        "total_amount": 282,
-        "amount_tendered": 1000,
-        "change": 718,
-        "user_email": "admin@lightpos.com",
-        "customer_id": "ed377109-9e1f-434c-9342-c5e3a2d3aa7a",
-        "customer_name": "Juan Dela",
-        "timestamp": "2026-01-03T10:17:38.439Z",
-        "sync_status": 1,
-        "id": "2d053917-5b3f-4764-a2f7-738ce200413a"
-    },
-    {
-        "items": [
-            {
-                "id": "Vgg4rZj2DsuCQGRW677A",
-                "min_stock": 1,
-                "stock_level": 0,
-                "selling_price": 29,
-                "cost_price": 21.65,
-                "name": "GILAS PAPER PLATE #9",
-                "barcode": "4806525910543",
-                "timestamp": {
-                    "seconds": 1767410326,
-                    "nanoseconds": 668000000
-                },
-                "category": "PLATE",
-                "base_unit": "Unit",
-                "qty": 1
-            }
-        ],
-        "total_amount": 29,
-        "amount_tendered": 100,
-        "change": 71,
-        "user_email": "admin@lightpos.com",
-        "customer_id": "cfb8b09c-3a1e-4fbd-94f2-881bae9a9204",
-        "customer_name": "Jonas Brate",
-        "timestamp": "2026-01-03T10:34:06.665Z",
-        "sync_status": 1,
-        "id": "b8bba4d7-54b8-44f1-9c81-e17ca6aac24d"
-    },
-    {
-        "items": [
-            {
-                "id": "01x0ecwBktmEyAyO2RYi",
-                "cost_price": 117.7,
-                "barcode": "4800140001082",
-                "min_stock": 2,
-                "name": "Bactidol 60mL",
-                "stock_level": 9,
-                "base_unit": "Unit",
-                "category": "MEDICINE",
-                "timestamp": {
-                    "seconds": 1767410307,
-                    "nanoseconds": 284000000
-                },
-                "selling_price": 131,
-                "qty": 1
-            },
-            {
-                "id": "02saxS6dA8z2jwEb3YgO",
-                "barcode": "4800086038692",
-                "base_unit": "Unit",
-                "name": "Selecta 2in1 Quezo Buco Salad 1.5L",
-                "stock_level": -2,
-                "timestamp": {
-                    "seconds": 1767410305,
-                    "nanoseconds": 595000000
-                },
-                "selling_price": 250,
-                "min_stock": 2,
-                "cost_price": 222.72,
-                "category": "ICE CREAM",
-                "qty": 4
-            }
-        ],
-        "total_amount": 1131,
-        "amount_tendered": 1200,
-        "change": 69,
-        "user_email": "admin@lightpos.com",
-        "customer_id": "afed138b-bd44-4613-b963-3bca1c0ef750",
-        "customer_name": "New Customer",
-        "timestamp": "2026-01-03T10:47:33.702Z",
-        "sync_status": 1,
-        "id": "d917b794-9654-43ce-9844-2a1daecdf0ce"
-    },
-    {
-        "items": [
-            {
-                "id": "0M9K4k4qgQj27wG5vNcP",
-                "stock_level": 0,
-                "min_stock": 2,
-                "cost_price": 105,
-                "barcode": "4808680230979",
-                "category": "SEASONINGS",
-                "base_unit": "Unit",
-                "timestamp": {
-                    "seconds": 1767410315,
-                    "nanoseconds": 253000000
-                },
-                "selling_price": 121,
-                "name": "Knorr Liquid Seasoning 250ml",
-                "qty": 1
-            },
-            {
-                "id": "0XhpK06qySBWU8Yx3yAr",
-                "category": "TBA",
-                "barcode": "6903848358",
-                "name": "ARIELSunrise FResh 48g 1\/2dz",
-                "cost_price": 42.12,
-                "base_unit": "Unit",
-                "min_stock": 2,
-                "stock_level": 0,
-                "selling_price": 51,
-                "timestamp": {
-                    "seconds": 1767410300,
-                    "nanoseconds": 571000000
-                },
-                "qty": 1
-            },
-            {
-                "id": "0iDcgoHcU4jwdqI7VlGR",
-                "base_unit": "Unit",
-                "category": "OIL",
-                "timestamp": {
-                    "seconds": 1767410302,
-                    "nanoseconds": 298000000
-                },
-                "min_stock": 2,
-                "name": "Golden Fiesta Palm Oil1L",
-                "selling_price": 99,
-                "stock_level": 0,
-                "cost_price": 87,
-                "barcode": "14285003410",
-                "qty": 1
-            }
-        ],
-        "total_amount": 271,
-        "amount_tendered": 1000,
-        "change": 729,
-        "user_email": "JohnRoss@LP.com",
-        "customer_id": "Guest",
-        "customer_name": "Guest",
-        "timestamp": "2026-01-03T11:56:15.089Z",
-        "sync_status": 1,
-        "id": "619b570b-cc42-45f3-8bf8-05bc53c231ab"
-    },
-    {
-        "items": [
-            {
-                "id": "1Qvv92oCtDA6gM34WPiV",
-                "timestamp": {
-                    "seconds": 1767410316,
-                    "nanoseconds": 772000000
-                },
-                "min_stock": 2,
-                "name": "Mr Hat Gulaman Buko Pandan 24g",
-                "selling_price": 17,
-                "cost_price": 14.09,
-                "category": "jelly",
-                "stock_level": 0,
-                "barcode": "4809013526271",
-                "base_unit": "Unit",
-                "qty": 1
-            },
-            {
-                "id": "1Rft4o54DEza55jiLE82",
-                "category": "NOODLES",
-                "min_stock": 2,
-                "stock_level": 0,
-                "selling_price": 99,
-                "base_unit": "Unit",
-                "timestamp": {
-                    "seconds": 1767410303,
-                    "nanoseconds": 829000000
-                },
-                "barcode": "4800017910707",
-                "name": "RAM SALAD MACARONI 1Kg",
-                "cost_price": 88.35,
-                "qty": 1
-            },
-            {
-                "id": "1UxVMR3maD16dRuERHDo",
-                "selling_price": 70,
-                "stock_level": 0,
-                "barcode": "4204955216",
-                "min_stock": 2,
-                "base_unit": "Unit",
-                "category": "rice",
-                "timestamp": {
-                    "seconds": 1767410297,
-                    "nanoseconds": 762000000
-                },
-                "cost_price": 55,
-                "name": "Margarine 1kl",
-                "qty": 1
-            },
-            {
-                "id": "vAIwvkivefAicKtEP3zw",
-                "cost_price": 61.8,
-                "timestamp": {
-                    "seconds": 1767410323,
-                    "nanoseconds": 495000000
-                },
-                "barcode": "4800274372331",
-                "stock_level": 0,
-                "min_stock": 1,
-                "base_unit": "Unit",
-                "selling_price": 71,
-                "category": "CEREAL",
-                "name": "Quaker Oats Banana 6x33g",
-                "qty": 1
-            }
-        ],
-        "total_amount": 257,
-        "amount_tendered": 500,
-        "change": 243,
-        "user_email": "JohnRoss@LP.com",
-        "customer_id": "Guest",
-        "customer_name": "Guest",
-        "timestamp": "2026-01-03T11:56:50.849Z",
-        "sync_status": 1,
-        "id": "0399a292-2969-4ed0-8843-02ba88b98ffc"
-    },
-    {
-        "items": [
-            {
-                "id": "L61LBo2l70yW5t9BNmsK",
-                "timestamp": {
-                    "seconds": 1767410320,
-                    "nanoseconds": 81000000
-                },
-                "cost_price": 27.9,
-                "base_unit": "Unit",
-                "stock_level": 0,
-                "barcode": "9555513203017",
-                "name": "Jersey Evaporada 370ml",
-                "category": "CANNED MILK",
+                "cost_price": 25,
                 "selling_price": 32,
-                "min_stock": 2,
-                "qty": 3
-            },
-            {
-                "id": "DnaeZvXVZ9uZwCVh1yBp",
-                "stock_level": 0,
                 "min_stock": 1,
-                "selling_price": 53,
-                "category": "MILK",
-                "cost_price": 47.6,
+                "stock_level": 0,
                 "base_unit": "Unit",
-                "name": "Angel All Purpose Creamer",
-                "timestamp": {
-                    "seconds": 1767410323,
-                    "nanoseconds": 497000000
-                },
-                "barcode": "748485402062",
+                "supplier_id": "",
+                "updatedAt": "2026-01-03T20:29:00.240Z",
+                "qty": 1
+            },
+            {
+                "id": "0030a3d4-d115-44e1-b5c1-9641f6b6e9fe",
+                "barcode": "8998389121688",
+                "name": "Kukis Kelapa Coconut Cookies 18g",
+                "category": "BISCUITS",
+                "cost_price": 7,
+                "selling_price": 7,
+                "min_stock": 1,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "",
+                "updatedAt": "2026-01-03T20:29:00.240Z",
+                "qty": 1
+            },
+            {
+                "id": "0064ba5b-7c97-447b-adf5-750e78a1cf36",
+                "barcode": "4800058945676",
+                "name": "Philips Dry Peas 155g",
+                "category": "TBA",
+                "cost_price": 11.9,
+                "selling_price": 15,
+                "min_stock": 2,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "",
+                "updatedAt": "2026-01-03T20:29:00.237Z",
                 "qty": 1
             }
         ],
-        "total_amount": 149,
-        "amount_tendered": 200,
-        "change": 51,
-        "user_email": "JohnRoss@LP.com",
-        "customer_id": "Guest",
-        "customer_name": "Guest",
-        "timestamp": "2026-01-03T12:12:16.613Z",
-        "sync_status": 1,
-        "id": "bfbb565b-674d-41f6-b104-7abd0ecce6df"
-    },
-    {
-        "items": [
-            {
-                "id": "06lVnQBxodbNevev7nL2",
-                "base_unit": "Unit",
-                "cost_price": 29.35,
-                "stock_level": 0,
-                "category": "BAKING ESSENTIALS",
-                "min_stock": 2,
-                "timestamp": {
-                    "seconds": 1767410297,
-                    "nanoseconds": 758000000
-                },
-                "selling_price": 36,
-                "name": "Efficascent oil Extra Strengh 25ml",
-                "barcode": "48035156",
-                "qty": 1
-            },
-            {
-                "id": "06cZSGyuJBIlZUYB6pNR",
-                "cost_price": 14.09,
-                "min_stock": 2,
-                "selling_price": 17,
-                "stock_level": 0,
-                "timestamp": {
-                    "seconds": 1767410316,
-                    "nanoseconds": 772000000
-                },
-                "base_unit": "Unit",
-                "barcode": "4809013526325",
-                "category": "jelly",
-                "name": "Mr Hat Gulaman Green 25g",
-                "qty": 1
-            },
-            {
-                "id": "089Ruvf11Gt1rZ3vzspG",
-                "name": "Albatross Lemon 50g",
-                "min_stock": 2,
-                "barcode": "4800067600108",
-                "stock_level": 0,
-                "selling_price": 31,
-                "cost_price": 27.25,
-                "timestamp": {
-                    "seconds": 1767410305,
-                    "nanoseconds": 595000000
-                },
-                "category": "TBA",
-                "base_unit": "Unit",
-                "qty": 1
-            },
-            {
-                "id": "08IWurwBKEHZUcJNmBQF",
-                "selling_price": 30,
-                "name": "Sunsilk smooth & Manageable 1\/2 dz",
-                "min_stock": 2,
-                "cost_price": 23.5,
-                "base_unit": "Unit",
-                "barcode": "6894941669",
-                "timestamp": {
-                    "seconds": 1767410300,
-                    "nanoseconds": 571000000
-                },
-                "stock_level": 0,
-                "category": "TBA",
-                "qty": 1
-            }
-        ],
-        "total_amount": 114,
-        "amount_tendered": 150,
-        "change": 36,
-        "tax_amount": 12.214285714285722,
-        "payment_method": "Cash",
-        "user_email": "cashier@lp.com",
-        "customer_id": "Guest",
-        "customer_name": "Guest",
-        "timestamp": "2026-01-03T15:52:59.546Z",
-        "sync_status": 1,
-        "is_voided": false,
-        "id": "2b042eb2-9491-46e3-bf73-dbfcc1eac4e7"
-    },
-    {
-        "items": [
-            {
-                "id": "06lVnQBxodbNevev7nL2",
-                "base_unit": "Unit",
-                "cost_price": 29.35,
-                "stock_level": 0,
-                "category": "BAKING ESSENTIALS",
-                "min_stock": 2,
-                "timestamp": {
-                    "seconds": 1767410297,
-                    "nanoseconds": 758000000
-                },
-                "selling_price": 36,
-                "name": "Efficascent oil Extra Strengh 25ml",
-                "barcode": "48035156",
-                "qty": 1
-            },
-            {
-                "id": "06cZSGyuJBIlZUYB6pNR",
-                "cost_price": 14.09,
-                "min_stock": 2,
-                "selling_price": 17,
-                "stock_level": 0,
-                "timestamp": {
-                    "seconds": 1767410316,
-                    "nanoseconds": 772000000
-                },
-                "base_unit": "Unit",
-                "barcode": "4809013526325",
-                "category": "jelly",
-                "name": "Mr Hat Gulaman Green 25g",
-                "qty": 1
-            },
-            {
-                "id": "089Ruvf11Gt1rZ3vzspG",
-                "name": "Albatross Lemon 50g",
-                "min_stock": 2,
-                "barcode": "4800067600108",
-                "stock_level": 0,
-                "selling_price": 31,
-                "cost_price": 27.25,
-                "timestamp": {
-                    "seconds": 1767410305,
-                    "nanoseconds": 595000000
-                },
-                "category": "TBA",
-                "base_unit": "Unit",
-                "qty": 1
-            },
-            {
-                "id": "08IWurwBKEHZUcJNmBQF",
-                "selling_price": 30,
-                "name": "Sunsilk smooth & Manageable 1\/2 dz",
-                "min_stock": 2,
-                "cost_price": 23.5,
-                "base_unit": "Unit",
-                "barcode": "6894941669",
-                "timestamp": {
-                    "seconds": 1767410300,
-                    "nanoseconds": 571000000
-                },
-                "stock_level": 0,
-                "category": "TBA",
-                "qty": 1
-            }
-        ],
-        "total_amount": 114,
-        "amount_tendered": 150,
-        "change": 36,
-        "tax_amount": 12.214285714285722,
-        "payment_method": "Cash",
-        "user_email": "cashier@lp.com",
-        "customer_id": "Guest",
-        "customer_name": "Guest",
-        "timestamp": "2026-01-03T15:52:59.546Z",
-        "sync_status": 1,
-        "is_voided": true,
-        "id": "cf5b3a4b-5904-4ee4-b747-f3a9f5d1004d",
-        "voided_at": "2026-01-03T16:02:39.708Z",
-        "voided_by": "cashier@lp.com",
-        "local_id": 8
-    },
-    {
-        "items": [
-            {
-                "id": "x0ZQoxjRRZ93KJgWYuaY",
-                "timestamp": {
-                    "seconds": 1767410320,
-                    "nanoseconds": 79000000
-                },
-                "category": "CANNED MILK",
-                "cost_price": 30.24,
-                "min_stock": 2,
-                "barcode": "8888168012422",
-                "stock_level": 0,
-                "selling_price": 35,
-                "name": "OKI SWEETENED CONDENSED CREAMER 390g",
-                "base_unit": "Unit",
-                "qty": 1
-            },
-            {
-                "id": "0DNUAUY4LKIbUOMPS71w",
-                "selling_price": 27,
-                "base_unit": "Unit",
-                "min_stock": 2,
-                "barcode": "4806516144056",
-                "name": "Jolly Ole Chef APF 200g",
-                "stock_level": 0,
-                "cost_price": 22.13,
-                "timestamp": {
-                    "seconds": 1767410313,
-                    "nanoseconds": 789000000
-                },
-                "category": "TBA",
-                "qty": 1
-            }
-        ],
-        "total_amount": 62,
+        "total_amount": 54,
         "amount_tendered": 100,
-        "change": 38,
-        "tax_amount": 6.642857142857146,
-        "payment_method": "Cash",
-        "user_email": "admin@lightpos.com",
-        "customer_id": "f4e3c458-34c1-4490-afd5-7a12b399545c",
-        "customer_name": "normal customer",
-        "timestamp": "2026-01-03T16:58:53.494Z",
-        "sync_status": 1,
-        "is_voided": false,
-        "id": "a16de956-e6f6-45e8-b8ad-1d618017a46d"
-    },
-    {
-        "items": [
-            {
-                "id": "00j72Gb7NIcZPz5rB7nD",
-                "selling_price": 159,
-                "timestamp": {
-                    "seconds": 1767410307,
-                    "nanoseconds": 282000000
-                },
-                "min_stock": 2,
-                "name": "Big Shot Hotdog Classic King 1K",
-                "barcode": "4800088288347",
-                "category": "FROZEN FOODS",
-                "stock_level": 10,
-                "base_unit": "Unit",
-                "cost_price": 146,
-                "qty": 1
-            },
-            {
-                "id": "01x0ecwBktmEyAyO2RYi",
-                "cost_price": 117.7,
-                "barcode": "4800140001082",
-                "min_stock": 2,
-                "name": "Bactidol 60mL",
-                "stock_level": 8,
-                "base_unit": "Unit",
-                "category": "MEDICINE",
-                "timestamp": {
-                    "seconds": 1767410307,
-                    "nanoseconds": 284000000
-                },
-                "selling_price": 131,
-                "qty": 1
-            },
-            {
-                "id": "095aMExbcACFwU2dOk8E",
-                "stock_level": 0,
-                "selling_price": 104,
-                "min_stock": 2,
-                "base_unit": "Unit",
-                "category": "PERSONAL HYGIENE",
-                "barcode": "4806789519186",
-                "timestamp": {
-                    "seconds": 1767410315,
-                    "nanoseconds": 252000000
-                },
-                "cost_price": 86.4,
-                "name": "Master Oil Ctrl Max 50g",
-                "qty": 1
-            },
-            {
-                "id": "0AF0pW6fT8326zmU0ZKV",
-                "base_unit": "Unit",
-                "timestamp": {
-                    "seconds": 1767410329,
-                    "nanoseconds": 594000000
-                },
-                "selling_price": 13,
-                "category": "NOODLES",
-                "stock_level": 0,
-                "min_stock": 1,
-                "name": "Lm Beef Chilimansi 53G",
-                "barcode": "4807770274893",
-                "cost_price": 9.75,
-                "qty": 1
-            }
-        ],
-        "total_amount": 407,
-        "amount_tendered": 500,
-        "change": 93,
-        "tax_amount": 43.60714285714289,
-        "payment_method": "Cash",
-        "user_email": "cashier@lp.com",
-        "customer_id": "Guest",
-        "customer_name": "Guest",
-        "timestamp": "2026-01-03T18:31:42.606Z",
-        "sync_status": 1,
-        "is_voided": false,
-        "id": "20d5833e-0c51-43bb-865d-478467834fcd"
-    },
-    {
-        "items": [
-            {
-                "id": "00pyyobyPZbSsU00GGHm",
-                "min_stock": 1,
-                "cost_price": 79.5,
-                "stock_level": -1,
-                "barcode": "9556006012086",
-                "timestamp": {
-                    "seconds": 1767410325,
-                    "nanoseconds": 100000000
-                },
-                "category": "PERSONAL HYGIENE",
-                "name": "JJ Baby Bath Mild 100ml",
-                "selling_price": 91,
-                "base_unit": "Unit",
-                "qty": 1
-            },
-            {
-                "id": "02saxS6dA8z2jwEb3YgO",
-                "barcode": "4800086038692",
-                "base_unit": "Unit",
-                "name": "Selecta 2in1 Quezo Buco Salad 1.5L",
-                "stock_level": -6,
-                "timestamp": {
-                    "seconds": 1767410305,
-                    "nanoseconds": 595000000
-                },
-                "selling_price": 250,
-                "min_stock": 2,
-                "cost_price": 222.72,
-                "category": "ICE CREAM",
-                "qty": 1
-            },
-            {
-                "id": "06lVnQBxodbNevev7nL2",
-                "base_unit": "Unit",
-                "cost_price": 29.35,
-                "stock_level": -1,
-                "category": "BAKING ESSENTIALS",
-                "min_stock": 2,
-                "timestamp": {
-                    "seconds": 1767410297,
-                    "nanoseconds": 758000000
-                },
-                "selling_price": 36,
-                "name": "Efficascent oil Extra Strengh 25ml",
-                "barcode": "48035156",
-                "qty": 1
-            }
-        ],
-        "total_amount": 377,
-        "amount_tendered": 500,
-        "change": 123,
-        "tax_amount": 40.39285714285717,
+        "change": 46,
+        "tax_amount": 0,
         "payment_method": "Cash",
         "user_email": "admin@lightpos.com",
         "customer_id": "Guest",
         "customer_name": "Guest",
         "points_earned": 0,
-        "timestamp": "2026-01-03T19:18:42.343Z",
+        "timestamp": "2026-01-03T20:29:36.177Z",
         "sync_status": 1,
-        "is_voided": false,
-        "id": "14825cd7-3fc2-4188-983e-b459153e5123"
+        "is_voided": false
+    },
+    {
+        "id": "bdc41dd3-2859-405e-884b-69e7f19003c1",
+        "items": [
+            {
+                "id": "00010f86-e2da-465b-b0ca-9f056d377a53",
+                "barcode": "NULL",
+                "name": "Crocs Footwear",
+                "category": "TBA",
+                "cost_price": 85,
+                "selling_price": 119,
+                "min_stock": 1,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "",
+                "updatedAt": "2026-01-03T20:30:30.278Z",
+                "qty": 1
+            },
+            {
+                "id": "003efa03-67d7-415c-b54b-85bcc44c0264",
+                "barcode": "4800086045355",
+                "name": "Selecta 2in1 Pistachio & Double Dutch 750ml",
+                "category": "ICE CREAM",
+                "cost_price": 135.52,
+                "selling_price": 155,
+                "min_stock": 2,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "",
+                "updatedAt": "2026-01-03T20:30:30.275Z",
+                "qty": 5
+            },
+            {
+                "id": "0066405d-8190-451c-8f9d-31e944fdf5df",
+                "barcode": "4800068901105",
+                "name": "Mothers Best Kaldrta 40g",
+                "category": "TBA",
+                "cost_price": 28.55,
+                "selling_price": 32,
+                "min_stock": 2,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "",
+                "updatedAt": "2026-01-03T20:30:30.275Z",
+                "qty": 9
+            },
+            {
+                "id": "0096f256-42ff-431d-b40e-c2d13a47a93f",
+                "barcode": "4800361419963",
+                "name": "Nescafe White 58gx10 Promo",
+                "category": "COFFEE",
+                "cost_price": 110.15,
+                "selling_price": 124,
+                "min_stock": 1,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "",
+                "updatedAt": "2026-01-03T20:30:30.277Z",
+                "qty": 1
+            }
+        ],
+        "total_amount": 1306,
+        "amount_tendered": 1500,
+        "change": 194,
+        "tax_amount": 0,
+        "payment_method": "Cash",
+        "user_email": "admin@lightpos.com",
+        "customer_id": "92815335-87bb-46f3-95ea-146dcbe331df",
+        "customer_name": "Jun Jun Batumbakal",
+        "points_earned": 13,
+        "timestamp": "2026-01-03T20:31:07.781Z",
+        "sync_status": 1,
+        "is_voided": false
+    },
+    {
+        "id": "11bebc68-eb14-43d4-a8bd-482be0ebaa40",
+        "items": [
+            {
+                "id": "000777fc-5ebf-47ff-a27d-a48a7e0c0e75",
+                "barcode": "NULL",
+                "name": "Fine Comb",
+                "category": "TBA",
+                "cost_price": 6,
+                "selling_price": 7,
+                "min_stock": 2,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "",
+                "updatedAt": "2026-01-03T20:38:43.793Z",
+                "qty": 1
+            },
+            {
+                "id": "00284c91-8090-491c-95f9-fc131cbd7ee5",
+                "barcode": "4800488961482",
+                "name": "Charmee Prt Pack",
+                "category": "BAKING ESSENTIALS",
+                "cost_price": 35.26,
+                "selling_price": 41,
+                "min_stock": 2,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "",
+                "updatedAt": "2026-01-03T20:38:43.784Z",
+                "qty": 1
+            },
+            {
+                "id": "036a6500-986d-48c8-ad54-88c99e0413f5",
+                "barcode": "4805358323032",
+                "name": "Magnolia Quickmelt 165g",
+                "category": "CONDIMENTS",
+                "cost_price": 85.5,
+                "selling_price": 90,
+                "min_stock": 2,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "",
+                "updatedAt": "2026-01-03T20:38:43.784Z",
+                "qty": 1
+            },
+            {
+                "id": "03673097-2f64-4884-ab16-7bb8d7589869",
+                "barcode": "NULL",
+                "name": "clear book ",
+                "category": "SCHOOL SUPPLIES",
+                "cost_price": 39,
+                "selling_price": 49,
+                "min_stock": 1,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "",
+                "updatedAt": "2026-01-03T20:38:43.794Z",
+                "qty": 1
+            },
+            {
+                "id": "04fd8ba0-1e3f-4d4b-a942-6063e7152f24",
+                "barcode": "4800110094779",
+                "name": "Selecta Dolce Chocolate Milk 1L",
+                "category": "MILK",
+                "cost_price": 92.29,
+                "selling_price": 99,
+                "min_stock": 1,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "",
+                "updatedAt": "2026-01-03T20:38:43.794Z",
+                "qty": 1
+            },
+            {
+                "id": "051af160-e1d8-44e5-bdcd-4db69a6fa424",
+                "barcode": "4800016074721",
+                "name": "B'lue Cactus Tangarine 500ml",
+                "category": "DRINK",
+                "cost_price": 34,
+                "selling_price": 39,
+                "min_stock": 1,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "",
+                "updatedAt": "2026-01-03T20:38:43.794Z",
+                "qty": 1
+            }
+        ],
+        "total_amount": 325,
+        "amount_tendered": 500,
+        "change": 175,
+        "tax_amount": 0,
+        "payment_method": "Cash",
+        "user_email": "admin@lightpos.com",
+        "customer_id": "95f47548-b028-4eee-a40a-9d3ac973eeac",
+        "customer_name": "Leila Dela",
+        "points_earned": 3,
+        "timestamp": "2026-01-03T20:39:49.713Z",
+        "sync_status": 1,
+        "is_voided": false
+    },
+    {
+        "id": "mjyrp43yfhznab9wok",
+        "items": [
+            {
+                "id": "01399304-8dc4-41bd-99aa-69c81dbadbe6",
+                "barcode": "4800216130043",
+                "name": "Clover BBQ 145g",
+                "category": "TBA",
+                "cost_price": 38,
+                "selling_price": 43,
+                "min_stock": 2,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "",
+                "updatedAt": "2026-01-03T20:39:55.222Z",
+                "qty": 1
+            },
+            {
+                "id": "0142c3b4-aaa9-49d7-9cf6-03849a9db456",
+                "barcode": "5889916153",
+                "name": "Loperamide Diatabs Capsule 2mg",
+                "category": "MEDICINE",
+                "cost_price": 7.2,
+                "selling_price": 10,
+                "min_stock": 2,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "",
+                "updatedAt": "2026-01-03T20:39:55.222Z",
+                "qty": 60
+            },
+            {
+                "id": "026e179a-a251-464d-bbea-ad1779e7b4ec",
+                "barcode": "9555538117511",
+                "name": "Mantika 250ml",
+                "category": "TBA",
+                "cost_price": 18,
+                "selling_price": 23,
+                "min_stock": 2,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "",
+                "updatedAt": "2026-01-03T20:39:55.223Z",
+                "qty": 1
+            }
+        ],
+        "total_amount": 666,
+        "amount_tendered": 666,
+        "change": 0,
+        "tax_amount": 0,
+        "payment_method": "Cash",
+        "user_email": "admin@lightpos.com",
+        "customer_id": "Guest",
+        "customer_name": "Guest",
+        "points_earned": 6,
+        "timestamp": "2026-01-03T20:40:45.838Z",
+        "sync_status": 1,
+        "is_voided": false
     }
 ]

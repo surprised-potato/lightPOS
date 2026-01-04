@@ -294,12 +294,13 @@ function updateSyncUI() {
     if (!label) return;
 
     const lastSync = localStorage.getItem('last_sync_timestamp');
-    if (!lastSync) {
+    const date = new Date(lastSync);
+
+    if (!lastSync || isNaN(date.getTime())) {
         label.textContent = "Never synced";
         return;
     }
 
-    const date = new Date(lastSync);
     const now = new Date();
     const diffMs = now - date;
     const diffMin = Math.floor(diffMs / 60000);

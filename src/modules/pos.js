@@ -798,6 +798,7 @@ async function processTransaction() {
     const pointsEarned = Math.floor(total / rewardRatio);
     
     const transaction = {
+        id: (self.crypto?.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).substring(2)),
         items: JSON.parse(JSON.stringify(cart)), // Deep copy
         total_amount: total,
         amount_tendered: tendered,
@@ -815,7 +816,7 @@ async function processTransaction() {
 
     try {
         // 1. Save to Dexie (Offline First)
-        const txId = await db.transactions.add(transaction);
+        await db.transactions.put(transaction);
 
         // 2. Update Local Dexie Items
         for (const item of transaction.items) {
@@ -853,7 +854,7 @@ async function processTransaction() {
             if (!Array.isArray(serverTxs)) serverTxs = [];
             
             // Add to server transactions
-            serverTxs.push({ ...transaction, id: crypto.randomUUID(), sync_status: 1 });
+            serverTxs.push({ ...transaction, sync_status: 1 });
 
             await fetch(`${API_URL}?file=transactions`, {
                 method: 'POST',
@@ -877,14 +878,14 @@ async function processTransaction() {
             }
 
             // Mark Local as Synced
-            await db.transactions.update(txId, { sync_status: 1 });
+            await db.transactions.update(transaction.id, { sync_status: 1 });
 
         } catch (serverError) {
             console.warn("Server sync failed (Offline mode active):", serverError);
             // Do not alert user, just log. Transaction is safe in Dexie with sync_status=0.
         }
 
-        lastTransactionData = { ...transaction, id: txId };
+        lastTransactionData = transaction;
         cart = [];
         renderCart();
         closeCheckout();

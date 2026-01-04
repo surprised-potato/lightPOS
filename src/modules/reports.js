@@ -738,28 +738,16 @@ async function generateReport() {
         const localStockIn = await db.stockins.toArray();
         const allItems = await db.items.toArray();
 
-        // Fetch supporting data from server
-        const [shiftsRes, customersRes, suppliersRes, stockInRes, adjustmentsRes] = await Promise.all([
-            fetch('api/router.php?file=shifts'),
-            fetch('api/router.php?file=customers'),
-            fetch('api/router.php?file=suppliers'),
-            fetch('api/router.php?file=stock_in_history'),
-            fetch('api/router.php?file=adjustments')
+        // Fetch supporting data from local Dexie
+        const [shifts, customers, suppliers, adjustments] = await Promise.all([
+            db.shifts.toArray(),
+            db.customers.toArray(),
+            db.suppliers.toArray(),
+            db.adjustments.toArray()
         ]);
 
-        const safeJson = async (res) => {
-            try { return await res.json(); } catch(e) { return []; }
-        };
-
-        const shifts = await safeJson(shiftsRes);
-        const customers = await safeJson(customersRes);
-        const suppliers = await safeJson(suppliersRes);
-        const serverStockIn = await safeJson(stockInRes);
-        const adjustments = await safeJson(adjustmentsRes);
-
-        // Merge Stock-In History (Server + Local)
+        // Merge Stock-In History (Local Dexie already contains synced server data)
         const historyMap = new Map();
-        if (Array.isArray(serverStockIn)) serverStockIn.forEach(entry => historyMap.set(entry.id, entry));
         if (Array.isArray(localStockIn)) localStockIn.forEach(entry => historyMap.set(entry.id, entry));
         
         const stockInHistory = Array.from(historyMap.values());

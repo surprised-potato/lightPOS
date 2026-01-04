@@ -1,178 +1,24 @@
 [
     {
-        "id": "f0cd876a-c072-4908-ba5b-c3891306d384",
-        "item_id": "00j72Gb7NIcZPz5rB7nD",
-        "item_name": "Big Shot Hotdog Classic King 1K",
-        "old_stock": -1,
-        "new_stock": 10,
-        "difference": 11,
+        "id": "14209148-8fd1-4186-a6bb-cdcefeac94d9",
+        "item_id": "fec6e1d0-f608-46f9-89bb-fcc5e63f200f",
+        "item_name": "ARIEL TWIN JUMBO PACK 66G",
+        "old_stock": 0,
+        "new_stock": 45,
+        "difference": 45,
         "reason": "Routine Audit",
-        "user": "JohnRoss@LP.com",
-        "timestamp": "2026-01-03T12:49:31.583Z"
+        "user": "admin@lightpos.com",
+        "timestamp": "2026-01-03T20:33:28.662Z"
     },
     {
-        "id": "1a696d6d-f12c-4950-b63a-222c2bb3c99e",
-        "item_id": "nJNfUNY0rH8yJnhedqdI",
-        "item_name": "Natures 350ml",
+        "id": "7736cd77-924d-4011-9063-06cd97a89e92",
+        "item_id": "22a5490c-d35b-40b1-b7ba-db54d7b32c57",
+        "item_name": "ARIEL Fantasy Perfume 36g",
         "old_stock": 0,
-        "new_stock": 10,
-        "difference": 10,
+        "new_stock": 12,
+        "difference": 12,
         "reason": "Routine Audit",
-        "user": "JohnRoss@LP.com",
-        "timestamp": "2026-01-03T13:20:57.214Z"
-    },
-    {
-        "id": "21d9ee0c-9038-4d4d-a3dc-bb24446cf3c3",
-        "item_id": "HcIxjEMRervTaE55rCNP",
-        "item_name": "Banana Chip",
-        "old_stock": 0,
-        "new_stock": 10,
-        "difference": 10,
-        "reason": "Routine Audit",
-        "user": "JohnRoss@LP.com",
-        "timestamp": "2026-01-03T13:21:11.337Z"
-    },
-    {
-        "id": "a716feda-1f32-401d-9068-821456575304",
-        "item_id": "Xahs11P8DmZJX2L5BJc6",
-        "item_name": "KEY CHAIN ID TAG",
-        "old_stock": 0,
-        "new_stock": 10,
-        "difference": 10,
-        "reason": "Routine Audit",
-        "user": "JohnRoss@LP.com",
-        "timestamp": "2026-01-03T13:21:35.715Z"
-    },
-    {
-        "id": "0e84302c-2d72-411b-a5d2-f8a035b49546",
-        "item_id": "WfnfVdFVKQFhZcplGsRp",
-        "item_name": "gold strike predator energy 245ml",
-        "old_stock": 0,
-        "new_stock": 15,
-        "difference": 15,
-        "reason": "Routine Audit",
-        "user": "JohnRoss@LP.com",
-        "timestamp": "2026-01-03T13:21:48.759Z"
-    },
-    {
-        "id": "fbfc86f7-2362-4648-ae0d-90d3064ac964",
-        "item_id": "UmK0qQXY4lrgZ9sBw6Nx",
-        "item_name": "A Plus Rice 1 kg",
-        "old_stock": 0,
-        "new_stock": -5,
-        "difference": -5,
-        "reason": "Routine Audit",
-        "user": "JohnRoss@LP.com",
-        "timestamp": "2026-01-03T13:23:16.158Z"
-    },
-    {
-        "id": "f9d0c650-f674-4dce-aa59-b29705a44c68",
-        "item_id": "2B56UETPqZXzj9gkgLY9",
-        "item_name": "Pilit 1KL",
-        "old_stock": 0,
-        "new_stock": 5,
-        "difference": 5,
-        "reason": "Routine Audit",
-        "user": "JohnRoss@LP.com",
-        "timestamp": "2026-01-03T13:23:40.034Z"
-    },
-    {
-        "id": "aef3d760-749c-45a0-8e71-e4f98d2b7443",
-        "item_id": "rslAJdewKpDmQamv5zJj",
-        "item_name": "Muscovado 1 KL",
-        "old_stock": 0,
-        "new_stock": 150,
-        "difference": 150,
-        "reason": "Routine Audit",
-        "user": "JohnRoss@LP.com",
-        "timestamp": "2026-01-03T13:23:55.351Z"
-    },
-    {
-        "id": "c11f848b-4115-477f-af81-e5acb817bd67",
-        "item_id": "FHVqorLboLCOKBlfCVW8",
-        "item_name": "Brown Sugar 1kg",
-        "old_stock": 0,
-        "new_stock": 15,
-        "difference": 15,
-        "reason": "Routine Audit",
-        "user": "JohnRoss@LP.com",
-        "timestamp": "2026-01-03T13:24:16.522Z"
-    },
-    {
-        "id": "561a0d92-9605-4bd0-892a-39c1527c1f51",
-        "item_id": "OCvrxg348eQeRNOvyfud",
-        "item_name": "555 Corned Sardines 100g",
-        "old_stock": 0,
-        "new_stock": 11,
-        "difference": 11,
-        "reason": "Routine Audit",
-        "user": "JohnRoss@LP.com",
-        "timestamp": "2026-01-03T13:24:31.878Z"
-    },
-    {
-        "id": "597114f4-e2f9-49cf-8d6b-b6a201f36ed0",
-        "item_id": "GA6BtuiydgMvnQHdRD5j",
-        "item_name": "EXTENTION CORD WITH SOCKET",
-        "old_stock": 0,
-        "new_stock": 2,
-        "difference": 2,
-        "reason": "Routine Audit",
-        "user": "JohnRoss@LP.com",
-        "timestamp": "2026-01-03T13:24:46.878Z"
-    },
-    {
-        "id": "22ce4fe3-0908-42ee-a673-e1d5d90835ed",
-        "item_id": "VNdmzq6Vwu3LnZbeorhX",
-        "item_name": "Bench Daily Spell Clean Fun 70ml",
-        "old_stock": 0,
-        "new_stock": 13,
-        "difference": 13,
-        "reason": "Routine Audit",
-        "user": "JohnRoss@LP.com",
-        "timestamp": "2026-01-03T13:25:01.176Z"
-    },
-    {
-        "id": "f677c924-d586-491a-ae0b-6fa9cb8bbfa4",
-        "item_id": "s4BFOdlad0qdlIyUM1gK",
-        "item_name": "Gourmet - Cheese - 30g",
-        "old_stock": 0,
-        "new_stock": 4,
-        "difference": 4,
-        "reason": "Routine Audit",
-        "user": "JohnRoss@LP.com",
-        "timestamp": "2026-01-03T13:26:48.946Z"
-    },
-    {
-        "id": "5a68cd43-cf68-4089-826b-8177f41f1733",
-        "item_id": "TNlF8IVpIE8HtfABQmQp",
-        "item_name": "Texas Colored Medium",
-        "old_stock": 0,
-        "new_stock": 1,
-        "difference": 1,
-        "reason": "Routine Audit",
-        "user": "JohnRoss@LP.com",
-        "timestamp": "2026-01-03T13:43:40.809Z"
-    },
-    {
-        "id": "dd1035b2-e0af-46a4-9b64-818282f62cc5",
-        "item_id": "CkOdasRtlUICmNRUoeyp",
-        "item_name": "`Extra Rolled Cotton 25g",
-        "old_stock": 0,
-        "new_stock": 13,
-        "difference": 13,
-        "reason": "Routine Audit",
-        "user": "JohnRoss@LP.com",
-        "timestamp": "2026-01-03T13:56:06.232Z"
-    },
-    {
-        "id": "7f7609cd-e61a-4d13-ad86-08a5f53435c5",
-        "item_id": "1pBXtzuHrUKVoH2OoQJg",
-        "item_name": "Hello Baby Pants L12",
-        "old_stock": 0,
-        "new_stock": 10,
-        "difference": 10,
-        "reason": "Routine Audit",
-        "user": "JohnRoss@LP.com",
-        "timestamp": "2026-01-03T13:56:31.302Z"
+        "user": "admin@lightpos.com",
+        "timestamp": "2026-01-03T20:33:38.142Z"
     }
 ]

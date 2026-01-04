@@ -10,7 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 $dataDir = __DIR__ . '/../data/';
-$allowedFiles = ['items', 'users', 'suppliers', 'customers', 'transactions', 'shifts', 'expenses', 'stock_in_history', 'adjustments', 'suspended_transactions', 'returns', 'settings'];
+$allowedFiles = ['items', 'users', 'suppliers', 'customers', 'transactions', 'shifts', 'expenses', 'stock_in_history', 'adjustments', 'suspended_transactions', 'returns', 'settings', 'last_sync'];
 
 $action = $_GET['action'] ?? null;
 $file = $_GET['file'] ?? null;
@@ -31,7 +31,11 @@ if (!is_dir($dataDir)) {
 // Helper to initialize file if missing
 function initFile($path) {
     if (!file_exists($path)) {
-        file_put_contents($path, json_encode([]));
+        if (strpos($path, 'last_sync.json') !== false) {
+            file_put_contents($path, json_encode(["timestamp" => ""]));
+        } else {
+            file_put_contents($path, json_encode([]));
+        }
     }
 }
 
@@ -170,6 +174,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             http_response_code(400);
             echo json_encode(["error" => "No data provided"]);
         }
+    } elseif ($action === 'reset_all') {
+        // Nuclear option: Delete all JSON files in data directory
+        $files = glob($dataDir . '*.json');
+        foreach ($files as $f) {
+            if (basename($f) !== 'users.json') { // Keep users so we can still login
+                unlink($f);
+            }
+        }
+        echo json_encode(["success" => true, "message" => "All data except users has been wiped."]);
     }
 }
 ?>

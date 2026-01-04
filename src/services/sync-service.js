@@ -13,6 +13,22 @@ export function startRealtimeSync() {
     syncCustomersDown();
     setInterval(syncCustomersDown, SYNC_INTERVAL);
 
+    syncTransactionsDown();
+    setInterval(syncTransactionsDown, SYNC_INTERVAL);
+
+    // 1b. Additional Downlink entities
+    const extraEntities = ['shifts', 'expenses', 'adjustments', 'returns', 'suppliers', 'settings', 'stock_in_history'];
+    extraEntities.forEach(entity => {
+        let table = entity;
+        if (entity === 'settings') table = 'sync_metadata';
+        if (entity === 'stock_in_history') table = 'stockins';
+
+        syncEntityDown(entity, table);
+        setInterval(() => {
+            syncEntityDown(entity, table);
+        }, SYNC_INTERVAL);
+    });
+
     // 2. Uplink: Listen for online status
     window.addEventListener('online', processQueue);
     
@@ -20,23 +36,61 @@ export function startRealtimeSync() {
     processQueue();
 }
 
-function updateLastSyncTimestamp(timestamp = null) {
+function updateLastSyncTimestamp(timestamp = null, pushToServer = false) {
     const newTs = timestamp || new Date().toISOString();
     const localTs = localStorage.getItem('last_sync_timestamp');
     
-    // Only update if newer or if we are forcing a local update
-    if (!localTs || new Date(newTs) >= new Date(localTs)) {
+    // Only update local storage if the new timestamp is actually newer
+    if (!localTs || new Date(newTs) > new Date(localTs)) {
         localStorage.setItem('last_sync_timestamp', newTs);
         window.dispatchEvent(new CustomEvent('sync-updated'));
     }
     
-    // If we generated this locally, push to server so other devices can see it
-    if (!timestamp && navigator.onLine) {
+    // Only push to server if explicitly requested (e.g., after a successful upload)
+    if (pushToServer && navigator.onLine) {
         fetch(`${API_URL}?file=last_sync`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ timestamp: newTs })
-        }).catch(() => {}); // Silent fail for metadata
+        }).catch(() => {}); // Silent fail for network errors
+    }
+}
+
+/**
+ * Generic helper to sync data down from server to local Dexie
+ */
+async function syncEntityDown(file, table) {
+    if (!navigator.onLine) return;
+    try {
+        const response = await fetch(`${API_URL}?file=${file}`);
+        if (!response.ok) return;
+        
+        let data = await response.json();
+        // Settings/Metadata might be an object, others are arrays
+        if (table !== 'sync_metadata' && !Array.isArray(data)) data = [];
+
+        // Convert date strings to Date objects for indexing and range queries
+        if (Array.isArray(data)) {
+            data = data.map(item => {
+                if (item.timestamp) item.timestamp = new Date(item.timestamp);
+                if (item.date) item.date = new Date(item.date);
+                if (item.start_time) item.start_time = new Date(item.start_time);
+                if (item.end_time) item.end_time = item.end_time ? new Date(item.end_time) : null;
+                if (item.updatedAt) item.updatedAt = new Date(item.updatedAt);
+                if (item.voided_at) item.voided_at = new Date(item.voided_at);
+                return item;
+            });
+        }
+
+        if (db.isOpen()) {
+            if (table === 'sync_metadata') {
+                await db[table].put({ key: file, value: data });
+            } else {
+                await db[table].bulkPut(data);
+            }
+        }
+    } catch (error) {
+        console.error(`Error syncing ${file} down:`, error);
     }
 }
 
@@ -45,20 +99,27 @@ async function syncItemsDown() {
     
     try {
         // Fetch items and global sync metadata
-        const [response, syncRes] = await Promise.all([
-            fetch(`${API_URL}?file=items`),
-            fetch(`${API_URL}?file=last_sync`)
-        ]);
-
-        if (syncRes.ok) {
-            const meta = await syncRes.json().catch(() => null);
-            if (meta && meta.timestamp) updateLastSyncTimestamp(meta.timestamp);
-        }
+        const response = await fetch(`${API_URL}?file=items`);
+        
+        // Fetch metadata separately to avoid blocking or console noise if missing
+        fetch(`${API_URL}?file=last_sync`)
+            .then(async (res) => {
+                if (res.ok) {
+                    const meta = await res.json().catch(() => null);
+                    if (meta && meta.timestamp) updateLastSyncTimestamp(meta.timestamp);
+                }
+            })
+            .catch(() => {}); 
 
         if (!response.ok) return;
         
         let items = await response.json();
         if (!Array.isArray(items)) items = [];
+
+        items = items.map(i => ({
+            ...i,
+            updatedAt: i.updatedAt ? new Date(i.updatedAt) : new Date()
+        }));
 
         // Bulk put updates existing items by ID and adds new ones
         await db.items.bulkPut(items);
@@ -86,6 +147,32 @@ async function syncCustomersDown() {
     }
 }
 
+async function syncTransactionsDown() {
+    if (!navigator.onLine) return;
+    
+    try {
+        const response = await fetch(`${API_URL}?file=transactions`);
+        if (!response.ok) return;
+        
+        let transactions = await response.json();
+        if (!Array.isArray(transactions)) transactions = [];
+
+        transactions = transactions.map(tx => ({
+            ...tx,
+            timestamp: new Date(tx.timestamp)
+        }));
+
+        if (db.isOpen()) {
+            await db.transactions.bulkPut(transactions);
+            updateLastSyncTimestamp();
+        } else {
+            console.warn("Database is closed. Skipping transactions downlink sync.");
+        }
+    } catch (error) {
+        console.error("Error syncing transactions down:", error);
+    }
+}
+
 export async function syncAll() {
     if (!navigator.onLine) return;
     console.log("Manual sync triggered...");
@@ -93,7 +180,13 @@ export async function syncAll() {
         await Promise.all([
             syncItemsDown(),
             syncCustomersDown(),
-            processQueue()
+            syncTransactionsDown(),
+            processQueue(),
+            syncEntityDown('shifts', 'shifts'),
+            syncEntityDown('expenses', 'expenses'),
+            syncEntityDown('adjustments', 'adjustments'),
+            syncEntityDown('returns', 'returns'),
+            syncEntityDown('suppliers', 'suppliers')
         ]);
         updateLastSyncTimestamp();
     } catch (e) {
@@ -128,14 +221,12 @@ export async function processQueue() {
 
         // 3. Process each unsynced transaction
         for (const tx of unsyncedTxs) {
-            // a. Prepare server transaction object
-            // Generate a UUID for the server record, keep local ID for reference if needed
-            const serverTx = { 
-                ...tx, 
-                id: crypto.randomUUID(), 
-                sync_status: 1,
-                local_id: tx.id 
-            };
+            // a. Prepare server transaction object (already has UUID)
+            if (serverTxs.some(s => s.id === tx.id)) {
+                continue;
+            }
+
+            const serverTx = { ...tx, sync_status: 1 };
             serverTxs.push(serverTx);
 
             // b. Update Server Stock
@@ -170,7 +261,7 @@ export async function processQueue() {
             }
         });
 
-        updateLastSyncTimestamp();
+        updateLastSyncTimestamp(null, true);
 
         // 6. Process Generic Sync Queue (e.g., Stock In)
         const syncQueueItems = await db.syncQueue.toArray();
