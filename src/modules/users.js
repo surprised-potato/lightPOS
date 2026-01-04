@@ -40,10 +40,21 @@ export async function loadUsersView() {
     content.innerHTML = `
         <div class="p-6">
             <div class="flex justify-between items-center mb-6">
-                <h1 class="text-2xl font-bold text-gray-800">User Management</h1>
-                <button id="btn-add-user" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 ${canWrite ? '' : 'hidden'}">
-                    Add User
-                </button>
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800">User Management</h1>
+                    <div class="flex gap-4 mt-2">
+                        <button id="filter-all" class="text-sm font-medium text-blue-600 border-b-2 border-blue-600 pb-1">All Users</button>
+                        <button id="filter-pending" class="text-sm font-medium text-gray-500 hover:text-blue-600 pb-1">Pending Approval</button>
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <button id="btn-refresh-users" class="bg-gray-100 text-gray-600 px-4 py-2 rounded hover:bg-gray-200 transition">
+                        Refresh
+                    </button>
+                    <button id="btn-add-user" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 ${canWrite ? '' : 'hidden'}">
+                        Add User
+                    </button>
+                </div>
             </div>
             
             <div class="bg-white rounded-lg shadow overflow-hidden">
@@ -143,13 +154,30 @@ export async function loadUsersView() {
     if (canWrite) {
         document.getElementById("btn-add-user").addEventListener("click", () => openUserModal());
     }
+    document.getElementById("btn-refresh-users").addEventListener("click", () => fetchAndRenderUsers());
     document.getElementById("btn-cancel-user").addEventListener("click", closeUserModal);
     document.getElementById("user-form").addEventListener("submit", handleUserSubmit);
 
-    await fetchAndRenderUsers();
+    // Filter Logic
+    const filterAll = document.getElementById("filter-all");
+    const filterPending = document.getElementById("filter-pending");
+
+    filterAll.onclick = () => {
+        filterAll.className = "text-sm font-medium text-blue-600 border-b-2 border-blue-600 pb-1";
+        filterPending.className = "text-sm font-medium text-gray-500 hover:text-blue-600 pb-1";
+        fetchAndRenderUsers("all");
+    };
+
+    filterPending.onclick = () => {
+        filterPending.className = "text-sm font-medium text-blue-600 border-b-2 border-blue-600 pb-1";
+        filterAll.className = "text-sm font-medium text-gray-500 hover:text-blue-600 pb-1";
+        fetchAndRenderUsers("pending");
+    };
+
+    await fetchAndRenderUsers("all");
 }
 
-async function fetchAndRenderUsers() {
+async function fetchAndRenderUsers(filter = "all") {
     const tbody = document.getElementById("users-table-body");
     const canWrite = checkPermission("users", "write");
     try {
@@ -158,12 +186,20 @@ async function fetchAndRenderUsers() {
         
         tbody.innerHTML = "";
         
-        if (!Array.isArray(users) || users.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-gray-500">No users found.</td></tr>`;
+        let filteredUsers = users;
+        if (filter === "pending") {
+            filteredUsers = users.filter(u => {
+                const hasPerms = u.permissions && Object.values(u.permissions).some(p => p.read || p.write);
+                return !hasPerms || !u.is_active;
+            });
+        }
+
+        if (!Array.isArray(filteredUsers) || filteredUsers.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-gray-500">No users found matching criteria.</td></tr>`;
             return;
         }
 
-        users.forEach((user) => {
+        filteredUsers.forEach((user) => {
             const tr = document.createElement("tr");
             
             let permCount = 0;
@@ -326,25 +362,37 @@ async function handleUserSubmit(e) {
         permissions[mod][type] = chk.checked;
     });
 
+    // To preserve existing password if not changed during edit, we need the full user list
+    const response = await fetch(`${API_URL}?file=users`);
+    const users = await response.json();
+    const existingUser = users.find(u => u.email === email);
+
+    if (!isEdit && existingUser) {
+        alert("User already exists.");
+        return;
+    }
+
     const userData = {
+        ...existingUser,
         email,
         name,
         phone,
         is_active: isActive,
         permissions
     };
-    if (password) userData.password = md5(password);
+    
+    // Only update password if provided
+    if (password) {
+        if (typeof md5 === 'function') {
+            userData.password = md5(password);
+        } else {
+            console.error("MD5 function not found. Password not updated.");
+            alert("Error: Security library missing. Password could not be set.");
+            return;
+        }
+    }
 
     try {
-        if (!isEdit) {
-            const response = await fetch(`${API_URL}?file=users`);
-            const users = await response.json();
-            if (users.find(u => u.email === email)) {
-                alert("User already exists.");
-                return;
-            }
-        }
-
         const success = await syncCollection('users', email, userData);
         
         if (!success) {

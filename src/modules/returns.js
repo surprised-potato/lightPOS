@@ -3,6 +3,7 @@ import { checkPermission, requestManagerApproval } from "../auth.js";
 import { addNotification } from "../services/notification-service.js";
 import { generateUUID } from "../utils.js";
 import { checkActiveShift, requireShift } from "./shift.js";
+import { syncCollection } from "../services/sync-service.js";
 
 const API_URL = 'api/router.php';
 
@@ -228,19 +229,23 @@ async function handleReturnSubmit(e) {
 
     try {
         // 1. Update Transaction Record (track returned qty)
+        const returnId = generateUUID();
         selectedTransaction.items[index].returned_qty = (selectedTransaction.items[index].returned_qty || 0) + qty;
         await db.transactions.put(selectedTransaction);
 
         // 2. Update Inventory if restockable
+        let updatedMasterItem = null;
         if (condition === 'restockable') {
-            const masterItem = await db.items.get(item.id);
-            if (masterItem) {
-                await db.items.update(item.id, { stock_level: masterItem.stock_level + qty });
+            updatedMasterItem = await db.items.get(item.id);
+            if (updatedMasterItem) {
+                updatedMasterItem.stock_level += qty;
+                await db.items.put(updatedMasterItem);
             }
         }
 
         // 3. Log Return
         const returnRecord = {
+            id: returnId,
             transaction_id: selectedTransaction.id,
             item_id: item.id,
             item_name: item.name,
@@ -269,50 +274,19 @@ async function handleReturnSubmit(e) {
         };
         await db.stock_movements.add(movement);
 
-        // Sync to Server
+        // 4. Sync to Server using centralized service
         if (navigator.onLine) {
-            try {
-                // 1. Update Server Items
-                const itemsRes = await fetch(`${API_URL}?file=items`);
-                let serverItems = await itemsRes.json();
-                if (condition === 'restockable') {
-                    const idx = serverItems.findIndex(i => i.id === item.id);
-                    if (idx !== -1) serverItems[idx].stock_level += qty;
-                }
-                await fetch(`${API_URL}?file=items`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(serverItems) });
-
-                // 2. Update Server Transaction (Returned Qty)
-                const txRes = await fetch(`${API_URL}?file=transactions`);
-                let serverTxs = await txRes.json();
-                const sIdx = serverTxs.findIndex(t => t.id === selectedTransaction.id);
-                if (sIdx !== -1) {
-                    const itemIdx = serverTxs[sIdx].items.findIndex(i => i.id === item.id);
-                    if (itemIdx !== -1) {
-                        serverTxs[sIdx].items[itemIdx].returned_qty = (serverTxs[sIdx].items[itemIdx].returned_qty || 0) + qty;
-                    }
-                    await fetch(`${API_URL}?file=transactions`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(serverTxs) });
-                }
-
-                // 3. Update Server Returns Log
-                const returnsRes = await fetch(`${API_URL}?file=returns`);
-                let serverReturns = await returnsRes.json();
-                if (!Array.isArray(serverReturns)) serverReturns = [];
-                serverReturns.push({ ...returnRecord, sync_status: 1 });
-                await fetch(`${API_URL}?file=returns`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(serverReturns) });
-
-                // 4. Update Server Movements
-                const movementsRes = await fetch(`${API_URL}?file=stock_movements`);
-                let serverMovements = await movementsRes.json();
-                if (!Array.isArray(serverMovements)) serverMovements = [];
-                serverMovements.push({ ...movement, sync_status: 1 });
-                await fetch(`${API_URL}?file=stock_movements`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(serverMovements) });
-
-                // Mark local as synced
-                await db.returns.update(returnRecord.id, { sync_status: 1 });
-                await db.stock_movements.update(movement.id, { sync_status: 1 });
-            } catch (e) {
-                console.warn("Server sync failed for return:", e);
+            await syncCollection('returns', returnRecord.id, returnRecord);
+            await syncCollection('stock_movements', movement.id, movement);
+            await syncCollection('transactions', selectedTransaction.id, selectedTransaction);
+            
+            if (updatedMasterItem) {
+                await syncCollection('items', updatedMasterItem.id, updatedMasterItem);
             }
+            
+            // Mark local as synced
+            await db.returns.update(returnRecord.id, { sync_status: 1 });
+            await db.stock_movements.update(movement.id, { sync_status: 1 });
         }
 
         await addNotification('Return', `Refund of ₱${returnRecord.refund_amount.toFixed(2)} processed for ${item.name} (${reason})`);

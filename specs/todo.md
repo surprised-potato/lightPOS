@@ -155,7 +155,7 @@ Use this checklist to track your progress through the development phases.
 
 ### 6.2 Dashboard & Reports
 - [x] Create `src/modules/dashboard.js`.
-- [ ] Fetch recent transactions from `transactions.json`.
+- [x] Fetch recent transactions from `transactions.json`.
 - [x] Calculate KPIs: Total Sales, Total Profit.
 - [x] Calculate Tax Liability (VAT) for the dashboard.
 - [x] Low Stock: Fetch & Render items where stock < `min_stock`.
@@ -177,11 +177,8 @@ Use this checklist to track your progress through the development phases.
 - [x] Report: Retailer's Matrix Visualization.
 
 ## Phase 10: Enterprise Features (Valuation & Audit)
-- [ ] Logic: Implement FIFO/LIFO/Weighted Average valuation logic.
-- [ ] Logic: Implement Landed Cost allocation in Stock In module.
 - [x] Write: Implement `stock_movement.json` logging for all inventory events (Sales, Receives, Adjustments).
 - [x] Report: Inventory Ledger with historical snapshotting.
-- [ ] Report: Advanced COGS Analysis (including Landed Costs).
 - [x] Report: Detailed Stock Movement / Transaction Log (User ID + Timestamp).
 - [x] Report: Shrinkage / Variance Analysis with categorization (Theft, Admin Error, Vendor Fraud).
 
@@ -195,7 +192,7 @@ Use this checklist to track your progress through the development phases.
 - [x] Report: Show Overage/Shortage summary upon closing.
  - [x] Modularize: Refactor to use `syncCollection` for shift records.
 - [x] Report: Generate "Z-Report" on shift close (Final summary).
-- [ ] Write: Save shift records to `shifts.json`.
+- [x] Write: Save shift records to `shifts.json`.
 
 ## Phase 8: Expense Management
 - [x] Create `src/modules/expenses.js`.
@@ -204,7 +201,7 @@ Use this checklist to track your progress through the development phases.
 - [x] Form: Amount, Category (Dropdown), Description, Date.
 - [x] Link: Optional "Supplier" dropdown (reuse `fetchSuppliers`).
  - [x] Modularize: Refactor to use `syncCollection` for expenses.
-- [ ] Write: Save to `expenses.json`.
+- [x] Write: Save to `expenses.json`.
 
 ## Phase 9: User Management
 - [x] Create `src/modules/users.js`.

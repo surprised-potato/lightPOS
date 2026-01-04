@@ -335,6 +335,9 @@ async function processAdjustment(newStock, reason) {
             const adjSync = await syncCollection('adjustments', adjustment.id, adjustment);
             if (adjSync) await db.adjustments.update(adjustment.id, { sync_status: 1 });
             
+            const mSync = await syncCollection('stock_movements', movement.id, movement);
+            if (mSync) await db.stock_movements.update(movement.id, { sync_status: 1 });
+
             await processQueue(); // Handles movements
         }
 

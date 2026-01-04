@@ -3,6 +3,8 @@ import { checkPermission } from "../auth.js";
 import { generateUUID } from "../utils.js";
 import { syncCollection } from "../services/sync-service.js";
 
+const API_URL = 'api/router.php';
+
 let suppliersList = [];
 
 export async function loadExpensesView() {
@@ -179,6 +181,20 @@ async function fetchExpenses() {
     tbody.innerHTML = `<tr><td colspan="7" class="py-3 px-6 text-center">Loading...</td></tr>`;
 
     try {
+        // Sync from server to local DB if online
+        if (navigator.onLine) {
+            try {
+                const response = await fetch(`${API_URL}?file=expenses`);
+                const serverExpenses = await response.json();
+                if (Array.isArray(serverExpenses)) {
+                    await db.expenses.clear();
+                    await db.expenses.bulkPut(serverExpenses);
+                }
+            } catch (error) {
+                console.warn("Could not sync expenses from server, using local data.", error);
+            }
+        }
+
         let expenses = await db.expenses.toArray();
 
         // Sort by date desc and limit to 50

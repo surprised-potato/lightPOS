@@ -1,7 +1,7 @@
 import { checkPermission, getUserProfile } from "../auth.js";
 import { db } from "../db.js";
 import { generateUUID } from "../utils.js";
-import { processQueue } from "../services/sync-service.js";
+import { syncCollection, processQueue } from "../services/sync-service.js";
 
 // Module-level state for the cart
 let stockInCart = [];
@@ -450,10 +450,24 @@ async function saveStockIn() {
         }
         await db.stock_movements.bulkPut(movements);
 
-        // 3. Add to Sync Queue and process
-        await db.syncQueue.add({ action: 'batch_stock_in', data: historyRecord });
-        
+        // 3. Sync to Server using centralized service
         if (navigator.onLine) {
+            // Sync Items
+            for (const item of itemsToUpdate) {
+                const success = await syncCollection('items', item.id, item);
+                if (success) await db.items.update(item.id, { sync_status: 1 });
+            }
+
+            // Sync History
+            const histSuccess = await syncCollection('stock_in_history', historyRecord.id, historyRecord);
+            if (histSuccess) await db.stockins.update(historyRecord.id, { sync_status: 1 });
+
+            // Sync Movements
+            for (const m of movements) {
+                const mSuccess = await syncCollection('stock_movements', m.id, m);
+                if (mSuccess) await db.stock_movements.update(m.id, { sync_status: 1 });
+            }
+            
             await processQueue();
         }
 

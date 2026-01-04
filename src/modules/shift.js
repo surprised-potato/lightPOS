@@ -196,7 +196,10 @@ export async function loadShiftsView() {
 
     content.innerHTML = `
         <div class="max-w-6xl mx-auto">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6">My Shifts</h2>
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">My Shifts</h2>
+                <div id="shift-actions-container"></div>
+            </div>
             <div class="bg-white shadow-md rounded overflow-hidden">
                 <table class="min-w-full table-auto">
                     <thead>
@@ -228,6 +231,18 @@ async function fetchShifts() {
     if (!user) {
          tbody.innerHTML = `<tr><td colspan="7" class="py-3 px-6 text-center">Please login to view shifts.</td></tr>`;
          return;
+    }
+
+    const actionsContainer = document.getElementById("shift-actions-container");
+    if (actionsContainer) {
+        actionsContainer.innerHTML = "";
+        if (currentShift) {
+            const xBtn = document.createElement("button");
+            xBtn.className = "bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-bold text-sm transition shadow-sm";
+            xBtn.textContent = "Generate X-Report";
+            xBtn.onclick = () => showXReport();
+            actionsContainer.appendChild(xBtn);
+        }
     }
 
     try {
@@ -592,4 +607,41 @@ export function showShiftHistoryModal(adjustments) {
     const closeModal = () => div.remove();
     document.getElementById("close-history-modal-x").addEventListener("click", closeModal);
     document.getElementById("btn-close-history").addEventListener("click", closeModal);
+}
+
+export async function showXReport() {
+    if (!currentShift) {
+        alert("No active shift found.");
+        return;
+    }
+
+    const expected = await calculateExpectedCash();
+    
+    const div = document.createElement("div");
+    div.id = "modal-x-report";
+    div.className = "fixed inset-0 bg-gray-900 bg-opacity-90 flex items-center justify-center z-50";
+    div.innerHTML = `
+        <div class="bg-white rounded-lg shadow-xl p-8 w-96">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">X-Report (Mid-Shift)</h2>
+            <div class="space-y-4">
+                <div class="flex justify-between border-b pb-2">
+                    <span class="text-gray-600">Start Time:</span>
+                    <span class="font-medium">${new Date(currentShift.start_time).toLocaleString()}</span>
+                </div>
+                <div class="flex justify-between border-b pb-2">
+                    <span class="text-gray-600">Opening Cash:</span>
+                    <span class="font-medium">₱${(currentShift.opening_cash || 0).toFixed(2)}</span>
+                </div>
+                <div class="flex justify-between border-b pb-2">
+                    <span class="text-gray-600">Expected Cash:</span>
+                    <span class="font-bold text-blue-600">₱${expected.toFixed(2)}</span>
+                </div>
+            </div>
+            <button id="close-x-report" class="w-full mt-6 bg-gray-800 hover:bg-gray-900 text-white font-bold py-2 px-4 rounded">
+                Close
+            </button>
+        </div>
+    `;
+    document.body.appendChild(div);
+    document.getElementById("close-x-report").addEventListener("click", () => div.remove());
 }

@@ -1229,25 +1229,8 @@ async function requestQuickCustomer(tx) {
 
             // 2. Immediate Server Sync if online
             if (navigator.onLine) {
-                try {
-                    const txRes = await fetch(`${API_URL}?file=transactions`);
-                    let serverTxs = await txRes.json();
-                    if (Array.isArray(serverTxs)) {
-                        const sIdx = serverTxs.findIndex(t => t.id === tx.id);
-                        if (sIdx !== -1) {
-                            serverTxs[sIdx].customer_id = customer.id;
-                            serverTxs[sIdx].customer_name = customer.name;
-                            await fetch(`${API_URL}?file=transactions`, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify(serverTxs)
-                            });
-                            await db.transactions.update(tx.id, { sync_status: 1 });
-                        }
-                    }
-                } catch (e) {
-                    console.warn("Failed to sync transaction update to server:", e);
-                }
+                const success = await syncCollection('transactions', tx.id, tx);
+                if (success) await db.transactions.update(tx.id, { sync_status: 1 });
             }
 
             cleanup();
@@ -1347,17 +1330,7 @@ async function requestQuickCustomer(tx) {
                 const newCustomer = { id: generateUUID(), name, phone, email: "", loyalty_points: 0, timestamp: new Date() };
                 await db.customers.add(newCustomer);
                 if (navigator.onLine) {
-                    try {
-                        const res = await fetch(`${API_URL}?file=customers`);
-                        let customers = await res.json();
-                        if (!Array.isArray(customers)) customers = [];
-                        customers.push(newCustomer);
-                        await fetch(`${API_URL}?file=customers`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(customers)
-                        });
-                    } catch (e) { console.warn("Quick customer server sync failed"); }
+                    await syncCollection('customers', newCustomer.id, newCustomer);
                 }
                 fetchCustomersFromDexie();
                 await updateTxAndResolve(newCustomer);
