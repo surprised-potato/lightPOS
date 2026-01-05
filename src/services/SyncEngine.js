@@ -1,4 +1,5 @@
 import { db } from "../db.js";
+import { handleError } from "../utils.js";
 
 const SYNC_URL = 'api/sync.php';
 
@@ -25,8 +26,8 @@ export const SyncEngine = {
                 window.dispatchEvent(new CustomEvent('sync-updated'));
                 console.log("Sync completed.");
             } catch (error) {
+                handleError(error, 'SyncEngine');
                 window.dispatchEvent(new CustomEvent('sync-failed'));
-                console.error("Sync failed:", error);
             }
         };
 

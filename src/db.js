@@ -1,4 +1,5 @@
 import Dexie from './libs/dexie.mjs';
+import { handleError } from './utils.js';
 
 export const db = new Dexie('lightPOS_DB');
 
@@ -22,6 +23,33 @@ db.version(27).stores({
     suppliers: '++id, name, sync_status, _version, _updatedAt, _deleted',
     users: 'email, name, is_active, sync_status, _version, _updatedAt, _deleted',
     outbox: '++id, collection, docId, type'
+});
+
+// Global error handler for unhandled database exceptions
+window.addEventListener('unhandledrejection', (event) => {
+    if (event.reason && event.reason.name && event.reason.name.includes('Error')) {
+        handleError(event.reason, 'Database Global');
+    }
+});
+
+// Handle multi-tab synchronization and upgrades
+db.on('versionchange', function (event) {
+    // Another tab has upgraded the database. We must close our connection
+    // to allow the upgrade to proceed, then reload to get the new schema.
+    console.warn("Database version change detected in another tab. Closing connection...");
+    db.close();
+    alert("The system has been updated. This tab will now reload.");
+    window.location.reload();
+});
+
+db.on('blocked', function (event) {
+    // This tab is trying to upgrade the database, but other tabs are blocking it.
+    console.warn("Database upgrade blocked by other open tabs.");
+});
+
+db.on('populate', (trans) => {
+    // This runs only once when the database is first created.
+    console.log("Database created for the first time. Seeding initial data...");
 });
 
 db.open().catch("UpgradeError", err => {

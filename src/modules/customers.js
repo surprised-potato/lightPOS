@@ -1,4 +1,4 @@
-import { checkPermission } from "../auth.js";
+import { checkPermission, requestManagerApproval } from "../auth.js";
 import { generateUUID } from "../utils.js";
 import { Repository } from "../services/Repository.js";
 import { SyncEngine } from "../services/SyncEngine.js";
@@ -198,13 +198,28 @@ function openEditModal(cust) {
 async function handleSaveCustomer(e) {
     e.preventDefault();
     const id = document.getElementById("cust-id").value;
+    const newPoints = parseInt(document.getElementById("cust-points").value) || 0;
+
+    // Require manager approval if loyalty points are being changed or set initially
+    if (id) {
+        const existing = await Repository.get('customers', id);
+        if (existing && existing.loyalty_points !== newPoints) {
+            const approved = await requestManagerApproval();
+            if (!approved) return;
+        }
+    } else if (newPoints !== 0) {
+        // New customer with non-zero points
+        const approved = await requestManagerApproval();
+        if (!approved) return;
+    }
+
     const customerData = {
         id: id || generateUUID(),
         account_number: document.getElementById("cust-account").value,
         name: document.getElementById("cust-name").value,
         phone: document.getElementById("cust-phone").value,
         email: document.getElementById("cust-email").value,
-        loyalty_points: parseInt(document.getElementById("cust-points").value) || 0,
+        loyalty_points: newPoints,
         timestamp: new Date(),
         sync_status: 0
     };

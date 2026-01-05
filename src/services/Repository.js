@@ -1,4 +1,5 @@
 import { db } from '../db.js';
+import { handleError } from '../utils.js';
 
 export const Repository = {
     /**
@@ -6,37 +7,39 @@ export const Repository = {
      * Increments _version to ensure Last-Write-Wins (LWW) consistency.
      */
     async upsert(collection, data) {
-        const idField = collection === 'users' ? 'email' : 'id';
-        const id = data[idField];
+        try {
+            const idField = db[collection].schema.primKey.name;
+            const id = data[idField];
 
-        // 1. Get existing record to determine the next version
-        const existing = await db[collection].get(id);
-        
-        // 2. Increment version: 
-        // If it's a new record, start at 1.
-        // If it's an update, increment the existing version.
-        const newVersion = (existing?._version || 0) + 1;
+            // 1. Get existing record to determine the next version
+            const existing = await db[collection].get(id);
+            
+            // 2. Increment version
+            const newVersion = (existing?._version || 0) + 1;
 
-        const updatedDoc = {
-            ...data,
-            _version: newVersion,
-            _updatedAt: Date.now(),
-            _deleted: data._deleted || false
-        };
+            const updatedDoc = {
+                ...data,
+                _version: newVersion,
+                _updatedAt: Date.now(),
+                _deleted: data._deleted || false
+            };
 
-        // 3. Update Local Database (Dexie)
-        await db[collection].put(updatedDoc);
+            // 3. Update Local Database (Dexie)
+            await db[collection].put(updatedDoc);
 
-        // 4. Add to Outbox
-        // The SyncEngine will pick this up and push it to the server.
-        await db.outbox.add({
-            collection,
-            docId: id,
-            type: 'upsert',
-            payload: updatedDoc
-        });
+            // 4. Add to Outbox
+            await db.outbox.add({
+                collection,
+                docId: id,
+                type: 'upsert',
+                payload: updatedDoc
+            });
 
-        return updatedDoc;
+            return updatedDoc;
+        } catch (error) {
+            handleError(error, `Repository.upsert(${collection})`);
+            throw error; // Re-throw to allow UI to handle failure
+        }
     },
 
     async get(collection, id) {

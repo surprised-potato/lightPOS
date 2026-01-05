@@ -1012,9 +1012,17 @@ export async function loadReportsView() {
             showStockInDetails(stockInRow.dataset.id);
         }
 
+        const btnForceClose = e.target.closest(".btn-force-close-shift");
+        if (btnForceClose) {
+            e.stopPropagation();
+            forceCloseShift(btnForceClose.dataset.id);
+            return;
+        }
+
         const btnViewShift = e.target.closest(".btn-view-shift-tx");
         if (btnViewShift) {
             showShiftTransactions(btnViewShift.dataset.id);
+            return;
         }
 
         const btnViewShiftReport = e.target.closest(".btn-view-shift-report");
@@ -2672,8 +2680,9 @@ function renderCashVariance(shifts) {
             <td class="py-3 px-6 text-right">₱${(s.totalSales || 0).toFixed(2)}</td>
             <td class="py-3 px-6 text-right">₱${(s.totalCogs || 0).toFixed(2)}</td>
             <td class="py-3 px-6 text-right font-bold text-blue-600">₱${(s.grossProfit || 0).toFixed(2)}</td>
-            <td class="py-3 px-6 text-center">
+            <td class="py-3 px-6 text-center flex items-center justify-center gap-2">
                 <button class="text-blue-600 hover:text-blue-800 font-bold btn-view-shift-tx" data-id="${s.id}">View</button>
+                ${!isClosed ? `<button class="text-red-600 hover:text-red-800 font-bold btn-force-close-shift" data-id="${s.id}">Force Close</button>` : ''}
             </td>
         `;
         tbody.appendChild(row);
@@ -2786,6 +2795,47 @@ function renderStockMovement(data) {
         `;
         tbody.appendChild(row);
     });
+}
+
+async function forceCloseShift(id) {
+    const shift = reportData.variance.find(s => s.id == id);
+    if (!shift) return;
+
+    if (!confirm(`Force close shift for ${shift.user_id}?`)) return;
+    
+    const approved = await requestManagerApproval();
+    if (!approved) return;
+
+    const expected = (shift.opening_cash || 0) + (shift.totalSales || 0);
+    const closingCashStr = prompt(`Force Closing Shift\nUser: ${shift.user_id}\nExpected Cash: ₱${expected.toFixed(2)}\n\nEnter actual cash in drawer:`, expected.toFixed(2));
+    
+    if (closingCashStr === null) return;
+    const closingCash = parseFloat(closingCashStr) || 0;
+
+    try {
+        const now = new Date().toISOString();
+        const shiftId = isNaN(id) ? id : parseInt(id);
+        // We need the original record from DB to avoid saving report-only fields
+        const original = await Repository.get('shifts', shiftId);
+        
+        const updatedShift = {
+            ...original,
+            status: 'closed',
+            end_time: now,
+            closing_cash: closingCash,
+            expected_cash: expected,
+            _updatedAt: Date.now()
+        };
+
+        await Repository.upsert('shifts', updatedShift);
+        SyncEngine.sync();
+        
+        alert("Shift closed successfully.");
+        generateReport();
+    } catch (error) {
+        console.error("Error force closing shift:", error);
+        alert("Failed to close shift.");
+    }
 }
 
 function renderLowStockReport(data) {
