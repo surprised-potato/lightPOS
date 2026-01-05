@@ -239,9 +239,22 @@ async function handleReturnSubmit(e) {
                 updatedMasterItem.stock_level += qty;
                 await Repository.upsert('items', updatedMasterItem);
             }
+
+            // Record Stock Movement Locally only if restocked
+            await Repository.upsert('stock_movements', {
+                id: generateUUID(),
+                item_id: item.id,
+                item_name: item.name,
+                timestamp: new Date().toISOString(),
+                type: 'Return',
+                qty: qty,
+                user: JSON.parse(localStorage.getItem('pos_user'))?.email || 'unknown',
+                transaction_id: selectedTransaction.id,
+                reason: `${reason} (Restocked)`
+            });
         }
 
-        // 3. Log Return
+        // 3. Log Return Record (Always needed for financial audit)
         const returnRecord = {
             id: returnId,
             transaction_id: selectedTransaction.id,
@@ -256,42 +269,17 @@ async function handleReturnSubmit(e) {
         };
         await Repository.upsert('returns', returnRecord);
 
-        // Record Stock Movement Locally
-        await Repository.upsert('stock_movements', {
-            id: generateUUID(),
-            item_id: item.id,
-            item_name: item.name,
-            timestamp: returnRecord.timestamp,
-            type: 'Return',
-            qty: qty,
-            user: returnRecord.processed_by,
-            transaction_id: selectedTransaction.id,
-            reason: `${reason} (${condition})`
-        });
-
         if (condition === 'damaged') {
-            // Record an additional movement for the loss to keep ledger balanced
-            await Repository.upsert('stock_movements', {
-                id: generateUUID(),
-                item_id: item.id,
-                item_name: item.name,
-                timestamp: returnRecord.timestamp,
-                type: 'Shrinkage',
-                qty: -qty,
-                user: returnRecord.processed_by,
-                transaction_id: selectedTransaction.id,
-                reason: `Return Write-off: ${reason}`
-            });
-            
-            // Also log to adjustments so it shows in shrinkage reports
+            // Log to adjustments for reporting, but with 0 difference 
+            // because physical stock never actually moved
             await Repository.upsert('adjustments', {
                 id: generateUUID(),
                 item_id: item.id,
                 item_name: item.name,
                 old_stock: 0, 
                 new_stock: 0,
-                difference: -qty,
-                reason: 'Spoilage/Damage',
+                difference: 0,
+                reason: `Damaged Return: ${reason}`,
                 user: returnRecord.processed_by,
                 timestamp: returnRecord.timestamp
             });
