@@ -1021,7 +1021,12 @@ async function analyzeSync() {
         const onlyInLocal = localData.filter(i => !serverMap.has(i.id));
         const conflicts = serverData.filter(s => {
             const l = localMap.get(s.id);
-            return l && JSON.stringify(s) !== JSON.stringify(l);
+            if (!l) return false;
+            const sVer = s._version || 0;
+            const lVer = l._version || 0;
+            const sUpd = s._updatedAt || 0;
+            const lUpd = l._updatedAt || 0;
+            return sVer !== lVer || sUpd !== lUpd;
         });
         const statusEl = document.getElementById("sync-status-text");
         if (onlyInServer.length === 0 && onlyInLocal.length === 0 && conflicts.length === 0) {
@@ -1043,7 +1048,11 @@ async function analyzeSync() {
             };
             if (onlyInServer.length > 0) renderRow("Missing in Local DB", onlyInServer.length, "Download to Local", "bg-blue-500", async () => {
                 for (const item of onlyInServer) {
-                    await Repository.upsert('items', item);
+                    // Directly apply server state and clear outbox to prevent push-back loops
+                    await db.transaction('rw', [db.items, db.outbox], async () => {
+                        await db.items.put(item);
+                        await db.outbox.where({ collection: 'items', docId: item.id }).delete();
+                    });
                 }
             });
             if (onlyInLocal.length > 0) renderRow("Missing in Server DB", onlyInLocal.length, "Upload to Server", "bg-green-500", async () => {
@@ -1054,7 +1063,11 @@ async function analyzeSync() {
             });
             if (conflicts.length > 0) renderRow("Data Mismatch / Conflicts", conflicts.length, "Overwrite Local (Trust Server)", "bg-orange-500", async () => {
                 for (const item of conflicts) {
-                    await Repository.upsert('items', item);
+                    // Force local to match server version and timestamp
+                    await db.transaction('rw', [db.items, db.outbox], async () => {
+                        await db.items.put(item);
+                        await db.outbox.where({ collection: 'items', docId: item.id }).delete();
+                    });
                 }
             });
         }
