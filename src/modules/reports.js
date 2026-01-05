@@ -1072,7 +1072,7 @@ async function generateReport() {
 
     try {
         // Query Dexie instead of Firestore
-        let rawTransactions = await db.transactions
+        const rawTransactions = await db.transactions
             .where('timestamp')
             .between(startStr, endStr, true, true)
             .and(t => !t._deleted)
@@ -1095,18 +1095,18 @@ async function generateReport() {
             .and(r => !r._deleted)
             .toArray();
         
-        
         const localStockIn = await Repository.getAll('stockins');
         const allItems = await Repository.getAll('items');
 
-        // Fetch supporting data from local Dexie
+        // Fetch supporting data from local Dexie - Optimized with date filtering
         const [shifts, customers, suppliers, adjustments, stockMovements, expenses] = await Promise.all([
             Repository.getAll('shifts'),
             Repository.getAll('customers'),
             Repository.getAll('suppliers'),
-            Repository.getAll('adjustments'),
-            Repository.getAll('stock_movements'),
-            Repository.getAll('expenses')
+            db.adjustments.where('timestamp').between(startStr, endStr, true, true).toArray(),
+            // For valuation history, we need movements from startDate to now to reverse current stock
+            db.stock_movements.where('timestamp').aboveOrEqual(startStr).toArray(),
+            db.expenses.where('date').between(startStr, endStr, true, true).toArray()
         ]);
 
         // Merge Stock-In History (Local Dexie already contains synced server data)
@@ -1126,10 +1126,7 @@ async function generateReport() {
             return inRange;
         }).sort((a, b) => new Date(b.start_time) - new Date(a.start_time));
 
-        const filteredExpenses = (expenses || []).filter(e => {
-            const d = new Date(e.date).toISOString();
-            return d >= startStr && d <= endStr;
-        }).sort((a, b) => new Date(b.date) - new Date(a.date));
+        const filteredExpenses = (expenses || []).sort((a, b) => new Date(b.date) - new Date(a.date));
 
         let totalExpenses = 0;
         filteredExpenses.forEach(e => totalExpenses += (e.amount || 0));
@@ -1140,11 +1137,7 @@ async function generateReport() {
             return inRange;
         }).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-        const filteredAdjustments = adjustments.filter(a => {
-            const d = a.timestamp instanceof Date ? a.timestamp.toISOString() : a.timestamp;
-            const inRange = d >= startStr && d <= endStr;
-            return inRange;
-        }).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        const filteredAdjustments = (adjustments || []).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
         // Synthesize movements from transactions to ensure the log is complete
         // This ensures the report is accurate even if movements weren't explicitly recorded in pos.js
@@ -1180,9 +1173,8 @@ async function generateReport() {
 
         // Combine with explicit movements, filtering out synthesized types to avoid duplicates
         const otherMovements = stockMovements.filter(m => {
-            const isTypeMatch = !['Sale', 'Return', 'Shrinkage'].includes(m.type);
-            const isUserMatch = true;
-            return isTypeMatch && isUserMatch;
+            const type = m.type;
+            return type !== 'Sale' && type !== 'Return' && type !== 'Shrinkage';
         });
         const allMovements = [...otherMovements, ...salesMovements, ...returnMovements];
 
@@ -1448,27 +1440,34 @@ async function generateReport() {
         reportData.totalExpenses = totalExpenses;
         reportData.expenses = filteredExpenses;
 
-        // Initial Render
-        updateFinancials(grossSales, totalOutputTax, totalInputTax, cogs);
-        renderCashflowReport(grossSales, totalExpenses, filteredExpenses, reportData.dailyCashflow);
-        await generateValuationHistory(startDate, endDate, allItems, stockMovements);
-        renderInventoryHistory(filteredStockIn, filteredAdjustments);
-        renderUserStats(reportData.users);
-        renderPaymentStats(reportData.payments);
-        renderProductStats(reportData.products);
-        renderProductAffinity(reportData.affinity);
-        renderAuditLog(reportData.audit);
-        renderCashVariance(reportData.variance);
-        renderShiftReports(reportData.variance.filter(s => s.status === 'closed'));
-        renderCustomerInsights(reportData.vip, reportData.ledger);
-        renderSupplierInsights(reportData.vendorPerf, reportData.purchaseHistory, reportData.landedCost);
-        renderReturnsReport(reportData.returnReasons, reportData.defectiveSuppliers, reportData.returns);
-        renderStockMovement(reportData.movements);
-        renderShrinkageAnalysis(reportData.shrinkage, reportData.products);
-        renderRiskMetrics(reportData.products);
-        renderLowStockReport(reportData.lowStock);
-        renderSalesVelocity(reportData.velocity);
-        renderVelocityTrendChart(reportData.hourlyTrend);
+        // Initial Render - Use requestAnimationFrame to keep UI responsive
+        requestAnimationFrame(async () => {
+            updateFinancials(grossSales, totalOutputTax, totalInputTax, cogs);
+            renderCashflowReport(grossSales, totalExpenses, filteredExpenses, reportData.dailyCashflow);
+            
+            // Heavy calculations/rendering in chunks
+            await generateValuationHistory(startDate, endDate, allItems, stockMovements);
+            
+            setTimeout(() => {
+                renderInventoryHistory(filteredStockIn, filteredAdjustments);
+                renderUserStats(reportData.users);
+                renderPaymentStats(reportData.payments);
+                renderProductStats(reportData.products);
+                renderProductAffinity(reportData.affinity);
+                renderAuditLog(reportData.audit);
+                renderCashVariance(reportData.variance);
+                renderShiftReports(reportData.variance.filter(s => s.status === 'closed'));
+                renderCustomerInsights(reportData.vip, reportData.ledger);
+                renderSupplierInsights(reportData.vendorPerf, reportData.purchaseHistory, reportData.landedCost);
+                renderReturnsReport(reportData.returnReasons, reportData.defectiveSuppliers, reportData.returns);
+                renderStockMovement(reportData.movements);
+                renderShrinkageAnalysis(reportData.shrinkage, reportData.products);
+                renderRiskMetrics(reportData.products);
+                renderLowStockReport(reportData.lowStock);
+                renderSalesVelocity(reportData.velocity);
+                renderVelocityTrendChart(reportData.hourlyTrend);
+            }, 0);
+        });
 
         // If no transactions were found, update the users table message
         if (transactions.length === 0) {
@@ -1548,6 +1547,14 @@ async function generateValuationHistory(startDate, endDate, allItems, allMovemen
     let runningCostVal = currentCostVal;
     let runningRetailVal = currentRetailVal;
 
+    // Group movements by date for O(1) lookup - Massive performance boost
+    const movesByDate = {};
+    allMovements.forEach(m => {
+        const dateKey = moment(m.timestamp).format('YYYY-MM-DD');
+        if (!movesByDate[dateKey]) movesByDate[dateKey] = [];
+        movesByDate[dateKey].push(m);
+    });
+
     // Generate days array
     let currentDate = moment(startDate);
     const days = [];
@@ -1562,11 +1569,8 @@ async function generateValuationHistory(startDate, endDate, allItems, allMovemen
     for (const day of daysDesc) {
         const dayStart = day.clone().startOf('day');
         const dayEnd = day.clone().endOf('day');
-
-        const dayMoves = allMovements.filter(m => {
-            const t = moment(m.timestamp);
-            return t.isBetween(dayStart, dayEnd, null, '[]');
-        });
+        const dateKey = day.format('YYYY-MM-DD');
+        const dayMoves = movesByDate[dateKey] || [];
 
         // Sort descending (latest first) to walk back from Close to Open
         dayMoves.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));

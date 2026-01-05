@@ -650,19 +650,28 @@ async function refreshItemInsights() {
     startDate.setDate(startDate.getDate() - chartDays);
     const startStr = startDate.toISOString();
 
-    // 1. Fetch Transactions for this item
-    const txs = await db.transactions
-        .where('timestamp').aboveOrEqual(startStr)
-        .and(t => !t._deleted && !t.is_voided)
+    // 1. Fetch Transactions for this item (Optimized with multi-entry index)
+    // This assumes an index on 'item_ids' exists: transactions: '..., *item_ids'
+    const itemSales = await db.transactions
+        .where('item_ids').equals(item.id)
+        .filter(t => t.timestamp >= startStr && !t._deleted && !t.is_voided)
         .toArray();
 
-    const itemSales = txs.filter(t => t.items.some(i => i.id === item.id));
+    // 1b. Fetch Total Sold All Time (Optimized with index and .each to minimize memory footprint)
+    let totalSoldAllTime = 0;
+    await db.transactions
+        .where('item_ids').equals(item.id)
+        .filter(t => !t._deleted && !t.is_voided)
+        .each(t => {
+            const entry = t.items.find(it => it.id === item.id);
+            if (entry) totalSoldAllTime += entry.qty;
+        });
     
     // 2. Render Chart
-    renderItemSalesChart(itemSales, item.id);
+    renderItemSalesChart(itemSales, item.id, chartDays);
 
     // 3. Calculate Stats
-    const totalQty = itemSales.reduce((sum, t) => sum + t.items.find(i => i.id === item.id).qty, 0);
+    const totalQty = itemSales.reduce((sum, t) => sum + (t.items.find(i => i.id === item.id)?.qty || 0), 0);
     const avgDaily = totalQty / chartDays;
     const duration = avgDaily > 0 ? Math.floor(item.stock_level / avgDaily) : Infinity;
 
@@ -681,7 +690,10 @@ async function refreshItemInsights() {
     const lastAudit = await db.adjustments.where('item_id').equals(item.id).last();
 
     // Quadrant Classification (Simplified logic from reports.js)
-    const revenue = itemSales.reduce((sum, t) => sum + (t.items.find(i => i.id === item.id).selling_price * t.items.find(i => i.id === item.id).qty), 0);
+    const revenue = itemSales.reduce((sum, t) => {
+        const entry = t.items.find(i => i.id === item.id);
+        return sum + (entry ? (entry.selling_price * entry.qty) : 0);
+    }, 0);
     const marginPct = ((item.selling_price - item.cost_price) / item.selling_price) * 100;
     
     const badge = document.getElementById("item-quadrant-badge");
@@ -696,6 +708,7 @@ async function refreshItemInsights() {
     }
 
     document.getElementById("item-stats-body").innerHTML = `
+        <tr><td class="py-2 text-gray-500">Total Sold (All Time)</td><td class="py-2 text-right font-bold">${totalSoldAllTime} units</td></tr>
         <tr><td class="py-2 text-gray-500">Avg. Daily Sales</td><td class="py-2 text-right font-bold">${avgDaily.toFixed(2)} units</td></tr>
         <tr><td class="py-2 text-gray-500">Stock Duration</td><td class="py-2 text-right font-bold ${duration < 7 ? 'text-red-600' : ''}">${duration === Infinity ? 'N/A' : duration + ' days'}</td></tr>
         <tr><td class="py-2 text-gray-500">Recommended Purchase</td><td class="py-2 text-right font-bold text-blue-600">${recPurchase} units</td></tr>
@@ -715,21 +728,25 @@ async function refreshItemInsights() {
     `).join('') || '<tr><td colspan="2" class="py-4 text-center text-gray-400 italic">No data</td></tr>';
 }
 
-function renderItemSalesChart(transactions, itemId) {
+function renderItemSalesChart(transactions, itemId, days) {
     const ctx = document.getElementById('item-sales-chart').getContext('2d');
     if (itemSalesChart) itemSalesChart.destroy();
 
     const dailyData = {};
-    for (let i = 0; i < chartDays; i++) {
-        const d = new Date();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Normalize to start of day local time
+
+    for (let i = 0; i < days; i++) {
+        const d = new Date(today);
         d.setDate(d.getDate() - i);
-        dailyData[d.toISOString().split('T')[0]] = 0;
+        const key = d.toISOString().split('T')[0];
+        dailyData[key] = 0;
     }
 
     transactions.forEach(t => {
         const day = t.timestamp.split('T')[0];
         if (dailyData[day] !== undefined) {
-            dailyData[day] += t.items.find(i => i.id === itemId).qty;
+            dailyData[day] += t.items.find(i => i.id === itemId)?.qty || 0;
         }
     });
 
