@@ -373,6 +373,46 @@ async function renderPosInterface(content) {
                 </div>
             </div>
         </div>
+
+        <!-- Close Shift Modal -->
+        <div id="modal-close-shift" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center z-50">
+            <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+                <h3 class="text-xl font-bold mb-4 text-gray-800">Close Shift - Cash Count</h3>
+                <div class="max-h-[70vh] overflow-y-auto pr-2">
+                    <div class="grid grid-cols-3 gap-2 mb-2 font-bold text-[10px] text-gray-400 uppercase border-b pb-1">
+                        <div>Denomination</div>
+                        <div class="text-center">Count</div>
+                        <div class="text-right">Subtotal</div>
+                    </div>
+                    <div class="space-y-1 mb-4" id="cash-counter-grid">
+                        <!-- Denominations injected here -->
+                    </div>
+                    <div class="pt-2 border-t flex justify-between items-center mb-6">
+                        <span class="font-bold text-gray-600 text-sm">Physical Cash:</span>
+                        <span id="cash-counter-total" class="text-lg font-bold text-gray-800">₱0.00</span>
+                    </div>
+
+                    <div class="mb-4">
+                        <div class="flex justify-between items-center mb-2">
+                            <h4 class="text-sm font-bold text-gray-700 uppercase">Expense Receipts</h4>
+                            <button id="btn-add-shift-receipt" class="text-[10px] bg-blue-100 text-blue-600 px-2 py-1 rounded font-bold hover:bg-blue-200">+ Add Receipt</button>
+                        </div>
+                        <div id="shift-receipts-list" class="space-y-2">
+                            <!-- Receipts injected here -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-3 border-t flex justify-between items-center mt-4">
+                    <span class="font-bold text-gray-800">Total Turnover:</span>
+                    <span id="shift-total-turnover" class="text-2xl font-bold text-blue-600">₱0.00</span>
+                </div>
+                <div class="mt-6 flex gap-2">
+                    <button id="btn-cancel-close-shift" class="w-1/2 bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 rounded shadow transition">Cancel</button>
+                    <button id="btn-confirm-close-shift" class="w-1/2 bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded shadow transition">Confirm Close</button>
+                </div>
+            </div>
+        </div>
     `;
 
     // Load Items from Dexie
@@ -569,11 +609,209 @@ async function renderPosInterface(content) {
         custResults.classList.add("hidden");
     });
 
-    document.getElementById("btn-pos-close-shift").addEventListener("click", () => {
-        showCloseShiftModal(() => {
-            loadPosView();
+    const openCloseShiftModal = () => {
+        const modal = document.getElementById("modal-close-shift");
+        const grid = document.getElementById("cash-counter-grid");
+        const receiptsList = document.getElementById("shift-receipts-list");
+        const denoms = [1000, 500, 200, 100, 50, 20, 10, 5, 1, 0.01];
+        const labels = ["1000", "500", "200", "100", "50", "20", "10", "5", "1", "Cents"];
+        
+        receiptsList.innerHTML = ""; // Clear receipts
+        
+        grid.innerHTML = denoms.map((d, i) => `
+            <div class="flex items-center gap-2 py-1 border-b border-gray-50 last:border-0">
+                <label class="w-16 text-xs font-bold text-gray-500">${labels[i]}</label>
+                <input type="number" min="0" step="1" 
+                    class="flex-1 border rounded p-1 text-sm text-center denom-input focus:ring-2 focus:ring-blue-500 outline-none" 
+                    data-denom="${d}" 
+                    value=""
+                    placeholder="0"
+                    ${i === 0 ? 'id="first-denom-input"' : ''}>
+                <div class="w-24 text-right text-xs font-mono text-gray-600 denom-subtotal">₱0.00</div>
+            </div>
+        `).join('');
+
+        const updateTotals = () => {
+            let cashTotal = 0;
+            grid.querySelectorAll(".denom-input").forEach(input => {
+                const denom = parseFloat(input.dataset.denom);
+                const count = parseInt(input.value) || 0;
+                const subtotal = denom * count;
+                cashTotal += subtotal;
+                input.nextElementSibling.textContent = `₱${subtotal.toFixed(2)}`;
+            });
+            document.getElementById("cash-counter-total").textContent = `₱${cashTotal.toFixed(2)}`;
+            
+            let receiptTotal = 0;
+            receiptsList.querySelectorAll(".receipt-row").forEach(row => {
+                const amt = parseFloat(row.querySelector(".receipt-amount").value) || 0;
+                receiptTotal += amt;
+            });
+
+            const grandTotal = cashTotal + receiptTotal;
+            document.getElementById("shift-total-turnover").textContent = `₱${grandTotal.toFixed(2)}`;
+            modal.dataset.cashTotal = cashTotal;
+            modal.dataset.grandTotal = grandTotal;
+        };
+
+        // Add Receipt Logic
+        document.getElementById("btn-add-shift-receipt").onclick = () => {
+            const row = document.createElement("div");
+            row.className = "flex gap-2 receipt-row";
+            row.innerHTML = `
+                <input type="text" placeholder="Description" class="flex-1 border rounded p-1 text-xs receipt-desc outline-none focus:ring-1 focus:ring-blue-500">
+                <input type="number" placeholder="Amount" class="w-24 border rounded p-1 text-xs text-right receipt-amount outline-none focus:ring-1 focus:ring-blue-500" step="0.01">
+                <button class="text-red-500 hover:text-red-700 btn-remove-receipt">&times;</button>
+            `;
+            row.querySelector(".btn-remove-receipt").onclick = () => {
+                row.remove();
+                updateTotals();
+            };
+            row.querySelector(".receipt-amount").oninput = updateTotals;
+            receiptsList.appendChild(row);
+            row.querySelector(".receipt-desc").focus();
+        };
+
+        grid.querySelectorAll(".denom-input").forEach(input => {
+            input.addEventListener("input", updateTotals);
+            input.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    const next = input.closest('.flex').nextElementSibling?.querySelector('input');
+                    if (next) next.focus();
+                    else document.getElementById("btn-confirm-close-shift").focus();
+                }
+            });
         });
+
+        modal.classList.remove("hidden");
+        setTimeout(() => document.getElementById("first-denom-input")?.focus(), 100);
+    };
+
+    document.getElementById("btn-pos-close-shift").addEventListener("click", openCloseShiftModal);
+    document.getElementById("btn-cancel-close-shift").addEventListener("click", () => {
+        document.getElementById("modal-close-shift").classList.add("hidden");
     });
+
+    document.getElementById("btn-confirm-close-shift").addEventListener("click", async () => {
+        const modal = document.getElementById("modal-close-shift");
+        const cashTotal = parseFloat(modal.dataset.cashTotal) || 0;
+        const grandTotal = parseFloat(modal.dataset.grandTotal) || 0;
+        
+        const receipts = [];
+        modal.querySelectorAll(".receipt-row").forEach(row => {
+            const desc = row.querySelector(".receipt-desc").value.trim();
+            const amt = parseFloat(row.querySelector(".receipt-amount").value) || 0;
+            if (desc && amt > 0) receipts.push({ description: desc, amount: amt });
+        });
+
+        const user = JSON.parse(localStorage.getItem('pos_user'));
+        if (!user) return;
+
+        try {
+            const shifts = await Repository.getAll('shifts');
+            const activeShift = shifts.find(s => s.user_id === user.email && s.status === 'open');
+            if (activeShift) {
+                activeShift.status = 'closed';
+                activeShift.end_time = new Date().toISOString();
+                activeShift.closing_cash = cashTotal;
+                activeShift.closing_receipts = receipts;
+                activeShift.total_closing_amount = grandTotal;
+                
+                await Repository.upsert('shifts', activeShift);
+                await SyncEngine.sync();
+                
+                modal.classList.add("hidden");
+
+                if (confirm("Shift closed successfully. Would you like to print the closing report?")) {
+                    printShiftReport(activeShift);
+                }
+
+                loadPosView();
+            }
+        } catch (error) {
+            console.error("Error closing shift:", error);
+            showToast("Failed to close shift.", true);
+        }
+    });
+
+    async function printShiftReport(shift) {
+        const settings = await getSystemSettings();
+        const store = settings.store || { name: "LightPOS", data: "" };
+        
+        const printWindow = window.open('', '_blank', 'width=300,height=600');
+        
+        const receiptsHtml = (shift.closing_receipts || []).map(r => `
+            <tr>
+                <td style="font-size: 10px;">${r.description}</td>
+                <td style="text-align: right;">${r.amount.toFixed(2)}</td>
+            </tr>
+        `).join('');
+
+        const reportHtml = `
+            <html>
+            <head>
+                <title>Shift Closing Report</title>
+                <style>
+                    @page { margin: 0; }
+                    body { 
+                        width: 76mm; 
+                        font-family: 'Courier New', Courier, monospace; 
+                        font-size: 12px; 
+                        padding: 5mm;
+                        margin: 0;
+                        color: #000;
+                    }
+                    .text-center { text-align: center; }
+                    .text-right { text-align: right; }
+                    .bold { font-weight: bold; }
+                    .hr { border-bottom: 1px dashed #000; margin: 5px 0; }
+                    table { width: 100%; border-collapse: collapse; }
+                </style>
+            </head>
+            <body onload="window.print(); window.close();">
+                <div class="text-center">
+                    <div class="bold" style="font-size: 16px;">SHIFT CLOSING REPORT</div>
+                    <div class="bold">${store.name}</div>
+                </div>
+                <div class="hr"></div>
+                <div style="font-size: 10px;">
+                    User: ${shift.user_id}<br>
+                    Opened: ${new Date(shift.start_time).toLocaleString()}<br>
+                    Closed: ${new Date(shift.end_time).toLocaleString()}
+                </div>
+                <div class="hr"></div>
+                <table>
+                    <tr><td>Opening Cash</td><td class="text-right">₱${(shift.opening_cash || 0).toFixed(2)}</td></tr>
+                    <tr><td>Expected Cash</td><td class="text-right">₱${(shift.expected_cash || 0).toFixed(2)}</td></tr>
+                    <tr class="bold"><td>Physical Cash</td><td class="text-right">₱${(shift.closing_cash || 0).toFixed(2)}</td></tr>
+                </table>
+                ${receiptsHtml ? `
+                    <div class="hr"></div>
+                    <div class="bold" style="font-size: 10px;">EXPENSE RECEIPTS</div>
+                    <table>${receiptsHtml}</table>
+                ` : ''}
+                <div class="hr"></div>
+                <table>
+                    <tr class="bold" style="font-size: 14px;">
+                        <td>TOTAL TURNOVER</td>
+                        <td class="text-right">₱${(shift.total_closing_amount || shift.closing_cash || 0).toFixed(2)}</td>
+                    </tr>
+                    <tr class="bold">
+                        <td>VARIANCE</td>
+                        <td class="text-right">₱${((shift.total_closing_amount || shift.closing_cash || 0) - (shift.expected_cash || 0)).toFixed(2)}</td>
+                    </tr>
+                </table>
+                <div class="hr" style="margin-top: 20px;"></div>
+                <div class="text-center" style="font-size: 10px; margin-top: 10px;">
+                    End of Report
+                </div>
+            </body>
+            </html>
+        `;
+        printWindow.document.write(reportHtml);
+        printWindow.document.close();
+    }
 
     // Checkout Logic
     document.getElementById("btn-checkout").addEventListener("click", openCheckout);

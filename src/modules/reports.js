@@ -57,6 +57,7 @@ export async function loadReportsView() {
                     <div class="flex gap-4 mb-6 border-b border-gray-100">
                         <button data-subtab="fin-summary" class="subtab-btn border-blue-500 text-blue-600 py-2 px-4 border-b-2 text-xs font-bold transition-colors">Summary & Payments</button>
                         <button data-subtab="fin-variance" class="subtab-btn border-transparent text-gray-500 hover:text-gray-700 py-2 px-4 border-b-2 text-xs font-bold transition-colors">Shifts</button>
+                        <button data-subtab="fin-shift-reports" class="subtab-btn border-transparent text-gray-500 hover:text-gray-700 py-2 px-4 border-b-2 text-xs font-bold transition-colors">Closing Reports</button>
                     </div>
 
                     <div id="subpanel-fin-summary" class="sub-panel">
@@ -120,6 +121,29 @@ export async function loadReportsView() {
                                 <tbody id="report-variance-body" class="text-gray-600 text-sm font-light">
                                     <tr><td colspan="11" class="py-3 px-6 text-center">Select dates and click Generate.</td></tr>
                                 </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div id="subpanel-fin-shift-reports" class="sub-panel hidden">
+                        <div class="bg-white shadow-md rounded overflow-hidden">
+                            <div class="px-6 py-4 border-b bg-gray-50 flex justify-between items-center">
+                                <h3 class="font-bold text-gray-800">Shift Closing Reports</h3>
+                                <button class="btn-toggle-filter text-blue-500 hover:text-blue-700" data-target="shiftReports">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
+                                </button>
+                            </div>
+                            <div id="filter-shiftReports" class="hidden px-6 py-2 bg-gray-100 border-b"><input type="text" placeholder="Filter reports..." class="filter-input w-full p-1 border rounded text-sm" data-table="shiftReports"></div>
+                            <table class="min-w-full table-auto">
+                                <thead>
+                                    <tr class="bg-gray-100 text-gray-600 uppercase text-xs leading-normal">
+                                        <th class="py-3 px-6 text-left cursor-pointer hover:bg-gray-200" data-sort="end_time" data-table="shiftReports">Closed At</th>
+                                        <th class="py-3 px-6 text-left cursor-pointer hover:bg-gray-200" data-sort="user_id" data-table="shiftReports">User</th>
+                                        <th class="py-3 px-6 text-right cursor-pointer hover:bg-gray-200" data-sort="total_closing_amount" data-table="shiftReports">Total Turnover</th>
+                                        <th class="py-3 px-6 text-right">Variance</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="report-shift-reports-body" class="text-gray-600 text-sm font-light"></tbody>
                             </table>
                         </div>
                     </div>
@@ -942,6 +966,11 @@ export async function loadReportsView() {
         if (btnViewShift) {
             showShiftTransactions(btnViewShift.dataset.id);
         }
+
+        const btnViewShiftReport = e.target.closest(".btn-view-shift-report");
+        if (btnViewShiftReport) {
+            showShiftReportDetails(btnViewShiftReport.dataset.id);
+        }
     });
 
     document.getElementById("btn-refresh-slow")?.addEventListener("click", async () => {
@@ -1334,6 +1363,7 @@ async function generateReport() {
         renderProductAffinity(reportData.affinity);
         renderAuditLog(reportData.audit);
         renderCashVariance(reportData.variance);
+        renderShiftReports(reportData.variance.filter(s => s.status === 'closed'));
         renderCustomerInsights(reportData.vip, reportData.ledger);
         renderSupplierInsights(reportData.vendorPerf, reportData.purchaseHistory, reportData.landedCost);
         renderReturnsReport(reportData.returnReasons, reportData.defectiveSuppliers, reportData.returns);
@@ -1626,6 +1656,7 @@ function renderTable(tableId) {
         case 'velocity': renderSalesVelocity(reportData.velocity); break;
         case 'invLedger': renderInventoryLedger(reportData.ledgerSnapshot); break;
         case 'lowStock': renderLowStockReport(reportData.lowStock); break;
+        case 'shiftReports': renderShiftReports(reportData.variance.filter(s => s.status === 'closed')); break;
         case 'quadrantDetails': renderQuadrantDetails(); break;
         case 'variance': renderCashVariance(reportData.variance); break;
         case 'stockIn':
@@ -1854,6 +1885,102 @@ function showStockInDetails(id) {
                     </thead>
                     <tbody>${itemRows}</tbody>
                 </table>
+            </div>
+            <div class="mt-6 flex justify-end">
+                <button class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded shadow close-modal">Close</button>
+            </div>
+        </div>
+    `;
+
+    modal.classList.remove('hidden');
+    modal.querySelectorAll('.close-modal').forEach(btn => {
+        btn.addEventListener('click', () => modal.classList.add('hidden'));
+    });
+}
+
+function renderShiftReports(data) {
+    const tbody = document.getElementById("report-shift-reports-body");
+    if (!tbody) return;
+    tbody.innerHTML = "";
+    const processed = applySortAndFilter(data, 'shiftReports');
+
+    if (processed.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="py-3 px-6 text-center">No closed shift reports found.</td></tr>`;
+        return;
+    }
+
+    processed.forEach(s => {
+        const turnover = s.total_closing_amount || s.closing_cash || 0;
+        const variance = turnover - (s.expected_cash || 0);
+        const diffClass = variance < 0 ? "text-red-600 font-bold" : (variance > 0 ? "text-green-600 font-bold" : "text-gray-500");
+        
+        const row = document.createElement("tr");
+        row.className = "border-b border-gray-200 hover:bg-gray-100 cursor-pointer btn-view-shift-report";
+        row.dataset.id = s.id;
+        row.innerHTML = `
+            <td class="py-3 px-6 text-left">${new Date(s.end_time).toLocaleString()}</td>
+            <td class="py-3 px-6 text-left">${s.user_id}</td>
+            <td class="py-3 px-6 text-right font-bold">₱${turnover.toFixed(2)}</td>
+            <td class="py-3 px-6 text-right ${diffClass}">₱${variance.toFixed(2)}</td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+async function showShiftReportDetails(shiftId) {
+    const shift = reportData.variance.find(s => s.id === shiftId);
+    if (!shift) return;
+
+    let modal = document.getElementById('report-shift-details-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'report-shift-details-modal';
+        modal.className = 'fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center z-50';
+        document.body.appendChild(modal);
+    }
+
+    const receiptsHtml = (shift.closing_receipts || []).map(r => `
+        <tr class="border-b">
+            <td class="p-2">${r.description}</td>
+            <td class="p-2 text-right">₱${r.amount.toFixed(2)}</td>
+        </tr>
+    `).join('');
+
+    modal.innerHTML = `
+        <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md mx-4">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-gray-800">Shift Closing Report</h3>
+                <button class="text-gray-500 hover:text-gray-700 text-2xl close-modal">&times;</button>
+            </div>
+            <div class="space-y-4">
+                <div class="text-sm grid grid-cols-2 gap-2 bg-gray-50 p-3 rounded">
+                    <div><strong>User:</strong> ${shift.user_id}</div>
+                    <div><strong>Closed:</strong> ${new Date(shift.end_time).toLocaleString()}</div>
+                </div>
+                
+                <div class="border rounded overflow-hidden">
+                    <table class="w-full text-sm">
+                        <tr class="bg-gray-50 border-b"><td class="p-2">Opening Cash</td><td class="p-2 text-right">₱${(shift.opening_cash || 0).toFixed(2)}</td></tr>
+                        <tr class="border-b"><td class="p-2">Expected Cash</td><td class="p-2 text-right">₱${(shift.expected_cash || 0).toFixed(2)}</td></tr>
+                        <tr class="font-bold"><td class="p-2">Physical Cash Count</td><td class="p-2 text-right">₱${(shift.closing_cash || 0).toFixed(2)}</td></tr>
+                    </table>
+                </div>
+
+                ${receiptsHtml ? `
+                    <div>
+                        <h4 class="text-xs font-bold text-gray-500 uppercase mb-1">Expense Receipts</h4>
+                        <div class="border rounded overflow-hidden">
+                            <table class="w-full text-xs">
+                                <tbody class="bg-white">${receiptsHtml}</tbody>
+                            </table>
+                        </div>
+                    </div>
+                ` : ''}
+
+                <div class="pt-3 border-t flex justify-between items-center">
+                    <span class="font-bold text-gray-800">Total Turnover:</span>
+                    <span class="text-2xl font-bold text-blue-600">₱${(shift.total_closing_amount || shift.closing_cash || 0).toFixed(2)}</span>
+                </div>
             </div>
             <div class="mt-6 flex justify-end">
                 <button class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded shadow close-modal">Close</button>
