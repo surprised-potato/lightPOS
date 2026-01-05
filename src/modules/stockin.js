@@ -465,7 +465,7 @@ async function loadStockInHistory() {
     historyContainer.innerHTML = '<p class="text-gray-500">Loading history...</p>';
 
     try {
-        const history = await db.stockins.toArray();
+        const history = await Repository.getAll('stockins');
         historyCache = history;
 
         // Sort by timestamp desc and limit

@@ -14,34 +14,53 @@ if ($method === 'POST') {
     // PUSH: Apply incoming changes from client outbox
     $input = json_decode(file_get_contents('php://input'), true);
     $outbox = $input['outbox'] ?? [];
-    
+
+    // Group by collection to minimize I/O
+    $collectionsToUpdate = [];
     foreach ($outbox as $change) {
         $col = $change['collection'];
-        $payload = $change['payload'];
-        $data = $store->read($col);
-        
+        if (!isset($collectionsToUpdate[$col])) {
+            $collectionsToUpdate[$col] = [
+                'data' => $store->read($col),
+                'changes' => []
+            ];
+        }
+        $collectionsToUpdate[$col]['changes'][] = $change;
+    }
+
+    foreach ($collectionsToUpdate as $col => $group) {
+        $data = $group['data'];
         $idField = ($col === 'users') ? 'email' : 'id';
-        $idx = -1;
-        foreach ($data as $i => $item) {
-            if ($item[$idField] === $payload[$idField]) {
-                $idx = $i;
-                break;
+
+        foreach ($group['changes'] as $change) {
+            $payload = $change['payload'];
+            $idx = -1;
+            foreach ($data as $i => $item) {
+                if ($item[$idField] === $payload[$idField]) {
+                    $idx = $i;
+                    break;
+                }
             }
-        }
-        
-        if ($idx !== -1) {
-            // Conflict Resolution: Higher version wins (Last Write Wins)
-            if ($payload['_version'] > $data[$idx]['_version']) {
-                $data[$idx] = $payload;
-                $data[$idx]['_hash'] = md5(json_encode($payload));
+
+            if ($idx !== -1) {
+                // Conflict Resolution: Last Write Wins (LWW)
+                // Logic: Higher _version wins. If versions are equal, higher _updatedAt wins.
+                $clientVersion = $payload['_version'] ?? 0;
+                $serverVersion = $data[$idx]['_version'] ?? 0;
+                $clientUpdated = $payload['_updatedAt'] ?? 0;
+                $serverUpdated = $data[$idx]['_updatedAt'] ?? 0;
+
+                if ($clientVersion > $serverVersion || ($clientVersion === $serverVersion && $clientUpdated > $serverUpdated)) {
+                    $data[$idx] = $payload;
+                    $data[$idx]['_hash'] = md5(json_encode($payload));
+                }
+            } else {
+                $payload['_hash'] = md5(json_encode($payload));
+                $data[] = $payload;
             }
-        } else {
-            $payload['_hash'] = md5(json_encode($payload));
-            $data[] = $payload;
+            $store->appendLog($change);
         }
-        
         $store->write($col, $data);
-        $store->appendLog($change);
     }
     
     echo json_encode(['status' => 'success']);
@@ -57,7 +76,7 @@ if ($method === 'GET') {
     foreach ($collections as $col) {
         $data = $store->read($col);
         $deltas = array_filter($data, function($item) use ($since) {
-            return $item['_updatedAt'] > $since;
+            return ($item['_updatedAt'] ?? 0) > $since;
         });
         if (!empty($deltas)) {
             $response[$col] = array_values($deltas);
@@ -66,7 +85,7 @@ if ($method === 'GET') {
 
     echo json_encode([
         'deltas' => $response,
-        'serverTime' => time()
+        'serverTime' => round(microtime(true) * 1000) // Use milliseconds to match JS Date.now()
     ]);
     exit;
 }

@@ -68,8 +68,13 @@ export const SyncEngine = {
                     const idField = db[collection].schema.primKey.name;
                     const local = await db[collection].get(item[idField]);
                     
-                    // Apply change if local is missing or server version is higher
-                    if (!local || item._version > (local._version || 0)) {
+                    const localVersion = local?._version || 0;
+                    const serverVersion = item._version || 0;
+                    const localUpdated = local?._updatedAt || 0;
+                    const serverUpdated = item._updatedAt || 0;
+
+                    // Apply change if local is missing or server version is higher (LWW)
+                    if (!local || serverVersion > localVersion || (serverVersion === localVersion && serverUpdated > localUpdated)) {
                         await db[collection].put(item);
                     }
                 }

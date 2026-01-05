@@ -1,3 +1,6 @@
+import { Repository } from "./services/Repository.js";
+import { SyncEngine } from "./services/SyncEngine.js";
+
 const API_URL = 'api/router.php';
 
 let currentUserProfile = null;
@@ -76,14 +79,11 @@ export async function verifyManagerPassword(password) {
     if (now < lockoutUntil) return false;
 
     try {
-        let users;
         if (navigator.onLine) {
-            const response = await fetch(`${API_URL}?file=users`);
-            users = await response.json();
-            if (db.isOpen()) await db.users.bulkPut(users);
-        } else {
-            users = await db.users.toArray();
+            await SyncEngine.sync();
         }
+        
+        const users = await Repository.getAll('users');
 
         const hashed = md5(password);
         const isValid = users.some(u => 

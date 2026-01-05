@@ -1,0 +1,23 @@
+[
+    {
+        "id": "7289718b-ca44-4931-bd40-18d7c285d8c0",
+        "user_id": "admin@lightpos.com",
+        "username": "Super Admin",
+        "items": [
+            {
+                "item_id": "0d7fd628-5b84-4753-b9ce-0bfb94a90048",
+                "name": "Bigtime Chicken",
+                "quantity": 50,
+                "cost_price": 27,
+                "movement_id": "c2f14f8e-e264-400f-8c45-29ebc58f45ab"
+            }
+        ],
+        "timestamp": "2026-01-05T03:21:49.651Z",
+        "item_count": 50,
+        "supplier_id_override": null,
+        "_version": 1,
+        "_updatedAt": 1767583309651,
+        "_deleted": false,
+        "_hash": "806d4efada218b9ba6a00f66cee2754b"
+    }
+]

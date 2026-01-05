@@ -46,47 +46,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($action === 'login') {
         $email = $input['email'] ?? '';
         $password = $input['password'] ?? ''; 
-        
-        $usersPath = $dataDir . 'users.json';
-        
+
         // Auto-seed admin if file missing
-        if (!file_exists($usersPath)) {
+        $users = $store->read('users');
+        if (empty($users)) {
             $defaultAdmin = [[
                 "email" => "admin@lightpos.com",
                 "name" => "Super Admin",
                 "password" => "21232f297a57a5a743894a0e4a801fc3", // "admin"
                 "is_active" => true,
+                "_version" => 1,
+                "_updatedAt" => round(microtime(true) * 1000),
+                "_deleted" => false,
                 "permissions" => [
-                    "pos" => ["read" => true, "write" => true],
-                    "customers" => ["read" => true, "write" => true],
-                    "items" => ["read" => true, "write" => true],
-                    "suppliers" => ["read" => true, "write" => true],
-                    "stockin" => ["read" => true, "write" => true],
-                    "stock-count" => ["read" => true, "write" => true],
-                    "reports" => ["read" => true, "write" => true],
-                    "expenses" => ["read" => true, "write" => true],
-                    "users" => ["read" => true, "write" => true],
-                    "shifts" => ["read" => true, "write" => true],
-                    "migrate" => ["read" => true, "write" => true],
-                    "returns" => ["read" => true, "write" => true]
+                    "pos" => ["read" => true, "write" => true], "customers" => ["read" => true, "write" => true],
+                    "items" => ["read" => true, "write" => true], "suppliers" => ["read" => true, "write" => true],
+                    "stockin" => ["read" => true, "write" => true], "stock-count" => ["read" => true, "write" => true],
+                    "reports" => ["read" => true, "write" => true], "expenses" => ["read" => true, "write" => true],
+                    "users" => ["read" => true, "write" => true], "shifts" => ["read" => true, "write" => true],
+                    "migrate" => ["read" => true, "write" => true], "returns" => ["read" => true, "write" => true],
+                    "settings" => ["read" => true, "write" => true]
                 ]
             ]];
-            file_put_contents($usersPath, json_encode($defaultAdmin, JSON_PRETTY_PRINT));
+            $store->write('users', $defaultAdmin);
+            $users = $defaultAdmin;
         }
-        
-        $users = $store->read('users');
-        
+
         $foundUser = null;
-        if (is_array($users)) {
-            foreach ($users as $u) {
-                // Simple MD5 check as per PRD for MVP
-                if ($u['email'] === $email && $u['password'] === md5($password)) {
-                    $foundUser = $u;
-                    break;
-                }
+        foreach ($users as $u) {
+            if ($u['email'] === $email && $u['password'] === md5($password)) {
+                $foundUser = $u;
+                break;
             }
         }
-        
+
         if ($foundUser) {
             if (isset($foundUser['is_active']) && !$foundUser['is_active']) {
                 http_response_code(403);
@@ -98,59 +91,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             http_response_code(401);
             echo json_encode(["error" => "Invalid credentials"]);
-        }
-    } elseif ($action === 'batch_stock_in') {
-        $payload = $input['data'] ?? null;
-        $supplierOverride = $payload['supplier_id_override'] ?? null;
-        
-        if ($payload) {
-            // 1. Update Items Stock
-            $items = $store->read('items');
-            $movements = $store->read('stock_movements');
-            $history = $store->read('stock_in_history');
-            
-            
-            $itemsMap = [];
-            foreach ($items as &$item) {
-                $itemsMap[$item['id']] = &$item;
-            }
-            unset($item);
-
-            foreach ($payload['items'] as $cartItem) {
-                if (isset($itemsMap[$cartItem['item_id']])) {
-                    $item = &$itemsMap[$cartItem['item_id']];
-                    $item['stock_level'] = ($item['stock_level'] ?? 0) + $cartItem['quantity'];
-                    
-                    // Update supplier if override provided and item has none
-                    if ($supplierOverride && (empty($item['supplier_id']))) {
-                        $item['supplier_id'] = $supplierOverride;
-                    }
-
-                    // Record movement
-                    $movements[] = [
-                        "id" => $cartItem['movement_id'] ?? uniqid(),
-                        "item_id" => $cartItem['item_id'],
-                        "item_name" => $cartItem['name'],
-                        "timestamp" => $payload['timestamp'],
-                        "type" => "Stock-In",
-                        "qty" => (int)$cartItem['quantity'],
-                        "user" => $payload['username'] ?? $payload['user_id'],
-                        "reason" => "Supplier Delivery"
-                    ];
-                }
-            }
-            
-            $store->write('items', array_values($itemsMap));
-            $store->write('stock_movements', $movements);
-            
-            // 2. Log History
-            array_unshift($history, $payload);
-            $store->write('stock_in_history', $history);
-            
-            echo json_encode(["success" => true]);
-        } else {
-            http_response_code(400);
-            echo json_encode(["error" => "No data provided"]);
         }
     } elseif ($action === 'reset_all') {
         // Nuclear option: Delete all JSON files in data directory

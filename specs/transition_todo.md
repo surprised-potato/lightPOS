@@ -55,11 +55,11 @@
 - [x] **UI Components**
     - [x] Add Sync Status Indicator (Green/Yellow/Red) in `src/layout.js`.
     - [x] Add "Force Sync" button.
-- [ ] **Testing Scenarios**
-    - [ ] **Offline Creation:** Create item offline -> Refresh -> Online -> Verify Sync.
-    - [ ] **Conflict:** Edit Item A on Device 1 (Offline). Edit Item A on Device 2 (Online). Connect Device 1. Verify Device 2's edit wins (or higher version wins).
-    - [ ] **Interruption:** Kill server process mid-sync (simulate). Verify no data corruption (Atomic write check).
-    - [ ] **Tab Concurrency:** Open App in 2 tabs. Trigger sync. Verify only one network request fires.
+- [x] **Testing Scenarios**
+    - [x] **Offline Creation:** Create item offline -> Refresh -> Online -> Verify Sync.
+    - [x] **Conflict:** Edit Item A on Device 1 (Offline). Edit Item A on Device 2 (Online). Connect Device 1. Verify Device 2's edit wins (or higher version wins).
+    - [x] **Interruption:** Kill server process mid-sync (simulate). Verify no data corruption (Atomic write check).
+    - [x] **Tab Concurrency:** Open App in 2 tabs. Trigger sync. Verify only one network request fires.
 
 ## Phase 6: Cleanup
 - [x] Remove old `sync-service.js` (replaced by `SyncEngine.js`).

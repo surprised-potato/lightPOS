@@ -226,6 +226,11 @@ export async function loadSettingsView() {
                                         <input type="checkbox" id="set-auto-print" class="form-checkbox h-5 w-5 text-blue-600">
                                         <span class="ml-2 text-sm font-bold text-gray-700">Auto-print receipt after payment</span>
                                     </label>
+                        </div>
+                        <div class="mt-6 pt-6 border-t">
+                            <h4 class="text-xs font-bold text-gray-500 uppercase mb-2">Developer Tools</h4>
+                            <button type="button" id="btn-run-tests" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded transition text-sm shadow-sm">Run Sync Architecture Tests</button>
+                            <p class="text-[10px] text-gray-400 mt-1">Verifies Outbox, LWW Conflict Resolution, and Web Locks.</p>
                                 </div>
                             </div>
 
@@ -412,6 +417,12 @@ function setupEventListeners() {
     });
 
     document.getElementById("form-settings").addEventListener("submit", handleSave);
+
+    document.getElementById("btn-run-tests")?.addEventListener("click", async () => {
+        const { TestRunner } = await import("../services/TestRunner.js");
+        await TestRunner.runAll();
+        alert("Architecture tests completed. Please check the browser console (F12) for detailed logs.");
+    });
 
     document.getElementById("btn-nuclear-reset")?.addEventListener("click", async () => {
         if (confirm("ARE YOU ABSOLUTELY SURE? This cannot be undone. All sales and inventory data will be lost.")) {

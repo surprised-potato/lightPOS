@@ -16,6 +16,10 @@ export async function loadItemsView() {
             <h2 class="text-2xl font-bold text-gray-800 mb-4 md:mb-0">Items</h2>
             <div class="flex w-full md:w-auto gap-4 items-center">
                 <input type="text" id="search-items" placeholder="Search items..." class="shadow appearance-none border rounded w-full md:w-64 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <div class="flex items-center gap-2">
+                    <label class="text-xs font-bold text-gray-500 uppercase whitespace-nowrap">Show:</label>
+                    <input type="number" id="items-limit" value="50" min="1" class="w-16 border rounded p-1 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
                 <label class="inline-flex items-center text-sm text-gray-600 cursor-pointer whitespace-nowrap">
                     <input type="checkbox" id="filter-low-stock" class="form-checkbox h-4 w-4 text-blue-600">
                     <span class="ml-2">Low Stock Only</span>
@@ -182,6 +186,8 @@ export async function loadItemsView() {
         applyFiltersAndSort();
     });
 
+    document.getElementById("items-limit").addEventListener("input", () => applyFiltersAndSort());
+
     // Sorting Listener
     content.addEventListener("click", (e) => {
         const th = e.target.closest("th[data-sort]");
@@ -258,8 +264,8 @@ function applyFiltersAndSort() {
     if (filterState.search) {
         const term = filterState.search.toLowerCase();
         filtered = filtered.filter(item => 
-            item.name.toLowerCase().includes(term) || 
-            item.barcode.toLowerCase().includes(term)
+            (item.name || "").toLowerCase().includes(term) || 
+            (item.barcode || "").toLowerCase().includes(term)
         );
     }
     if (filterState.lowStock) {
@@ -278,9 +284,10 @@ function applyFiltersAndSort() {
         return 0;
     });
 
-    // Limit to 50 items for performance
+    // Limit items for performance
+    const limit = parseInt(document.getElementById("items-limit")?.value) || 50;
     const totalCount = filtered.length;
-    const limited = filtered.slice(0, 50);
+    const limited = filtered.slice(0, limit);
     renderItems(limited, totalCount);
 }
 
@@ -401,9 +408,9 @@ function renderItems(items, totalCount) {
         tbody.appendChild(row);
     });
 
-    if (totalCount > 50) {
+    if (totalCount > items.length) {
         const row = document.createElement("tr");
-        row.innerHTML = `<td colspan="7" class="py-4 text-center text-gray-500 italic bg-gray-50">Showing top 50 of ${totalCount} items. Refine search to see more.</td>`;
+        row.innerHTML = `<td colspan="7" class="py-4 text-center text-gray-500 italic bg-gray-50">Showing top ${items.length} of ${totalCount} items. Refine search or increase limit to see more.</td>`;
         tbody.appendChild(row);
     }
 }

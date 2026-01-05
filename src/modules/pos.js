@@ -1,4 +1,3 @@
-import { db } from "../db.js"; // Still needed for complex queries like history
 import { checkPermission, requestManagerApproval } from "../auth.js";
 import { checkActiveShift, requireShift, showCloseShiftModal } from "./shift.js";
 import { addNotification } from "../services/notification-service.js";
@@ -936,10 +935,10 @@ async function openHistoryModal() {
     tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center">Loading...</td></tr>`;
 
     try {
-        // Complex query still uses db directly but filters for non-deleted
-        const txs = await db.transactions
-            .filter(tx => !tx._deleted)
-            .orderBy('timestamp').reverse().limit(50).toArray();
+        const allTxs = await Repository.getAll('transactions');
+        const txs = allTxs
+            .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+            .slice(0, 50);
         tbody.innerHTML = txs.map(tx => `
             <tr class="border-b ${tx.is_voided ? 'bg-red-50 opacity-60' : ''}">
                 <td class="p-2 text-xs">${new Date(tx.timestamp).toLocaleString()}</td>
