@@ -25,6 +25,7 @@ export async function loadCustomersView() {
                 <table class="min-w-full table-auto">
                     <thead>
                         <tr class="bg-gray-100 text-gray-600 uppercase text-sm leading-normal">
+                            <th class="py-3 px-6 text-left">Account #</th>
                             <th class="py-3 px-6 text-left">Name</th>
                             <th class="py-3 px-6 text-left">Phone</th>
                             <th class="py-3 px-6 text-left">Email</th>
@@ -33,7 +34,7 @@ export async function loadCustomersView() {
                         </tr>
                     </thead>
                     <tbody id="customers-table-body" class="text-gray-600 text-sm font-light">
-                        <tr><td colspan="5" class="py-3 px-6 text-center">Loading...</td></tr>
+                        <tr><td colspan="6" class="py-3 px-6 text-center">Loading...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -46,6 +47,10 @@ export async function loadCustomersView() {
                     <h3 class="text-lg leading-6 font-medium text-gray-900 text-center mb-4">Customer Details</h3>
                     <form id="form-add-customer">
                         <input type="hidden" id="cust-id">
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Account Number</label>
+                            <input type="text" id="cust-account" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
                         <div class="mb-4">
                             <label class="block text-gray-700 text-sm font-bold mb-2">Full Name</label>
                             <input type="text" id="cust-name" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500" required>
@@ -125,7 +130,8 @@ export async function loadCustomersView() {
         const term = e.target.value.toLowerCase();
         const filtered = customersData.filter(c => 
             c.name.toLowerCase().includes(term) || 
-            c.phone.includes(term)
+            c.phone.includes(term) ||
+            (c.account_number && c.account_number.toLowerCase().includes(term))
         );
         renderCustomers(filtered);
     });
@@ -142,7 +148,7 @@ async function fetchCustomers() {
         // sync-service.js handles background synchronization from server
     } catch (error) {
         console.error("Error fetching customers:", error);
-        tbody.innerHTML = `<tr><td colspan="5" class="py-3 px-6 text-center text-red-500">Error loading data.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="py-3 px-6 text-center text-red-500">Error loading data.</td></tr>`;
     }
 }
 
@@ -152,7 +158,7 @@ function renderCustomers(customers) {
     tbody.innerHTML = "";
 
     if (customers.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="py-3 px-6 text-center">No customers found.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="py-3 px-6 text-center">No customers found.</td></tr>`;
         return;
     }
 
@@ -160,6 +166,7 @@ function renderCustomers(customers) {
         const row = document.createElement("tr");
         row.className = "border-b border-gray-200 hover:bg-gray-100";
         row.innerHTML = `
+            <td class="py-3 px-6 text-left font-mono text-xs">${cust.account_number || '-'}</td>
             <td class="py-3 px-6 text-left font-medium">${cust.name}</td>
             <td class="py-3 px-6 text-left">${cust.phone}</td>
             <td class="py-3 px-6 text-left">${cust.email || '-'}</td>
@@ -180,6 +187,7 @@ function renderCustomers(customers) {
 
 function openEditModal(cust) {
     document.getElementById("cust-id").value = cust.id;
+    document.getElementById("cust-account").value = cust.account_number || "";
     document.getElementById("cust-name").value = cust.name;
     document.getElementById("cust-phone").value = cust.phone;
     document.getElementById("cust-email").value = cust.email || "";
@@ -192,6 +200,7 @@ async function handleSaveCustomer(e) {
     const id = document.getElementById("cust-id").value;
     const customerData = {
         id: id || generateUUID(),
+        account_number: document.getElementById("cust-account").value,
         name: document.getElementById("cust-name").value,
         phone: document.getElementById("cust-phone").value,
         email: document.getElementById("cust-email").value,

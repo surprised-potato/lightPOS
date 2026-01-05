@@ -99,6 +99,20 @@ export async function calculateExpectedCash(shift = currentShift) {
         }
     });
 
+    let totalExchangePayments = 0;
+    allTransactions.forEach(tx => {
+        if (!tx.is_voided && tx.payment_method === 'Cash' && tx.exchanges) {
+            tx.exchanges.forEach(ex => {
+                const exTime = new Date(ex.timestamp);
+                if (exTime >= startTime && exTime <= endTime && ex.processed_by === userEmail) {
+                    const retVal = ex.returned.reduce((sum, i) => sum + i.selling_price, 0);
+                    const takeVal = ex.taken.reduce((sum, i) => sum + i.selling_price, 0);
+                    totalExchangePayments += (takeVal - retVal);
+                }
+            });
+        }
+    });
+
     const allReturns = await Repository.getAll('returns');
     const returns = allReturns.filter(r => {
         const rTime = new Date(r.timestamp);
@@ -119,7 +133,7 @@ export async function calculateExpectedCash(shift = currentShift) {
         shift.adjustments.forEach(adj => totalAdjustments += (adj.amount || 0));
     }
     
-    return (shift.opening_cash || 0) + totalSales - totalRefunds + totalAdjustments;
+    return (shift.opening_cash || 0) + totalSales + totalExchangePayments - totalRefunds + totalAdjustments;
 }
 
 export async function closeShift(closingCash) {
@@ -576,6 +590,8 @@ export async function showXReport() {
         alert("No active shift found.");
         return;
     }
+
+    if (!(await requestManagerApproval())) return;
 
     const expected = await calculateExpectedCash();
     

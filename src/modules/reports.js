@@ -9,6 +9,7 @@ import { SyncEngine } from "../services/SyncEngine.js";
 let reportData = {};
 let valuationChartInstance = null;
 let velocityTrendChartInstance = null;
+let cashflowChartInstance = null;
 let sortState = {}; // { tableId: { key, dir } }
 let filterState = {}; // { tableId: term }
 
@@ -26,6 +27,10 @@ export async function loadReportsView() {
                     <div class="relative">
                         <input type="text" id="report-range" class="w-full border rounded p-2 text-sm bg-white cursor-pointer" placeholder="Select date range...">
                     </div>
+                </div>
+                <div class="w-24">
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Rows</label>
+                    <input type="number" id="report-row-limit" value="50" min="1" class="w-full border rounded p-2 text-sm bg-white" title="Rows per table">
                 </div>
                 <div class="flex flex-wrap gap-2 mb-0.5">
                     <button type="button" data-range="today" class="btn-quick-range text-xs bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded font-semibold text-gray-600 transition">Today</button>
@@ -58,6 +63,7 @@ export async function loadReportsView() {
                         <button data-subtab="fin-summary" class="subtab-btn border-blue-500 text-blue-600 py-2 px-4 border-b-2 text-xs font-bold transition-colors">Summary & Payments</button>
                         <button data-subtab="fin-variance" class="subtab-btn border-transparent text-gray-500 hover:text-gray-700 py-2 px-4 border-b-2 text-xs font-bold transition-colors">Shifts</button>
                         <button data-subtab="fin-shift-reports" class="subtab-btn border-transparent text-gray-500 hover:text-gray-700 py-2 px-4 border-b-2 text-xs font-bold transition-colors">Closing Reports</button>
+                        <button data-subtab="fin-cashflow" class="subtab-btn border-transparent text-gray-500 hover:text-gray-700 py-2 px-4 border-b-2 text-xs font-bold transition-colors">Cashflow</button>
                     </div>
 
                     <div id="subpanel-fin-summary" class="sub-panel">
@@ -66,8 +72,8 @@ export async function loadReportsView() {
                                 <div class="text-gray-500 text-sm font-bold uppercase mb-1">Gross Sales</div>
                                 <div class="text-3xl font-bold text-gray-800" id="report-gross-sales">₱0.00</div>
                             </div>
-                            <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-orange-500">
-                                <div class="text-gray-500 text-sm font-bold uppercase mb-1">Tax Collected</div>
+                            <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-orange-500 relative group">
+                                <div class="text-gray-500 text-sm font-bold uppercase mb-1">VAT Owed (Net)</div>
                                 <div class="text-3xl font-bold text-gray-800" id="report-tax">₱0.00</div>
                             </div>
                             <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-red-500">
@@ -144,6 +150,45 @@ export async function loadReportsView() {
                                     </tr>
                                 </thead>
                                 <tbody id="report-shift-reports-body" class="text-gray-600 text-sm font-light"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div id="subpanel-fin-cashflow" class="sub-panel hidden">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                            <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-green-500">
+                                <div class="text-gray-500 text-sm font-bold uppercase mb-1">Total Inflow (Sales)</div>
+                                <div class="text-3xl font-bold text-gray-800" id="cashflow-inflow">₱0.00</div>
+                            </div>
+                            <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-red-500">
+                                <div class="text-gray-500 text-sm font-bold uppercase mb-1">Total Outflow (Expenses)</div>
+                                <div class="text-3xl font-bold text-gray-800" id="cashflow-outflow">₱0.00</div>
+                            </div>
+                            <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-blue-500">
+                                <div class="text-gray-500 text-sm font-bold uppercase mb-1">Net Cashflow</div>
+                                <div class="text-3xl font-bold text-gray-800" id="cashflow-net">₱0.00</div>
+                            </div>
+                        </div>
+                        <div class="bg-white shadow-md rounded p-6 mb-8">
+                            <h3 class="font-bold text-gray-800 mb-4">Daily Cashflow Trend</h3>
+                            <div class="h-80">
+                                <canvas id="cashflow-trend-chart"></canvas>
+                            </div>
+                        </div>
+                        <div class="bg-white shadow-md rounded overflow-hidden">
+                            <div class="px-6 py-4 border-b bg-gray-50">
+                                <h3 class="font-bold text-gray-800">Expense Breakdown</h3>
+                            </div>
+                            <table class="min-w-full table-auto">
+                                <thead>
+                                    <tr class="bg-gray-100 text-gray-600 uppercase text-xs leading-normal">
+                                        <th class="py-3 px-6 text-left">Date</th>
+                                        <th class="py-3 px-6 text-left">Category</th>
+                                        <th class="py-3 px-6 text-left">Description</th>
+                                        <th class="py-3 px-6 text-right">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="report-cashflow-body" class="text-gray-600 text-sm font-light"></tbody>
                             </table>
                         </div>
                     </div>
@@ -888,6 +933,11 @@ export async function loadReportsView() {
 
     document.getElementById("btn-generate-report").addEventListener("click", generateReport);
 
+    // Re-render tables when row limit changes
+    document.getElementById("report-row-limit")?.addEventListener("change", () => {
+        generateReport();
+    });
+
     // Tab Switching Logic
     const tabs = content.querySelectorAll(".tab-btn");
     const panels = content.querySelectorAll(".tab-panel");
@@ -1041,12 +1091,13 @@ async function generateReport() {
         const allItems = await Repository.getAll('items');
 
         // Fetch supporting data from local Dexie
-        const [shifts, customers, suppliers, adjustments, stockMovements] = await Promise.all([
+        const [shifts, customers, suppliers, adjustments, stockMovements, expenses] = await Promise.all([
             Repository.getAll('shifts'),
             Repository.getAll('customers'),
             Repository.getAll('suppliers'),
             Repository.getAll('adjustments'),
-            Repository.getAll('stock_movements')
+            Repository.getAll('stock_movements'),
+            Repository.getAll('expenses')
         ]);
 
         // Merge Stock-In History (Local Dexie already contains synced server data)
@@ -1065,6 +1116,14 @@ async function generateReport() {
             }
             return inRange;
         }).sort((a, b) => new Date(b.start_time) - new Date(a.start_time));
+
+        const filteredExpenses = (expenses || []).filter(e => {
+            const d = new Date(e.date).toISOString();
+            return d >= startStr && d <= endStr;
+        }).sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        let totalExpenses = 0;
+        filteredExpenses.forEach(e => totalExpenses += (e.amount || 0));
 
         const filteredStockIn = stockInHistory.filter(s => {
             const d = s.timestamp instanceof Date ? s.timestamp.toISOString() : s.timestamp;
@@ -1124,7 +1183,8 @@ async function generateReport() {
         }).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
         let grossSales = 0;
-        let totalTax = 0;
+        let totalOutputTax = 0;
+        let totalInputTax = 0;
         let cogs = 0;
         const userStats = {};
         const productStats = {};
@@ -1134,6 +1194,8 @@ async function generateReport() {
         const voidedTxs = [];
         const hourlySales = new Array(24).fill(0);
         const totalTxCount = transactions.filter(t => !t.is_voided).length;
+
+        const taxRate = (settings.tax?.rate || 0) / 100;
 
         transactions.forEach(data => {
             if (data.is_voided) {
@@ -1145,9 +1207,8 @@ async function generateReport() {
             grossSales += data.total_amount || 0;
             
             // Re-calculate tax based on current settings if not stored or for consistency
-            const taxRate = (settings.tax?.rate || 0) / 100;
             const calculatedTax = data.total_amount - (data.total_amount / (1 + taxRate));
-            totalTax += calculatedTax;
+            totalOutputTax += calculatedTax;
 
             const hour = new Date(data.timestamp).getHours();
             hourlySales[hour] += data.total_amount || 0;
@@ -1173,7 +1234,10 @@ async function generateReport() {
                 data.items.forEach(item => {
                     const cost = item.cost_price || 0;
                     const qty = item.qty || 0;
-                    cogs += cost * qty;
+                    const lineCost = cost * qty;
+                    cogs += lineCost;
+                    
+                    totalInputTax += lineCost - (lineCost / (1 + taxRate));
                     
                     // Product Stats
                     if (!productStats[item.id]) {
@@ -1339,8 +1403,35 @@ async function generateReport() {
         reportData.purchaseHistory = stockInHistory.map(h => ({ ...h, vendorName: h.supplier_id_override ? (suppliers.find(s => s.id === h.supplier_id_override)?.name || 'Unknown') : 'Mixed', total: h.items.reduce((sum, i) => sum + ((i.quantity || 0) * (i.cost_price || 0)), 0) })).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
         reportData.landedCost = allItems.filter(i => i.supplier_id).map(i => ({ ...i, vendorName: suppliers.find(s => s.id === i.supplier_id)?.name || '-' }));
 
+        // Daily Cashflow Aggregation
+        const dailyCashflow = {};
+        let curr = moment(startDate).startOf('day');
+        const endDay = moment(endDate).startOf('day');
+        while (curr <= endDay) {
+            dailyCashflow[curr.format('YYYY-MM-DD')] = { inflow: 0, outflow: 0 };
+            curr.add(1, 'days');
+        }
+
+        transactions.forEach(t => {
+            if (!t.is_voided) {
+                const day = moment(t.timestamp).format('YYYY-MM-DD');
+                if (dailyCashflow[day]) dailyCashflow[day].inflow += t.total_amount;
+            }
+        });
+
+        filteredExpenses.forEach(e => {
+            const day = moment(e.date).format('YYYY-MM-DD');
+            if (dailyCashflow[day]) dailyCashflow[day].outflow += e.amount;
+        });
+
+        reportData.dailyCashflow = Object.entries(dailyCashflow).map(([date, vals]) => ({ date, ...vals }));
+        reportData.grossSales = grossSales;
+        reportData.totalExpenses = totalExpenses;
+        reportData.expenses = filteredExpenses;
+
         // Initial Render
-        updateFinancials(grossSales, totalTax, cogs);
+        updateFinancials(grossSales, totalOutputTax, totalInputTax, cogs);
+        renderCashflowReport(grossSales, totalExpenses, filteredExpenses, reportData.dailyCashflow);
         await generateValuationHistory(startDate, endDate, allItems, stockMovements);
         renderInventoryHistory(filteredStockIn, filteredAdjustments);
         renderUserStats(reportData.users);
@@ -1627,7 +1718,9 @@ function applySortAndFilter(data, tableId) {
         });
     }
     
-    return result;
+    // Apply row limit
+    const limit = parseInt(document.getElementById("report-row-limit")?.value) || 50;
+    return result.slice(0, limit);
 }
 
 function renderTable(tableId) {
@@ -1642,6 +1735,7 @@ function renderTable(tableId) {
         case 'velocity': renderSalesVelocity(reportData.velocity); break;
         case 'invLedger': renderInventoryLedger(reportData.ledgerSnapshot); break;
         case 'lowStock': renderLowStockReport(reportData.lowStock); break;
+        case 'cashflow': renderCashflowReport(reportData.grossSales, reportData.totalExpenses, reportData.expenses, reportData.dailyCashflow); break;
         case 'shiftReports': renderShiftReports(reportData.variance.filter(s => s.status === 'closed')); break;
         case 'quadrantDetails': renderQuadrantDetails(); break;
         case 'variance': renderCashVariance(reportData.variance); break;
@@ -1661,11 +1755,93 @@ function renderTable(tableId) {
     }
 }
 
-function updateFinancials(sales, tax, cost) {
+function updateFinancials(sales, outputTax, inputTax, cost) {
+    const taxOwed = outputTax - inputTax;
     document.getElementById("report-gross-sales").textContent = `₱${sales.toFixed(2)}`;
-    document.getElementById("report-tax").textContent = `₱${tax.toFixed(2)}`;
+    
+    const taxEl = document.getElementById("report-tax");
+    taxEl.textContent = `₱${taxOwed.toFixed(2)}`;
+    taxEl.title = `Output Tax (Additive): ₱${outputTax.toFixed(2)} | Input Tax (Deductive): ₱${inputTax.toFixed(2)}`;
+    
     document.getElementById("report-cogs").textContent = `₱${cost.toFixed(2)}`;
-    document.getElementById("report-profit").textContent = `₱${(sales - tax - cost).toFixed(2)}`;
+    document.getElementById("report-profit").textContent = `₱${((sales - outputTax) - (cost - inputTax)).toFixed(2)}`;
+}
+
+function renderCashflowReport(sales, expenses, expenseList, dailyData) {
+    const inflowEl = document.getElementById("cashflow-inflow");
+    const outflowEl = document.getElementById("cashflow-outflow");
+    const netEl = document.getElementById("cashflow-net");
+    const tbody = document.getElementById("report-cashflow-body");
+
+    if (inflowEl) inflowEl.textContent = `₱${sales.toFixed(2)}`;
+    if (outflowEl) outflowEl.textContent = `₱${expenses.toFixed(2)}`;
+    if (netEl) netEl.textContent = `₱${(sales - expenses).toFixed(2)}`;
+
+    if (!tbody) return;
+    
+    const processedExpenses = applySortAndFilter(expenseList, 'cashflow');
+    
+    tbody.innerHTML = processedExpenses.map(e => `
+        <tr class="border-b border-gray-200 hover:bg-gray-100">
+            <td class="py-3 px-6 text-left">${new Date(e.date).toLocaleDateString()}</td>
+            <td class="py-3 px-6 text-left"><span class="bg-gray-100 px-2 py-1 rounded text-xs">${e.category}</span></td>
+            <td class="py-3 px-6 text-left">${e.description}</td>
+            <td class="py-3 px-6 text-right font-bold text-red-600">₱${e.amount.toFixed(2)}</td>
+        </tr>
+    `).join('');
+    
+    if (processedExpenses.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="py-3 px-6 text-center">No expenses found for this period.</td></tr>`;
+    }
+
+    // Chart Rendering
+    const canvas = document.getElementById('cashflow-trend-chart');
+    if (!canvas || !dailyData) return;
+    const ctx = canvas.getContext('2d');
+
+    if (cashflowChartInstance) {
+        cashflowChartInstance.destroy();
+    }
+
+    cashflowChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: dailyData.map(d => moment(d.date).format('MMM D')),
+            datasets: [
+                {
+                    label: 'Inflow (Sales)',
+                    data: dailyData.map(d => d.inflow),
+                    backgroundColor: 'rgba(34, 197, 94, 0.6)',
+                    borderColor: 'rgb(34, 197, 94)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Outflow (Expenses)',
+                    data: dailyData.map(d => d.outflow),
+                    backgroundColor: 'rgba(239, 68, 68, 0.6)',
+                    borderColor: 'rgb(239, 68, 68)',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { callback: value => '₱' + value.toLocaleString() }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: (context) => ` ${context.dataset.label}: ₱${context.raw.toFixed(2)}`
+                    }
+                }
+            }
+        }
+    });
 }
 
 function renderUserStats(data) {
@@ -1809,10 +1985,11 @@ function renderReturnsReport(reasons, defectiveSuppliers, log) {
     }
 
     // Log
-    if (log.length === 0) {
+    const processedLog = applySortAndFilter(log, 'returns');
+    if (processedLog.length === 0) {
         logBody.innerHTML = `<tr><td colspan="6" class="py-3 px-6 text-center">No returns found.</td></tr>`;
     } else {
-        logBody.innerHTML = log.map(r => `
+        logBody.innerHTML = processedLog.map(r => `
             <tr class="border-b border-gray-200 hover:bg-gray-100">
                 <td class="py-3 px-6 text-left text-xs">${new Date(r.timestamp).toLocaleString()}</td>
                 <td class="py-3 px-6 text-left font-medium">${r.item_name}</td>
@@ -2879,8 +3056,8 @@ function renderShrinkageAnalysis(summary, products) {
 function renderRiskMetrics(products) {
     const tbody = document.getElementById("report-risk-body");
     if (!tbody) return;
-    
-    const processed = [...products].sort((a, b) => b.returnRate - a.returnRate);
+
+    const processed = applySortAndFilter(products, 'risk');
     
     tbody.innerHTML = processed.length ? processed.map(p => `
         <tr class="border-b border-gray-200 hover:bg-gray-100">

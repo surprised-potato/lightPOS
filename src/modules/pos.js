@@ -9,6 +9,24 @@ import { SyncEngine } from "../services/SyncEngine.js";
 let activeCartIndex = null;
 let qtyBuffer = "";
 
+let audioCtx = null;
+function playBeep(freq, dur, type = 'sine') {
+    try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + dur);
+        osc.start();
+        osc.stop(audioCtx.currentTime + dur);
+    } catch (e) { console.warn("Audio feedback failed", e); }
+}
+
 // Global shortcut listener for POS
 document.addEventListener("keydown", (e) => {
     const searchInput = document.getElementById("pos-search");
@@ -71,10 +89,24 @@ document.addEventListener("keydown", (e) => {
 
     if (e.key === "F1") {
         e.preventDefault();
+        searchInput.value = "";
+        filterItems("");
         searchInput.focus();
+
+        // Visual highlight flash effect
+        searchInput.classList.add("ring-4", "ring-blue-400", "bg-blue-50");
+        setTimeout(() => {
+            searchInput.classList.remove("ring-4", "ring-blue-400", "bg-blue-50");
+        }, 300);
     } else if (e.key === "F2") {
         e.preventDefault();
         custInput.focus();
+
+        // Visual highlight flash effect
+        custInput.classList.add("ring-4", "ring-blue-400", "bg-blue-50");
+        setTimeout(() => {
+            custInput.classList.remove("ring-4", "ring-blue-400", "bg-blue-50");
+        }, 300);
     } else if (e.key === "F3") {
         e.preventDefault();
         if (cart.length > 0) {
@@ -164,7 +196,7 @@ async function renderPosInterface(content) {
                 <div class="p-4 border-b bg-gray-50 flex gap-4 items-center">
                     <div class="relative flex-1">
                         <input type="text" id="pos-search" placeholder="Search items (F1)..." 
-                            class="w-full pl-10 p-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg"
+                            class="w-full pl-10 p-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg transition-all duration-300"
                             autocomplete="off">
                         <svg class="w-6 h-6 absolute left-3 top-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                     </div>
@@ -220,7 +252,7 @@ async function renderPosInterface(content) {
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                             </div>
                             <input type="text" id="pos-customer-search" placeholder="Customer (F2)..." 
-                                class="w-full p-2 text-sm focus:outline-none rounded-md" autocomplete="off">
+                                class="w-full p-2 text-sm focus:outline-none rounded-md transition-all duration-300" autocomplete="off">
                             <button id="btn-reset-customer" class="p-2 text-gray-400 hover:text-red-500 hidden" title="Reset to Guest">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                             </button>
@@ -439,7 +471,7 @@ async function renderPosInterface(content) {
         }
     });
 
-    searchInput.addEventListener("keydown", (e) => {
+    searchInput.addEventListener("keydown", async (e) => {
         if (activeCartIndex !== null) return;
 
         if (e.key === "ArrowDown") {
@@ -471,9 +503,13 @@ async function renderPosInterface(content) {
             }
 
             if (item) {
-                addToCart(item, qty);
+                await addToCart(item, qty);
                 e.target.value = "";
                 filterItems("");
+                e.target.focus();
+            } else {
+                playBeep(220, 0.3, 'sawtooth'); // Bad beep
+                showToast("Item not found", true);
             }
         }
     });
@@ -990,16 +1026,28 @@ function renderGrid(items) {
         `;
         
         // Placeholder click
-        card.addEventListener("click", () => {
-            addToCart(item, 1);
+        card.addEventListener("click", async () => {
+            await addToCart(item, 1);
+            const searchInput = document.getElementById("pos-search");
+            if (searchInput) {
+                searchInput.value = "";
+                filterItems("");
+                searchInput.focus();
+            }
         });
 
-        card.addEventListener("keydown", (e) => {
+        card.addEventListener("keydown", async (e) => {
             if (activeCartIndex !== null) return;
 
             if (e.key === "Enter") {
                 e.preventDefault();
-                addToCart(item, 1);
+                await addToCart(item, 1);
+                const searchInput = document.getElementById("pos-search");
+                if (searchInput) {
+                    searchInput.value = "";
+                    filterItems("");
+                    searchInput.focus();
+                }
             } else {
                 handleGridNavigation(e, index, items.length);
             }
@@ -1062,6 +1110,8 @@ function parseSearchTerm(val) {
 }
 
 async function addToCart(item, qty = 1) {
+    playBeep(880, 0.1); // Good beep
+    showToast(`Added ${item.name} to cart`);
     // Hide last transaction summary when starting a new sale
     document.getElementById("last-transaction").classList.add("hidden");
 
@@ -1192,7 +1242,7 @@ function showToast(message, isError = false) {
     if (!container) return;
     
     const toast = document.createElement("div");
-    toast.className = `${isError ? 'bg-red-600' : 'bg-gray-800'} text-white px-4 py-2 rounded shadow-lg text-sm transition-all duration-300 opacity-0 transform translate-y-2`;
+    toast.className = `${isError ? 'bg-red-600' : 'bg-green-600'} text-white px-4 py-2 rounded shadow-lg text-sm transition-all duration-300 opacity-0 transform translate-y-2`;
     toast.textContent = message;
     
     container.appendChild(toast);

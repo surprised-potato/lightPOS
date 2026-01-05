@@ -128,5 +128,21 @@
         "_updatedAt": 1767593182355,
         "_deleted": false,
         "_hash": "ce26a0438fdb3b2e2c1f577cd1d38b75"
+    },
+    {
+        "id": "b8975481-4749-4d87-b8e0-144fc3ba2d9f",
+        "transaction_id": "621b5f83-989a-434f-bcc9-9108cb777dce",
+        "item_id": "002da6b6-5112-44e6-a01b-bc305752f915",
+        "item_name": "Rain Polish",
+        "qty": 1,
+        "refund_amount": 30,
+        "condition": "restockable",
+        "reason": "Defective",
+        "timestamp": "2026-01-05T07:47:59.778Z",
+        "processed_by": "admin@lightpos.com",
+        "_version": 1,
+        "_updatedAt": 1767599279778,
+        "_deleted": false,
+        "_hash": "8e89cc6f296725fd1377cf9c36943054"
     }
 ]

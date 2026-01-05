@@ -1,7 +1,7 @@
 import { db } from "./db.js";
 import { checkPermission, logout, getUserProfile } from "./auth.js";
 import { checkActiveShift } from "./modules/shift.js";
-import { getRecentNotifications, markAllAsRead, toggleNotificationRead } from "./services/notification-service.js";
+import { getRecentNotifications, markAllAsRead, toggleNotificationRead, getUnreadCount } from "./services/notification-service.js";
 import { SyncEngine } from "./services/SyncEngine.js";
 
 export function renderSidebar() {
@@ -161,6 +161,12 @@ export function renderSidebar() {
 
 async function getStoreSettings() {
     try {
+        // Try local database first for offline-first support and immediate updates
+        const localData = await db.sync_metadata.get('settings');
+        if (localData && localData.value && localData.value.store) {
+            return localData.value.store;
+        }
+
         const res = await fetch('api/router.php?file=settings');
         const settings = await res.json();
         return settings?.store || { name: "LightPOS", logo: "" };
@@ -301,6 +307,7 @@ export async function renderHeader() {
     }
 
     updateSyncUI();
+    updateNotificationUI();
 }
 
 window.addEventListener('sync-started', () => {
@@ -394,8 +401,8 @@ async function updateNotificationUI() {
     if (!badge || !list) return;
 
     const filterUnread = localStorage.getItem('notification_filter_unread') === 'true';
+    const unreadCount = await getUnreadCount();
     let notifications = await getRecentNotifications(20);
-    const unreadCount = notifications.filter(n => n.read === 0).length;
 
     if (unreadCount > 0) {
         badge.classList.remove('hidden');
@@ -417,7 +424,7 @@ async function updateNotificationUI() {
                     <div class="flex items-center gap-2">
                         <span class="text-[9px] text-gray-400">${new Date(n.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                         <button class="btn-toggle-read p-1 rounded-md hover:bg-gray-200 transition-colors" data-id="${n.id}" data-read="${n.read}" title="${n.read ? 'Mark as unread' : 'Mark as read'}">
-                            <div class="w-4 h-4 flex items-center justify-center rounded border ${n.read ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-gray-300 text-blue-200'} ${n.read === 1 ? 'animate-breathe-blue' : ''}">
+                            <div class="w-4 h-4 flex items-center justify-center rounded border ${n.read ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-gray-300 text-blue-200'} ${!n.read ? 'animate-breathe-blue' : ''}">
                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
                             </div>
                         </button>

@@ -302,6 +302,20 @@ export async function loadSettingsView() {
                     </div>
 
                     <div class="bg-white p-6 rounded-lg shadow-sm border">
+                        <h3 class="text-lg font-bold text-gray-700 mb-2">Bulk Import Customers</h3>
+                        <p class="text-sm text-gray-600 mb-4">Upload a CSV file to bulk add customers. Format: "first_name","last_name","account_number","points"</p>
+                        
+                        <div class="flex flex-col gap-4">
+                            <div class="flex items-center gap-4">
+                                <input type="file" id="import-customers-file" accept=".csv" class="text-sm">
+                                <button type="button" id="btn-import-customers" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded shadow transition disabled:opacity-50" disabled>
+                                    Import Customers
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-lg shadow-sm border">
                         <h3 class="text-lg font-bold text-gray-700 mb-4">Database Synchronization</h3>
                         <p class="text-sm text-gray-600 mb-4">Compare your local offline database (IndexedDB) with the server database (JSON) to identify discrepancies.</p>
                         
@@ -612,7 +626,7 @@ export async function getSystemSettings() {
         if (localData && localData.value) {
             return localData.value;
         }
-        return settings || {
+        return {
             store: { name: "LightPOS", logo: "", data: "" },
             tax: { rate: 12 },
             rewards: { ratio: 100 },
@@ -721,6 +735,25 @@ function setupMigrationEventListeners() {
     const restoreFileInput = document.getElementById("restore-file");
     document.getElementById("btn-trigger-restore").addEventListener("click", () => restoreFileInput.click());
     restoreFileInput.addEventListener("change", handleRestoreBackup);
+
+    // Customer Import Logic
+    const custFileInput = document.getElementById("import-customers-file");
+    const btnImportCust = document.getElementById("btn-import-customers");
+
+    custFileInput?.addEventListener("change", () => {
+        btnImportCust.disabled = custFileInput.files.length === 0;
+    });
+
+    btnImportCust?.addEventListener("click", async () => {
+        const file = custFileInput.files[0];
+        if (!file) return;
+        const text = await file.text();
+        const { bulkAddCustomersFromCSV } = await import("./migrations.js");
+        const count = await bulkAddCustomersFromCSV(text);
+        alert(`Successfully added ${count} customers.`);
+        custFileInput.value = "";
+        btnImportCust.disabled = true;
+    });
 
     btnImport.addEventListener("click", async () => {
         const file = fileInput.files[0];
