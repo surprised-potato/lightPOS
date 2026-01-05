@@ -3,6 +3,10 @@
         "id": "894ccedc-10d1-4aad-8645-c20c1c8ea7a6",
         "name": "ABC Corp",
         "contact": "mik2",
-        "email": "2316547"
+        "email": "2316547",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "e62d8dbf2cea66fe28882ff7a40862cf"
     }
 ]

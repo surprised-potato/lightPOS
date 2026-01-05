@@ -1,7 +1,6 @@
 import { checkPermission } from "../auth.js";
 import { generateUUID } from "../utils.js";
-import { db } from "../db.js";
-import { syncCollection } from "../services/sync-service.js";
+import { Repository } from "../services/Repository.js";
 
 let itemsData = [];
 let suppliersList = [];
@@ -214,39 +213,28 @@ export async function loadItemsView() {
             min_stock: parseInt(document.getElementById("item-min-stock").value),
             base_unit: document.getElementById("item-unit").value,
             parent_id: document.getElementById("item-parent-id").value || null,
-            conv_factor: document.getElementById("item-conv").value ? parseFloat(document.getElementById("item-conv").value) : 1,
-            sync_status: 0
+            conv_factor: document.getElementById("item-conv").value ? parseFloat(document.getElementById("item-conv").value) : 1
         };
 
         try {
-            if (itemId) {
-                await db.items.update(itemId, itemData);
-            } else {
-                itemData.id = generateUUID();
-                await db.items.add(itemData);
+            const finalData = itemId ? { ...itemData, id: itemId } : { ...itemData, id: generateUUID() };
+            
+            // Use Repository for versioned, offline-first write
+            await Repository.upsert('items', finalData);
 
-                // Record Initial Stock Movement
-                if (itemData.stock_level > 0) {
-                    const movement = {
-                        id: generateUUID(),
-                        item_id: itemData.id,
-                        item_name: itemData.name,
-                        timestamp: new Date(),
-                        type: 'Initial Stock',
-                        qty: itemData.stock_level,
-                        user: JSON.parse(localStorage.getItem('pos_user'))?.email || 'unknown',
-                        reason: 'Initial Inventory',
-                        sync_status: 0
-                    };
-                    await db.stock_movements.add(movement);
-                }
-            }
-
-            if (navigator.onLine) {
-                const syncId = itemId || itemData.id;
-                syncCollection('items', syncId, itemData).then(success => {
-                    if (success) db.items.update(syncId, { sync_status: 1 });
-                });
+            // Record Initial Stock Movement if new item
+            if (!itemId && finalData.stock_level > 0) {
+                const movement = {
+                    id: generateUUID(),
+                    item_id: finalData.id,
+                    item_name: finalData.name,
+                    timestamp: Math.floor(Date.now() / 1000),
+                    type: 'Initial Stock',
+                    qty: finalData.stock_level,
+                    user: JSON.parse(localStorage.getItem('pos_user'))?.email || 'unknown',
+                    reason: 'Initial Inventory'
+                };
+                await Repository.upsert('stock_movements', movement);
             }
 
             modal.classList.add("hidden");
@@ -295,7 +283,7 @@ function applyFiltersAndSort() {
 
 async function fetchSuppliers() {
     try {
-        const data = await db.suppliers.toArray();
+        const data = await Repository.getAll('suppliers');
         suppliersList = Array.isArray(data) ? data : [];
     } catch (error) {
         console.error("Error loading suppliers:", error);
@@ -319,7 +307,7 @@ async function fetchItems() {
     tbody.innerHTML = `<tr><td colspan="7" class="py-3 px-6 text-center">Loading...</td></tr>`;
 
     try {
-        const data = await db.items.toArray();
+        const data = await Repository.getAll('items');
         itemsData = Array.isArray(data) ? data : [];
         applyFiltersAndSort();
     } catch (error) {
@@ -398,25 +386,8 @@ function renderItems(items) {
             if (confirm(`Delete item "${item.name}"?`)) {
                 const id = e.currentTarget.getAttribute("data-id");
                 try {
-                    await db.items.delete(id);
-                    
-                    if (navigator.onLine) {
-                        syncCollection('items', id, null, true).then(success => {
-                            if (!success) {
-                                db.syncQueue.add({
-                                    action: 'delete_item',
-                                    data: { id, fileName: 'items' }
-                                });
-                            }
-                        });
-                    } else {
-                        // Queue the deletion for later
-                        await db.syncQueue.add({
-                            action: 'delete_item',
-                            data: { id, fileName: 'items' }
-                        });
-                    }
-                    fetchItems();
+                    await Repository.remove('items', id);
+                    await fetchItems();
                 } catch (error) {
                     console.error("Error deleting item:", error);
                     alert("Failed to delete item.");

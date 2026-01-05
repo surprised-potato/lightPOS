@@ -8,7 +8,11 @@
         "closing_cash": 2000,
         "expected_cash": 2281,
         "status": "closed",
-        "adjustments": []
+        "adjustments": [],
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "263a658ce865a3d3dc2bf40038f5ce58"
     },
     {
         "id": "ee929bd4-62be-4d2a-bf4c-4d318db0c94f",
@@ -19,7 +23,11 @@
         "closing_cash": 12000,
         "expected_cash": 10384,
         "status": "closed",
-        "adjustments": []
+        "adjustments": [],
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "a2ce9c984813f5ef0c6fe6a7128bd2a8"
     },
     {
         "id": "02d7b0ef-e66c-4d15-9f6f-9694458662bb",
@@ -30,7 +38,11 @@
         "closing_cash": 4000,
         "expected_cash": 3059,
         "status": "closed",
-        "adjustments": []
+        "adjustments": [],
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "d8f2f395db1b7750db5a9f8a71b268f4"
     },
     {
         "id": "cc40b601-8ba3-4261-b739-e354b7cb5cc3",
@@ -41,6 +53,10 @@
         "closing_cash": 0,
         "expected_cash": 100,
         "status": "open",
-        "adjustments": []
+        "adjustments": [],
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "53f6f7b8517065900f412ca6938250c5"
     }
 ]

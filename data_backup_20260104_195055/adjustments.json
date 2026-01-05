@@ -1,0 +1,46 @@
+[
+    {
+        "id": "a81a3f94-610b-48f7-9e47-0e6de4208e89",
+        "item_id": "2585e3d8-4943-4850-a2ea-85fa0626784c",
+        "item_name": " C2 solo apple 230ml",
+        "old_stock": 0,
+        "new_stock": 24,
+        "difference": 24,
+        "reason": "Routine Audit",
+        "user": "admin@lightpos.com",
+        "timestamp": "2026-01-04T04:48:46.414Z"
+    },
+    {
+        "id": "ad06d537-9d37-4a19-818c-5abf5991d913",
+        "item_id": "2585e3d8-4943-4850-a2ea-85fa0626784c",
+        "item_name": " C2 solo apple 230ml",
+        "old_stock": 0,
+        "new_stock": 24,
+        "difference": 24,
+        "reason": "Routine Audit",
+        "user": "admin@lightpos.com",
+        "timestamp": "2026-01-04T04:51:12.579Z"
+    },
+    {
+        "id": "985b65c9-5fb4-4b44-9205-be63f2d942b0",
+        "item_id": "1be269be-04c6-4258-8788-5ddd7f0b6664",
+        "item_name": "Pagoda Needle 1pc",
+        "old_stock": 0,
+        "new_stock": 50,
+        "difference": 50,
+        "reason": "Routine Audit",
+        "user": "admin@lightpos.com",
+        "timestamp": "2026-01-04T04:51:22.598Z"
+    },
+    {
+        "id": "3c9cbcdb-7769-43bd-a6d1-60830a9d1115",
+        "item_id": "3a03b4d1-984d-4637-aab4-cc4461d86fc8",
+        "item_name": " 9 Smile Balloons",
+        "old_stock": 0,
+        "new_stock": 20,
+        "difference": 20,
+        "reason": "Routine Audit",
+        "user": "admin@lightpos.com",
+        "timestamp": "2026-01-04T07:51:50.019Z"
+    }
+]

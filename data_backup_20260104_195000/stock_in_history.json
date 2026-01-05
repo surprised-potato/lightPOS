@@ -1,0 +1,185 @@
+[
+    {
+        "id": "local_1767544526965",
+        "user_id": "admin@lightpos.com",
+        "username": "Super Admin",
+        "items": [
+            {
+                "id": "3a03b4d1-984d-4637-aab4-cc4461d86fc8",
+                "name": " 9 Smile Balloons",
+                "quantity": 25,
+                "cost_price": 55
+            },
+            {
+                "id": "010409d0-5611-4d5a-801d-0f461c274114",
+                "name": "bamboo Tooth Pick",
+                "quantity": 15,
+                "cost_price": 5
+            }
+        ],
+        "timestamp": "2026-01-04T16:35:26.965Z",
+        "item_count": 40,
+        "supplier_id_override": "894ccedc-10d1-4aad-8645-c20c1c8ea7a6"
+    },
+    {
+        "id": "local_1767543944231",
+        "user_id": "admin@lightpos.com",
+        "username": "Super Admin",
+        "items": [
+            {
+                "id": "e342e88d-4f2e-44a4-bcb8-6f104762beea",
+                "name": "1\/4 Denorado Hot Star Rice",
+                "quantity": 85,
+                "cost_price": 10
+            }
+        ],
+        "timestamp": "2026-01-04T16:25:44.231Z",
+        "item_count": 85,
+        "supplier_id_override": null
+    },
+    {
+        "id": "local_1767543904479",
+        "user_id": "admin@lightpos.com",
+        "username": "Super Admin",
+        "items": [
+            {
+                "id": "97e7a286-220a-468f-881f-7717c7479481",
+                "name": "Sweet Baby Wipes30 sheets",
+                "quantity": 1,
+                "cost_price": 41.5
+            }
+        ],
+        "timestamp": "2026-01-04T16:25:04.479Z",
+        "item_count": 1,
+        "supplier_id_override": null
+    },
+    {
+        "id": "local_1767542989329",
+        "user_id": "admin@lightpos.com",
+        "username": "Super Admin",
+        "items": [
+            {
+                "id": "00b0c976-1b44-4775-b71e-5aa907390620",
+                "name": "Sunkist Grape 185mL",
+                "quantity": 4,
+                "cost_price": 7.9000000000000003552713678800500929355621337890625
+            },
+            {
+                "id": "00b55c22-8694-406d-b840-bf2bba0772fa",
+                "name": "Philips LED 9Watts",
+                "quantity": 7,
+                "cost_price": 122
+            }
+        ],
+        "timestamp": "2026-01-04T16:09:49.329Z",
+        "item_count": 11,
+        "supplier_id_override": "894ccedc-10d1-4aad-8645-c20c1c8ea7a6"
+    },
+    {
+        "id": "local_1767502116183",
+        "user_id": "admin@lightpos.com",
+        "username": "Super Admin",
+        "items": [
+            {
+                "id": "02fdf7c5-ae04-4ad1-b67b-57019cc4613d",
+                "name": "Good Life Sesame Oil 420ml",
+                "quantity": 10,
+                "cost_price": 230.80000000000001136868377216160297393798828125
+            },
+            {
+                "id": "00dc06e9-6389-422f-bbc3-79f148b561f0",
+                "name": "Chiz Curls 55g",
+                "quantity": 24,
+                "cost_price": 18.5
+            }
+        ],
+        "timestamp": "2026-01-04T04:48:36.183Z",
+        "item_count": 34,
+        "supplier_id_override": null
+    },
+    {
+        "id": "878e0480-7cea-4873-a9fb-409594c7362f",
+        "user_id": "admin@lightpos.com",
+        "username": "Super Admin",
+        "items": [
+            {
+                "id": "055262ef-0996-4457-a985-15ead7a3f13f",
+                "name": "Nescafe Classic 92g",
+                "quantity": 900,
+                "cost_price": 91
+            }
+        ],
+        "timestamp": "2026-01-04T16:50:32.875Z",
+        "item_count": 900,
+        "supplier_id_override": "894ccedc-10d1-4aad-8645-c20c1c8ea7a6"
+    },
+    {
+        "id": "7580cdad-dab4-4bce-b983-f6ded4545d63",
+        "user_id": "admin@lightpos.com",
+        "username": "Super Admin",
+        "items": [
+            {
+                "id": "03915142-9a2b-42d2-a96c-7634d3e495fe",
+                "name": "XO coffee candy 50x40",
+                "quantity": 100,
+                "cost_price": 39.14999999999999857891452847979962825775146484375
+            }
+        ],
+        "timestamp": "2026-01-04T16:59:00.288Z",
+        "item_count": 100,
+        "supplier_id_override": "894ccedc-10d1-4aad-8645-c20c1c8ea7a6",
+        "sync_status": 1
+    },
+    {
+        "id": "513a76bc-aac6-4c65-aeb6-2c6c0f558544",
+        "user_id": "admin@lightpos.com",
+        "username": "Super Admin",
+        "items": [
+            {
+                "id": "057aa9e9-3997-4920-9af3-8e2e0caa0389",
+                "name": "RAM Three Cheese Spag Sauce 250g",
+                "quantity": 100,
+                "cost_price": 21.78999999999999914734871708787977695465087890625
+            }
+        ],
+        "timestamp": "2026-01-04T17:02:50.510Z",
+        "item_count": 100,
+        "supplier_id_override": "894ccedc-10d1-4aad-8645-c20c1c8ea7a6",
+        "sync_status": 1
+    },
+    {
+        "id": "3c0ecff7-0bdc-4483-9cbe-3cc027a9f785",
+        "user_id": "admin@lightpos.com",
+        "username": "Super Admin",
+        "items": [
+            {
+                "id": "e8ab5e4b-ccec-4b7a-95de-652611fe3411",
+                "name": " Max Staple Wire #10",
+                "quantity": 50,
+                "cost_price": 9.5
+            }
+        ],
+        "timestamp": "2026-01-04T17:51:42.639Z",
+        "item_count": 50,
+        "supplier_id_override": null,
+        "sync_status": 1
+    },
+    {
+        "id": "e02a2820-2740-413d-93d0-8417771dd06d",
+        "user_id": "admin@lightpos.com",
+        "username": "Super Admin",
+        "items": [
+            {
+                "item_id": "00431c37-af4a-48c8-b299-73378ccea980",
+                "name": "Mega Prime Nata Lychee 425g",
+                "quantity": 45,
+                "cost_price": 44,
+                "movement_id": "fe20e6ce-3332-4cd7-af55-1e01b35c7db0"
+            }
+        ],
+        "timestamp": "2026-01-04T18:57:20.159Z",
+        "item_count": 45,
+        "supplier_id_override": null,
+        "sync_status": 1
+    }
+]

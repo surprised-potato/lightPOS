@@ -1,0 +1,46 @@
+[
+    {
+        "id": "b4ead595-aefb-4770-93a1-341349236f39",
+        "name": "Mike Hawk",
+        "phone": "13214445",
+        "email": "",
+        "loyalty_points": 1
+    },
+    {
+        "id": "423c5956-ba50-4617-b8ef-1dcb36e76a0d",
+        "name": "Jenna Fisher",
+        "phone": "4675643",
+        "email": "",
+        "loyalty_points": 2
+    },
+    {
+        "id": "1f989e8d-0c53-4c6f-8131-2d0acf00118f",
+        "name": "john Doe",
+        "phone": "216546",
+        "email": "",
+        "loyalty_points": 0
+    },
+    {
+        "id": "0951b3ec-4b50-4ece-89c7-ea64e6383583",
+        "name": "karen nika",
+        "phone": "75894546",
+        "email": "",
+        "loyalty_points": 0
+    },
+    {
+        "id": "570f0895-eb94-4abe-a513-de461841afe7",
+        "name": "George Carmicheal",
+        "phone": "0985587662",
+        "email": "",
+        "loyalty_points": 0,
+        "timestamp": "2026-01-04T07:16:00.724Z"
+    },
+    {
+        "id": "f8afcd86-84c3-48d1-84d9-a6caf78a9ba7",
+        "name": "Camille Torres",
+        "phone": "9837598734",
+        "email": "",
+        "loyalty_points": 0,
+        "timestamp": "2026-01-04T15:29:58.486Z"
+    }
+]

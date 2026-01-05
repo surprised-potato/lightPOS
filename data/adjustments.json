@@ -8,7 +8,11 @@
         "difference": 24,
         "reason": "Routine Audit",
         "user": "admin@lightpos.com",
-        "timestamp": "2026-01-04T04:48:46.414Z"
+        "timestamp": "2026-01-04T04:48:46.414Z",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "ff5d9979c143267043ee80c2a99b1933"
     },
     {
         "id": "ad06d537-9d37-4a19-818c-5abf5991d913",
@@ -19,7 +23,11 @@
         "difference": 24,
         "reason": "Routine Audit",
         "user": "admin@lightpos.com",
-        "timestamp": "2026-01-04T04:51:12.579Z"
+        "timestamp": "2026-01-04T04:51:12.579Z",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "e9d3a99df5a1aeca9dca7221206b6d0f"
     },
     {
         "id": "985b65c9-5fb4-4b44-9205-be63f2d942b0",
@@ -30,7 +38,11 @@
         "difference": 50,
         "reason": "Routine Audit",
         "user": "admin@lightpos.com",
-        "timestamp": "2026-01-04T04:51:22.598Z"
+        "timestamp": "2026-01-04T04:51:22.598Z",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "54f312bfe678921464b36f1b31b83e90"
     },
     {
         "id": "3c9cbcdb-7769-43bd-a6d1-60830a9d1115",
@@ -41,6 +53,10 @@
         "difference": 20,
         "reason": "Routine Audit",
         "user": "admin@lightpos.com",
-        "timestamp": "2026-01-04T07:51:50.019Z"
+        "timestamp": "2026-01-04T07:51:50.019Z",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "392d8009d18f12653ba928ecccf0bdd0"
     }
 ]

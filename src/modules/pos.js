@@ -1,12 +1,11 @@
-import { db } from "../db.js";
+import { db } from "../db.js"; // Still needed for complex queries like history
 import { checkPermission, requestManagerApproval } from "../auth.js";
 import { checkActiveShift, requireShift, showCloseShiftModal } from "./shift.js";
 import { addNotification } from "../services/notification-service.js";
 import { getSystemSettings } from "./settings.js";
 import { generateUUID } from "../utils.js";
-import { syncCollection, processQueue } from "../services/sync-service.js";
-
-const API_URL = 'api/router.php';
+import { Repository } from "../services/Repository.js";
+import { SyncEngine } from "../services/SyncEngine.js";
 
 // Global shortcut listener for POS
 document.addEventListener("keydown", (e) => {
@@ -260,7 +259,7 @@ async function renderPosInterface(content) {
     `;
 
     // Load Items from Dexie
-    await Promise.all([fetchItemsFromDexie(), fetchCustomersFromDexie(), processQueue()]);
+    await Promise.all([fetchItemsFromDexie(), fetchCustomersFromDexie(), SyncEngine.sync()]);
     
     // Render initial cart state (if persisting between views)
     renderCart();
@@ -268,9 +267,14 @@ async function renderPosInterface(content) {
     
     // Event Listeners
     const searchInput = document.getElementById("pos-search");
+    let searchTimeout;
+
     searchInput.addEventListener("input", (e) => {
-        const { term } = parseSearchTerm(e.target.value);
-        filterItems(term);
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            const { term } = parseSearchTerm(e.target.value);
+            filterItems(term);
+        }, 150); // Debounce to handle rapid scanner input
     });
 
     searchInput.addEventListener("keydown", (e) => {
@@ -281,6 +285,7 @@ async function renderPosInterface(content) {
             return;
         }
         if (e.key === "Enter") {
+            clearTimeout(searchTimeout);
             e.preventDefault();
             const { qty, term } = parseSearchTerm(e.target.value);
             if (!term.trim()) return;
@@ -485,7 +490,7 @@ async function renderPosInterface(content) {
 
 async function fetchItemsFromDexie() {
     try {
-        allItems = await db.items.toArray();
+        allItems = await Repository.getAll('items');
         renderGrid(allItems);
     } catch (error) {
         console.error("Error loading items from Dexie:", error);
@@ -495,7 +500,7 @@ async function fetchItemsFromDexie() {
 
 async function fetchCustomersFromDexie() {
     try {
-        allCustomers = await db.customers.toArray();
+        allCustomers = await Repository.getAll('customers');
     } catch (error) {
         console.error("Error loading customers:", error);
     }
@@ -530,7 +535,10 @@ function renderGrid(items) {
         return;
     }
 
-    items.forEach((item, index) => {
+    // Limit rendering to top 100 items to maintain performance during rapid searches/scans
+    const itemsToRender = items.slice(0, 100);
+
+    itemsToRender.forEach((item, index) => {
         const card = document.createElement("div");
         card.className = "bg-white border rounded-lg p-3 shadow-sm hover:shadow-md cursor-pointer transition duration-150 flex flex-col justify-between h-36 hover:border-blue-400 active:bg-blue-50 select-none relative overflow-hidden group focus:outline-none focus:ring-2 focus:ring-blue-500";
         card.setAttribute("tabindex", "0");
@@ -572,6 +580,13 @@ function renderGrid(items) {
         
         grid.appendChild(card);
     });
+
+    if (items.length > 100) {
+        const moreInfo = document.createElement("div");
+        moreInfo.className = "col-span-full text-center text-gray-400 text-xs py-4";
+        moreInfo.textContent = `Showing 100 of ${items.length} items. Refine search to find more.`;
+        grid.appendChild(moreInfo);
+    }
 }
 
 function filterItems(term) {
@@ -628,7 +643,7 @@ async function addToCart(item, qty = 1) {
             item.stock_level += factor;
 
             // Persist to Dexie immediately so state is saved
-            await db.items.bulkPut([parent, item]);
+            await Promise.all([Repository.upsert('items', parent), Repository.upsert('items', item)]);
             showToast(`Auto-converted 1 ${parent.name} to ${factor} ${item.name}`);
             
             // Refresh Grid to show new stock levels
@@ -842,39 +857,31 @@ async function processTransaction() {
         customer_name: selectedCustomer.name,
         points_earned: pointsEarned,
         timestamp: new Date(),
-        sync_status: 0, // 0 = Unsynced
         is_voided: false
     };
 
     try {
         // 1. Save to Dexie (Offline First)
-        await db.transactions.put(transaction);
+        await Repository.upsert('transactions', transaction);
 
         // 2. Update Local Dexie Items
         for (const item of transaction.items) {
-            const current = await db.items.get(item.id);
+            const current = await Repository.get('items', item.id);
             if (current) {
-                await db.items.update(item.id, { stock_level: current.stock_level - item.qty });
+                await Repository.upsert('items', { ...current, stock_level: current.stock_level - item.qty });
             }
         }
 
         // 3. Update Customer Points
         if (selectedCustomer.id !== "Guest") {
-            selectedCustomer.loyalty_points = (selectedCustomer.loyalty_points || 0) + pointsEarned;
-            if (paymentMethod === "Points") {
-                selectedCustomer.loyalty_points -= total;
-            }
-            await db.customers.put(selectedCustomer);
-            
-            if (navigator.onLine) {
-                await syncCollection('customers', selectedCustomer.id, selectedCustomer);
-            }
+            const updatedCustomer = { ...selectedCustomer };
+            updatedCustomer.loyalty_points = (updatedCustomer.loyalty_points || 0) + pointsEarned;
+            if (paymentMethod === "Points") updatedCustomer.loyalty_points -= total;
+            await Repository.upsert('customers', updatedCustomer);
         }
 
         // 4. Trigger Background Sync
-        if (navigator.onLine) {
-            processQueue();
-        }
+        SyncEngine.sync();
 
         lastTransactionData = transaction;
         cart = [];
@@ -918,7 +925,10 @@ async function openHistoryModal() {
     tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center">Loading...</td></tr>`;
 
     try {
-        const txs = await db.transactions.orderBy('timestamp').reverse().limit(50).toArray();
+        // Complex query still uses db directly but filters for non-deleted
+        const txs = await db.transactions
+            .filter(tx => !tx._deleted)
+            .orderBy('timestamp').reverse().limit(50).toArray();
         tbody.innerHTML = txs.map(tx => `
             <tr class="border-b ${tx.is_voided ? 'bg-red-50 opacity-60' : ''}">
                 <td class="p-2 text-xs">${new Date(tx.timestamp).toLocaleString()}</td>
@@ -962,33 +972,30 @@ async function voidTransaction(id) {
     if (reason === null) return; // User cancelled
 
     try {
-        const txId = isNaN(id) ? id : parseInt(id);
-        const tx = await db.transactions.get(txId);
+        const tx = await Repository.get('transactions', id);
         if (!tx) return;
 
         const user = JSON.parse(localStorage.getItem('pos_user'));
 
         // 1. Update Dexie Transaction
-        await db.transactions.update(txId, { 
+        await Repository.upsert('transactions', { 
+            ...tx,
             is_voided: true, 
             voided_at: new Date(),
             voided_by: user ? user.email : "System",
-            void_reason: reason || "No reason provided",
-            sync_status: 0 
+            void_reason: reason || "No reason provided"
         });
 
         // 2. Reverse Stock in Dexie
         for (const item of tx.items) {
-            const current = await db.items.get(item.id);
+            const current = await Repository.get('items', item.id);
             if (current) {
-                await db.items.update(item.id, { stock_level: current.stock_level + item.qty });
+                await Repository.upsert('items', { ...current, stock_level: current.stock_level + item.qty });
             }
         }
 
         // 3. Trigger Background Sync
-        if (navigator.onLine) {
-            processQueue();
-        }
+        SyncEngine.sync();
 
         showToast("Transaction voided and stock reversed.");
         await addNotification('Void', `Transaction ${txId} was voided by ${user ? user.email : "System"}`);
@@ -1014,20 +1021,12 @@ async function suspendCurrentTransaction() {
         user_email: user ? user.email : "Guest",
         timestamp: new Date(),
         total: cart.reduce((sum, item) => sum + (item.selling_price * item.qty), 0),
-        sync_status: 0 // 0 = Unsynced
     };
 
     try {
         // 1. Save locally first (Persistence across refreshes)
-        await db.suspended_transactions.add(suspendedTx);
+        await Repository.upsert('suspended_transactions', suspendedTx);
         
-        // 2. Sync with server
-        if (navigator.onLine) {
-            syncCollection('suspended_transactions', suspendedTx.id, suspendedTx).then(success => {
-                if (success) db.suspended_transactions.update(suspendedTx.id, { sync_status: 1 });
-            });
-        }
-
         cart = [];
         selectedCustomer = { id: "Guest", name: "Guest" };
         renderCart();
@@ -1046,8 +1045,7 @@ async function openSuspendedModal() {
     document.getElementById("modal-suspended").classList.remove("hidden");
 
     try {
-        const suspended = await db.suspended_transactions
-            .filter(tx => tx.sync_status !== 2).toArray();
+        const suspended = await Repository.getAll('suspended_transactions');
         if (suspended.length === 0) {
             container.innerHTML = `<div class="text-center p-4 text-gray-500">No suspended transactions.</div>`;
             return;
@@ -1103,22 +1101,12 @@ async function resumeTransaction(id) {
     }
 
     try {
-        // Robust ID lookup: try as string, then as number if applicable
-        let tx = await db.suspended_transactions.get(id);
-        let actualId = id;
-        if (!tx && !isNaN(id)) {
-            actualId = parseInt(id);
-            tx = await db.suspended_transactions.get(actualId);
-        }
+        let tx = await Repository.get('suspended_transactions', id);
 
         if (tx) {
             cart = tx.items;
             selectedCustomer = tx.customer || { id: "Guest", name: "Guest" };
-            
-            await db.suspended_transactions.delete(actualId);
-            if (navigator.onLine) {
-                syncCollection('suspended_transactions', actualId, null, true);
-            }
+            await Repository.remove('suspended_transactions', id);
             
             renderCart();
             selectCustomer(selectedCustomer);
@@ -1138,18 +1126,7 @@ async function deleteSuspendedTransaction(id) {
     if (!confirm("Are you sure you want to permanently delete this suspended transaction?")) return;
 
     try {
-        // Robust ID lookup for deletion
-        let tx = await db.suspended_transactions.get(id);
-        let actualId = id;
-        if (!tx && !isNaN(id)) {
-            actualId = parseInt(id);
-            tx = await db.suspended_transactions.get(actualId);
-        }
-
-        await db.suspended_transactions.delete(actualId);
-        if (navigator.onLine) {
-            syncCollection('suspended_transactions', actualId, null, true);
-        }
+        await Repository.remove('suspended_transactions', id);
         
         showToast("Transaction deleted.");
         openSuspendedModal(); // Refresh list
@@ -1161,8 +1138,7 @@ async function deleteSuspendedTransaction(id) {
 }
 
 async function updateSuspendedCount() {
-    const count = await db.suspended_transactions
-        .filter(tx => tx.sync_status !== 2).count();
+    const count = (await Repository.getAll('suspended_transactions')).length;
     const btn = document.getElementById("btn-view-suspended");
     if (!btn) return;
     
@@ -1219,21 +1195,14 @@ async function requestQuickCustomer(tx) {
 
         const updateTxAndResolve = async (customer) => {
             // 1. Update Local Dexie
-            await db.transactions.update(tx.id, {
+            await Repository.upsert('transactions', {
+                ...tx,
                 customer_id: customer.id,
-                customer_name: customer.name,
-                sync_status: 0 // Mark for re-sync
+                customer_name: customer.name
             });
             
             tx.customer_id = customer.id;
             tx.customer_name = customer.name;
-
-            // 2. Immediate Server Sync if online
-            if (navigator.onLine) {
-                syncCollection('transactions', tx.id, tx).then(success => {
-                    if (success) db.transactions.update(tx.id, { sync_status: 1 });
-                });
-            }
 
             cleanup();
             resolve(tx);
@@ -1330,10 +1299,7 @@ async function requestQuickCustomer(tx) {
 
             try {
                 const newCustomer = { id: generateUUID(), name, phone, email: "", loyalty_points: 0, timestamp: new Date() };
-                await db.customers.add(newCustomer);
-                if (navigator.onLine) {
-                    syncCollection('customers', newCustomer.id, newCustomer);
-                }
+                await Repository.upsert('customers', newCustomer);
                 fetchCustomersFromDexie();
                 await updateTxAndResolve(newCustomer);
             } catch (error) {
@@ -1470,10 +1436,3 @@ async function printReceipt(tx, isReprint = false) {
     // Mark transaction as printed to handle watermark on manual reprints
     tx.was_printed = true;
 }
-
-// Auto-sync when coming back online
-window.addEventListener('online', () => {
-    if (window.location.hash === '#pos') {
-        syncSuspendedFromServer();
-    }
-});

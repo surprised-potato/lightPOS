@@ -58,7 +58,11 @@
                 "write": true
             }
         },
-        "phone": ""
+        "phone": "",
+        "_version": 1,
+        "_updatedAt": 1767556200,
+        "_deleted": false,
+        "_hash": "b0fe9635bf105c7aa5e4ed9c548c7766"
     },
     {
         "email": "JohnRoss@LP.com",
@@ -119,7 +123,11 @@
                 "write": true
             }
         },
-        "phone": ""
+        "phone": "",
+        "_version": 1,
+        "_updatedAt": 1767556200,
+        "_deleted": false,
+        "_hash": "cba27cd7ab5c1d1f9e409d5ecb876769"
     },
     {
         "email": "cashier@lp.com",
@@ -176,6 +184,10 @@
                 "read": true,
                 "write": true
             }
-        }
+        },
+        "_version": 1,
+        "_updatedAt": 1767556200,
+        "_deleted": false,
+        "_hash": "4706e03153de2be443a169f061a446ba"
     }
 ]

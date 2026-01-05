@@ -8,7 +8,11 @@
         "qty": 50,
         "user": "admin@lightpos.com",
         "reason": "Routine Audit",
-        "sync_status": 1
+        "sync_status": 1,
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "2f12d4893501531cc71b7c6f478cb529"
     },
     {
         "id": "038380ff-179c-4dd2-985d-87899ed203a7",
@@ -20,7 +24,11 @@
         "user": "admin@lightpos.com",
         "transaction_id": "d8e38ced-8f0c-4328-ad0d-a6b58eeebb8a",
         "reason": "Defective",
-        "sync_status": 1
+        "sync_status": 1,
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "5e786fa60470f4aa4597195cb718bd27"
     },
     {
         "id": "627d06ce-d3b4-4871-abbc-ceec2a84b56f-002aa91b-a9eb-4b01-b6e3-787dd68d6c33",
@@ -31,7 +39,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "627d06ce-d3b4-4871-abbc-ceec2a84b56f",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "9b7e9a1aa568606c323fffe2f99746b9"
     },
     {
         "id": "627d06ce-d3b4-4871-abbc-ceec2a84b56f-00431c37-af4a-48c8-b299-73378ccea980",
@@ -42,7 +54,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "627d06ce-d3b4-4871-abbc-ceec2a84b56f",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "fc92ee82d4a63dcb4a6e67e68927af24"
     },
     {
         "id": "627d06ce-d3b4-4871-abbc-ceec2a84b56f-005f9b87-111c-47fe-8da3-877afe3a1522",
@@ -53,7 +69,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "627d06ce-d3b4-4871-abbc-ceec2a84b56f",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "73f81782072bbb844803dbd64c6f2494"
     },
     {
         "id": "e36932d9-0782-4a8b-9f29-2a67b4dbc006-bfd772b6-fc80-4d83-9b0d-45b5987b3bb0",
@@ -64,7 +84,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "e36932d9-0782-4a8b-9f29-2a67b4dbc006",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "e42046328d14973875b67ea5f8b927fa"
     },
     {
         "id": "e36932d9-0782-4a8b-9f29-2a67b4dbc006-bfd1aff4-1879-4f4d-ad75-b521575f2072",
@@ -75,7 +99,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "e36932d9-0782-4a8b-9f29-2a67b4dbc006",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "41d71df66d400e396ac4bc03d397552e"
     },
     {
         "id": "e36932d9-0782-4a8b-9f29-2a67b4dbc006-bfe7d10d-8d62-439a-9899-ea98dea8de1c",
@@ -86,7 +114,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "e36932d9-0782-4a8b-9f29-2a67b4dbc006",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "8a809701817e10858db40d0d0251f17d"
     },
     {
         "id": "e36932d9-0782-4a8b-9f29-2a67b4dbc006-bfdee949-6283-455a-b4bf-eaa0ece061ec",
@@ -97,7 +129,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "e36932d9-0782-4a8b-9f29-2a67b4dbc006",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "e95c05e790c8dd1406e95466b7760908"
     },
     {
         "id": "ec626234-9023-4d04-815a-100294950efa-c10b0830-7aa9-432b-ad27-45a509c0f69a",
@@ -108,7 +144,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "ec626234-9023-4d04-815a-100294950efa",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "94f2189fb871e64befe7326311744a13"
     },
     {
         "id": "ec626234-9023-4d04-815a-100294950efa-c109e5d8-12ae-4269-a078-dc8170ad8c83",
@@ -119,7 +159,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "ec626234-9023-4d04-815a-100294950efa",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "103cd960a47c0417c3733e1c3500e555"
     },
     {
         "id": "ec626234-9023-4d04-815a-100294950efa-c105713c-a040-4443-933a-6d5907463876",
@@ -130,7 +174,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "ec626234-9023-4d04-815a-100294950efa",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "57614d2070093f9df43edf7e9f913548"
     },
     {
         "id": "ec626234-9023-4d04-815a-100294950efa-c113b785-0104-4ada-b163-8adf6510263a",
@@ -141,7 +189,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "ec626234-9023-4d04-815a-100294950efa",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "5b82b91ff45da741aa9908549c4df9be"
     },
     {
         "id": "e53f8839-fdf3-4664-96bc-1886079af289",
@@ -153,7 +205,11 @@
         "user": "admin@lightpos.com",
         "transaction_id": "ec626234-9023-4d04-815a-100294950efa",
         "reason": "Changed Mind",
-        "sync_status": 1
+        "sync_status": 1,
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "6cc0b93576b418c52f3b295e7fa1c9e3"
     },
     {
         "id": "2d54c892-9a89-4128-b30d-536def36ee70",
@@ -165,7 +221,11 @@
         "user": "admin@lightpos.com",
         "transaction_id": "ec626234-9023-4d04-815a-100294950efa",
         "reason": "Wrong Item",
-        "sync_status": 1
+        "sync_status": 1,
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "168d43b0c6282aaa8313c6c119e7a487"
     },
     {
         "id": "149e36c1-95ea-4417-bc3e-d7c83d30ee4d-ab05f2c5-74f0-4061-97f3-2feccf0815d1",
@@ -176,7 +236,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "149e36c1-95ea-4417-bc3e-d7c83d30ee4d",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "dafd11ba9fe666b77f14539a372b8ab1"
     },
     {
         "id": "149e36c1-95ea-4417-bc3e-d7c83d30ee4d-aaf13796-ca57-4e96-b8ec-9b8e31b05408",
@@ -187,7 +251,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "149e36c1-95ea-4417-bc3e-d7c83d30ee4d",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "4218f08b44f4eba61ad4dc6e66624a73"
     },
     {
         "id": "149e36c1-95ea-4417-bc3e-d7c83d30ee4d-aaea445c-fe31-43c0-bc37-4ed4e154fd53",
@@ -198,7 +266,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "149e36c1-95ea-4417-bc3e-d7c83d30ee4d",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "796458913880c1b21202adc317aed3f6"
     },
     {
         "id": "149e36c1-95ea-4417-bc3e-d7c83d30ee4d-aadd4b52-e250-4ee3-8693-643807c1ae80",
@@ -209,7 +281,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "149e36c1-95ea-4417-bc3e-d7c83d30ee4d",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "c15f3ff4a722edba1dfae454ef490aeb"
     },
     {
         "id": "8448f97b-4c3f-4c52-9b7c-8c5c5851f07d-aadde55d-0c18-4e1c-8213-9dafa7383328",
@@ -220,7 +296,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "8448f97b-4c3f-4c52-9b7c-8c5c5851f07d",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "9ee65e8e04f587e754a4f8b2fda927d4"
     },
     {
         "id": "8448f97b-4c3f-4c52-9b7c-8c5c5851f07d-aadd7666-6e4d-4ae0-8454-a69612cc2ee1",
@@ -231,7 +311,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "8448f97b-4c3f-4c52-9b7c-8c5c5851f07d",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "60b51ab3182907d150bc3729f8ed1fe7"
     },
     {
         "id": "8448f97b-4c3f-4c52-9b7c-8c5c5851f07d-aab23c7a-37eb-4f28-9425-9f40c4825662",
@@ -242,7 +326,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "8448f97b-4c3f-4c52-9b7c-8c5c5851f07d",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "b0c007924ac7571371ecbb9a9131ec09"
     },
     {
         "id": "c7e6c563-909b-4def-ab3e-0f94fcc5f45d-001c8bed-b8f0-4f33-adda-e1581bbd9223",
@@ -253,7 +341,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "c7e6c563-909b-4def-ab3e-0f94fcc5f45d",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "ee5447bbd53083f924e0c5ec70a5a2d8"
     },
     {
         "id": "c7e6c563-909b-4def-ab3e-0f94fcc5f45d-001d06b3-e1e3-4674-87f3-2e469379aa1e",
@@ -264,7 +356,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "c7e6c563-909b-4def-ab3e-0f94fcc5f45d",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "cfb8d0786a31842557a0497c21f92255"
     },
     {
         "id": "4b711863-758a-4c13-a57d-d15c67a49552-005f9b87-111c-47fe-8da3-877afe3a1522",
@@ -275,7 +371,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "4b711863-758a-4c13-a57d-d15c67a49552",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "819d124c33d14228ce3afdbfc01c636d"
     },
     {
         "id": "4b711863-758a-4c13-a57d-d15c67a49552-0078db4b-4e64-4601-84ab-d03a7ed782a1",
@@ -286,7 +386,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "4b711863-758a-4c13-a57d-d15c67a49552",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "b1d0bad9ec83bfbe187d05b5a8a81be7"
     },
     {
         "id": "4b711863-758a-4c13-a57d-d15c67a49552-00dc06e9-6389-422f-bbc3-79f148b561f0",
@@ -297,7 +401,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "4b711863-758a-4c13-a57d-d15c67a49552",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "883e51fd22aa0ebf70b048524925e366"
     },
     {
         "id": "ac3c0471-6202-4742-8d62-e79af9245745-021f1595-32d3-4072-8b65-82ea6474bcf8",
@@ -308,7 +416,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "ac3c0471-6202-4742-8d62-e79af9245745",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "9175929a598c1c27d4c1e99c1103da1c"
     },
     {
         "id": "ac3c0471-6202-4742-8d62-e79af9245745-021c3f1e-b6cf-4c44-b9bc-3682ce40b604",
@@ -319,7 +431,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "ac3c0471-6202-4742-8d62-e79af9245745",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "50ffdc446b09f7773144d88c761542f4"
     },
     {
         "id": "ac3c0471-6202-4742-8d62-e79af9245745-02294eaf-41a0-460d-afc3-70bc73c0c510",
@@ -330,7 +446,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "ac3c0471-6202-4742-8d62-e79af9245745",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "8960f4e2b3218a8c950d3bad0797dbfe"
     },
     {
         "id": "ac3c0471-6202-4742-8d62-e79af9245745-026603d4-173b-418e-9d5f-98716778f6d0",
@@ -341,7 +461,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "ac3c0471-6202-4742-8d62-e79af9245745",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "1acc86cc00e173d105571887eff781c2"
     },
     {
         "id": "ac3c0471-6202-4742-8d62-e79af9245745-02837038-d270-40e3-ac24-b6f1eca34acb",
@@ -352,7 +476,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "ac3c0471-6202-4742-8d62-e79af9245745",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "e3a871066054c2be029443f61feb052c"
     },
     {
         "id": "d29d1eac-a6a4-4c1e-bedc-b8456c86230a-02f95c23-d42b-44c1-8172-f8c74d6b86ca",
@@ -363,7 +491,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "d29d1eac-a6a4-4c1e-bedc-b8456c86230a",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "531fb3be0833d24c17197874e0ef3dbd"
     },
     {
         "id": "d29d1eac-a6a4-4c1e-bedc-b8456c86230a-031fd50e-a821-4438-88a3-777e6e76ba65",
@@ -374,7 +506,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "d29d1eac-a6a4-4c1e-bedc-b8456c86230a",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "dc04fd9c7d2061257a55a6fb9721186c"
     },
     {
         "id": "d29d1eac-a6a4-4c1e-bedc-b8456c86230a-031910e3-2873-4aa5-b8e8-b394200ffa05",
@@ -385,7 +521,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "d29d1eac-a6a4-4c1e-bedc-b8456c86230a",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "2bc997c0f9378d9c481fd283317849f8"
     },
     {
         "id": "98c59af0-a1b6-46e8-822c-7957f968da6f-03cfeb21-fb1e-4d51-b179-3da3500c9c0a",
@@ -396,7 +536,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "98c59af0-a1b6-46e8-822c-7957f968da6f",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "2a547db3a0db9c96ece8cd8b0d8b0155"
     },
     {
         "id": "98c59af0-a1b6-46e8-822c-7957f968da6f-03e7db2e-c68c-4eb8-945a-c8a5e2203818",
@@ -407,7 +551,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "98c59af0-a1b6-46e8-822c-7957f968da6f",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "43893b08d57e9a744cbee0f58bfdef58"
     },
     {
         "id": "b58b821f-12d7-4718-bf64-b78932247b9b",
@@ -419,7 +567,11 @@
         "user": "admin@lightpos.com",
         "transaction_id": "4b711863-758a-4c13-a57d-d15c67a49552",
         "reason": "lol",
-        "sync_status": 1
+        "sync_status": 1,
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "ddc46c28a6f2d27e777f7467e846e8d6"
     },
     {
         "id": "37e68941-5323-4058-9693-dee30497dd87",
@@ -431,7 +583,11 @@
         "user": "admin@lightpos.com",
         "transaction_id": "4b711863-758a-4c13-a57d-d15c67a49552",
         "reason": "lol",
-        "sync_status": 1
+        "sync_status": 1,
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "e327c6d76e28c4c45eb3eec4d88e32c4"
     },
     {
         "id": "e173a746-98ca-42af-9a5c-bb758014e679",
@@ -443,7 +599,11 @@
         "user": "admin@lightpos.com",
         "transaction_id": "4b711863-758a-4c13-a57d-d15c67a49552",
         "reason": "lol",
-        "sync_status": 1
+        "sync_status": 1,
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "84af53c5037a7d287d091b35d148c1b7"
     },
     {
         "id": "c49d72f3-d8c6-456b-870c-b86e0b58db43",
@@ -455,7 +615,11 @@
         "user": "admin@lightpos.com",
         "transaction_id": "98c59af0-a1b6-46e8-822c-7957f968da6f",
         "reason": "Wrong Item",
-        "sync_status": 1
+        "sync_status": 1,
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "b990a454dbf38c2543f18d704b1c9d0a"
     },
     {
         "id": "332d1823-f21e-48ad-95c2-477c0c8eeac1",
@@ -467,7 +631,11 @@
         "user": "admin@lightpos.com",
         "transaction_id": "ac3c0471-6202-4742-8d62-e79af9245745",
         "reason": "Wrong Item",
-        "sync_status": 1
+        "sync_status": 1,
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "2d3adcf5682526d0d130aba06673aa55"
     },
     {
         "id": "9576d147-4fdc-4a82-b5c9-fb10cae3f076",
@@ -479,7 +647,11 @@
         "user": "admin@lightpos.com",
         "transaction_id": "c7e6c563-909b-4def-ab3e-0f94fcc5f45d",
         "reason": "Defective",
-        "sync_status": 1
+        "sync_status": 1,
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "4a21b4a95a402476d2a0873c7e2b79c0"
     },
     {
         "id": "fd92c90e-de49-4a3c-a5ba-a332075e7d1a-0111310b-4d3c-45cd-bf48-f8c13740e299",
@@ -490,7 +662,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "fd92c90e-de49-4a3c-a5ba-a332075e7d1a",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "7d077e216062858664496c5d643ed281"
     },
     {
         "id": "fd92c90e-de49-4a3c-a5ba-a332075e7d1a-010409d0-5611-4d5a-801d-0f461c274114",
@@ -501,7 +677,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "fd92c90e-de49-4a3c-a5ba-a332075e7d1a",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "b670cc565b52d02a8ab309bd97848f08"
     },
     {
         "id": "fd92c90e-de49-4a3c-a5ba-a332075e7d1a-00ffc8db-60b2-4121-8862-460cc2bf982c",
@@ -512,7 +692,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "fd92c90e-de49-4a3c-a5ba-a332075e7d1a",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "a18e7864aa93e7de976acb27f23b0214"
     },
     {
         "id": "fd92c90e-de49-4a3c-a5ba-a332075e7d1a-00fc3380-7c66-44db-937b-77e195796e6f",
@@ -523,7 +707,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "fd92c90e-de49-4a3c-a5ba-a332075e7d1a",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "096e5eee6712c54851690877f867cdd2"
     },
     {
         "id": "b37cfede-7049-47bd-8029-c28b7b0994fb-02bfaffc-1dbb-4006-87fc-d531a39968d4",
@@ -534,7 +722,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "b37cfede-7049-47bd-8029-c28b7b0994fb",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "ecce051622e3de15c3dd61777e0a0671"
     },
     {
         "id": "b37cfede-7049-47bd-8029-c28b7b0994fb-02cb347c-41ca-4a34-b9cd-bfe5daeab1e5",
@@ -545,7 +737,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "b37cfede-7049-47bd-8029-c28b7b0994fb",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "f5655d85aad3f23e4710473553c0bebf"
     },
     {
         "id": "b37cfede-7049-47bd-8029-c28b7b0994fb-02d4e2c6-3fb6-4b77-b8a0-d720a5e1a49c",
@@ -556,7 +752,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "b37cfede-7049-47bd-8029-c28b7b0994fb",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "b55df922e130e83433095ea4193ce4be"
     },
     {
         "id": "b37cfede-7049-47bd-8029-c28b7b0994fb-02c399e8-e2ab-45ed-a68d-c76c554d0340",
@@ -567,7 +767,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "b37cfede-7049-47bd-8029-c28b7b0994fb",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "e16ec9dfeb06a13f669d85159d228300"
     },
     {
         "id": "74a94a73-9458-4089-a9a5-b1df0fa41a40-a14e58ae-865c-4c2a-acc5-52c35c3be986",
@@ -578,7 +782,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "74a94a73-9458-4089-a9a5-b1df0fa41a40",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "3a61698e948f24c3ff8c4f2fcca21175"
     },
     {
         "id": "74a94a73-9458-4089-a9a5-b1df0fa41a40-a16b5415-d6b6-4589-8db0-e8da7322b23d",
@@ -589,7 +797,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "74a94a73-9458-4089-a9a5-b1df0fa41a40",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "157b204f62dd0e836254ae3428dde0c7"
     },
     {
         "id": "74a94a73-9458-4089-a9a5-b1df0fa41a40-a17f9060-2d96-4fe6-803c-d8045de0f523",
@@ -600,7 +812,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "74a94a73-9458-4089-a9a5-b1df0fa41a40",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "4e195ec282c59033584b597446887585"
     },
     {
         "id": "74a94a73-9458-4089-a9a5-b1df0fa41a40-a191a94f-4d1f-4ecc-ac89-b83f94fca7fd",
@@ -611,7 +827,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "74a94a73-9458-4089-a9a5-b1df0fa41a40",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "dfd8b8b4f0ddd9d01036606957910da3"
     },
     {
         "id": "2d649553-abf9-4483-be94-fb0e8aa468ef-9854b002-8bfa-47b2-8bfe-535e5dd65b04",
@@ -622,7 +842,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "2d649553-abf9-4483-be94-fb0e8aa468ef",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "564c5a5807482b8d61439b7d40ab2d72"
     },
     {
         "id": "2d649553-abf9-4483-be94-fb0e8aa468ef-985a6a35-e944-415b-9bc2-46a03a306fc2",
@@ -633,7 +857,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "2d649553-abf9-4483-be94-fb0e8aa468ef",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "e347733b2fb3bc854e8ae8291e731d20"
     },
     {
         "id": "2d649553-abf9-4483-be94-fb0e8aa468ef-985a441c-a7b3-4bae-bc79-5fc9c110f378",
@@ -644,7 +872,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "2d649553-abf9-4483-be94-fb0e8aa468ef",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "65bc87433d45135bcae10d41d2ed2140"
     },
     {
         "id": "2d649553-abf9-4483-be94-fb0e8aa468ef-98522fff-bac6-4180-8c98-a27639c2d14f",
@@ -655,7 +887,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "2d649553-abf9-4483-be94-fb0e8aa468ef",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "fa433659cbb311f3f27ed85402b0c470"
     },
     {
         "id": "3fe5cd9b-ddda-4a31-a49e-fc21121b0139-fffa228f-ceb2-41f1-8f4c-26cc67eebc07",
@@ -666,7 +902,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "3fe5cd9b-ddda-4a31-a49e-fc21121b0139",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "0b8d0bbe044541daa14295e22d767496"
     },
     {
         "id": "3fe5cd9b-ddda-4a31-a49e-fc21121b0139-ffe77aee-ee25-4056-80f2-399af8c307dd",
@@ -677,7 +917,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "3fe5cd9b-ddda-4a31-a49e-fc21121b0139",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "c5046e62176f5f9f1a6e05aeac2d1039"
     },
     {
         "id": "3fe5cd9b-ddda-4a31-a49e-fc21121b0139-ffe96400-e2fa-4ef3-bfb7-8af01db7cbe8",
@@ -688,7 +932,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "3fe5cd9b-ddda-4a31-a49e-fc21121b0139",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "e7a3884f63af98c65712ecbec69f5266"
     },
     {
         "id": "3fe5cd9b-ddda-4a31-a49e-fc21121b0139-ffdcbb66-dc5d-4144-a394-4440afae5417",
@@ -699,7 +947,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "3fe5cd9b-ddda-4a31-a49e-fc21121b0139",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "750c6506a53198c40630796c551c57cf"
     },
     {
         "id": "3fe5cd9b-ddda-4a31-a49e-fc21121b0139-ffc95a76-9b4d-4579-8ed7-df69fcedfa85",
@@ -710,7 +962,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "3fe5cd9b-ddda-4a31-a49e-fc21121b0139",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "baed89527db2b133c37ee1ca475498cd"
     },
     {
         "id": "b17cc047-ce63-42cd-8782-3144fbd61af8-5a33da58-db69-4408-8c3e-2b1dbf3617d8",
@@ -721,7 +977,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "b17cc047-ce63-42cd-8782-3144fbd61af8",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "c4aa27ed4911dccd3c8088fd0ec895f6"
     },
     {
         "id": "b17cc047-ce63-42cd-8782-3144fbd61af8-5a4630bf-e782-4614-ae2d-c35c9f742f9f",
@@ -732,7 +992,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "b17cc047-ce63-42cd-8782-3144fbd61af8",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "b4df4ebe71003d4fc06196dc9fa9950f"
     },
     {
         "id": "b17cc047-ce63-42cd-8782-3144fbd61af8-5a5ed870-1f32-46a4-b66c-abb02b579843",
@@ -743,7 +1007,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "b17cc047-ce63-42cd-8782-3144fbd61af8",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "e40f35e5243f957062609baf4ff689e4"
     },
     {
         "id": "b17cc047-ce63-42cd-8782-3144fbd61af8-5a498bac-6e5a-42d3-80f1-e3eb79e798e2",
@@ -754,7 +1022,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "b17cc047-ce63-42cd-8782-3144fbd61af8",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "08ec5f29e2552980e1cc7b34d9daef5e"
     },
     {
         "id": "2a853863-97b0-4480-88ec-1eb438b971ed-001c8bed-b8f0-4f33-adda-e1581bbd9223",
@@ -765,7 +1037,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "2a853863-97b0-4480-88ec-1eb438b971ed",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "0af4820e06b3a89534f349a5cad58d6e"
     },
     {
         "id": "2a853863-97b0-4480-88ec-1eb438b971ed-002da6b6-5112-44e6-a01b-bc305752f915",
@@ -776,7 +1052,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "2a853863-97b0-4480-88ec-1eb438b971ed",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "e0ae71e4331d9ef5cb1017e690685c50"
     },
     {
         "id": "2a853863-97b0-4480-88ec-1eb438b971ed-005590b6-62e5-4cbb-8573-5dbcc9354cc1",
@@ -787,7 +1067,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "2a853863-97b0-4480-88ec-1eb438b971ed",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "bb66c1c983a5fbee1bc383e9dc0ae4cb"
     },
     {
         "id": "20d7ad76-c72f-4898-98ee-6e98abc826d0-5cc5a683-e54b-4bff-b147-921708ca2dcf",
@@ -798,7 +1082,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "20d7ad76-c72f-4898-98ee-6e98abc826d0",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "500803face8ad8be20f8d15117616e63"
     },
     {
         "id": "20d7ad76-c72f-4898-98ee-6e98abc826d0-5caa5d3e-1a00-48de-96ed-a58fd310dd15",
@@ -809,7 +1097,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "20d7ad76-c72f-4898-98ee-6e98abc826d0",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "1d044bbd7337f6089193f19edac766ef"
     },
     {
         "id": "20d7ad76-c72f-4898-98ee-6e98abc826d0-5cda1083-91d7-4b56-bb66-800b30c08a46",
@@ -820,7 +1112,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "20d7ad76-c72f-4898-98ee-6e98abc826d0",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "c4fe112ef3d6158f9c2a7d327d4922cd"
     },
     {
         "id": "20d7ad76-c72f-4898-98ee-6e98abc826d0-5d102d22-15ee-4111-a4c1-165a38b17cbe",
@@ -831,7 +1127,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "20d7ad76-c72f-4898-98ee-6e98abc826d0",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "31eb8b930dc7019c42167d59c36781ec"
     },
     {
         "id": "e46ab3b1-cf4a-4825-a08c-aa241a164dac-00256301-2ea9-4e57-94f1-12941ea4a63a",
@@ -842,7 +1142,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "e46ab3b1-cf4a-4825-a08c-aa241a164dac",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "2ef184766fb961244b54bc1d17fdccb1"
     },
     {
         "id": "e46ab3b1-cf4a-4825-a08c-aa241a164dac-00407429-b498-4fab-9295-f42aa100c779",
@@ -853,7 +1157,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "e46ab3b1-cf4a-4825-a08c-aa241a164dac",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "97489bbddfa5bf420c2b9fec0349eaa8"
     },
     {
         "id": "e46ab3b1-cf4a-4825-a08c-aa241a164dac-005b920d-53d2-42b5-858e-236f5ebb70c5",
@@ -864,7 +1172,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "e46ab3b1-cf4a-4825-a08c-aa241a164dac",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "d7352602ec3c089f5266c86fa88d26e9"
     },
     {
         "id": "5e216f5e-b4df-43db-8a21-7070802fb27d-012c84be-1114-4cf8-9daf-24db535b5e25",
@@ -875,7 +1187,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "5e216f5e-b4df-43db-8a21-7070802fb27d",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "75f71ece776c3b571f9d529d95665459"
     },
     {
         "id": "5e216f5e-b4df-43db-8a21-7070802fb27d-0158cb2b-1a4c-4496-b3fa-f778161c259f",
@@ -886,7 +1202,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "5e216f5e-b4df-43db-8a21-7070802fb27d",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "3157325177965b3572b0a8d383a85a9e"
     },
     {
         "id": "5e216f5e-b4df-43db-8a21-7070802fb27d-017b0702-362a-4fb9-bf27-0ad25ad46d50",
@@ -897,7 +1217,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "5e216f5e-b4df-43db-8a21-7070802fb27d",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "ce45180775d2a7e4feef1fc8187a8ac0"
     },
     {
         "id": "92aebe96-774f-4b0d-a37c-cbc0e200dab8-0056801f-2563-4397-89ce-f516504e9fb3",
@@ -908,7 +1232,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "92aebe96-774f-4b0d-a37c-cbc0e200dab8",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "458650252ac3017d6e65b92930751b74"
     },
     {
         "id": "92aebe96-774f-4b0d-a37c-cbc0e200dab8-0091534e-b605-4d75-b167-aeb71d258284",
@@ -919,7 +1247,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "92aebe96-774f-4b0d-a37c-cbc0e200dab8",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "0d34605ab3ca37eb3ba6f754ef373d98"
     },
     {
         "id": "fa57177f-55df-4539-9ab6-71d95d9af6ca-039ad704-d613-4270-8bf5-a08ba70f757f",
@@ -930,7 +1262,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "fa57177f-55df-4539-9ab6-71d95d9af6ca",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "1cf9256d32ab61fb0320afddba1a8ac5"
     },
     {
         "id": "fa57177f-55df-4539-9ab6-71d95d9af6ca-03b9e691-69e0-4cdb-bd03-6b93a7d34afe",
@@ -941,7 +1277,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "fa57177f-55df-4539-9ab6-71d95d9af6ca",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "b37473b1ca1d80c40bfea691c1859a63"
     },
     {
         "id": "fa57177f-55df-4539-9ab6-71d95d9af6ca-03bc353c-1caa-43be-9106-c5f1e901a514",
@@ -952,7 +1292,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "fa57177f-55df-4539-9ab6-71d95d9af6ca",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "159d1ad029d5046a41e5d5a7e555d731"
     },
     {
         "id": "fa57177f-55df-4539-9ab6-71d95d9af6ca-039e2592-6294-4cdc-98af-edac642e1d44",
@@ -963,7 +1307,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "fa57177f-55df-4539-9ab6-71d95d9af6ca",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "6cd9f1edfaf7fa2030df36372d26d946"
     },
     {
         "id": "fa57177f-55df-4539-9ab6-71d95d9af6ca-03c4eb75-41f9-4343-baee-44db40c78f94",
@@ -974,7 +1322,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "fa57177f-55df-4539-9ab6-71d95d9af6ca",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "c9f5a2494a3bc47b03da788c5ceba671"
     },
     {
         "id": "fa57177f-55df-4539-9ab6-71d95d9af6ca-03ea2081-67f6-4b97-861b-63c926327959",
@@ -985,7 +1337,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "fa57177f-55df-4539-9ab6-71d95d9af6ca",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "4db2cc9ea91f876d4375e6cc76ceea0e"
     },
     {
         "id": "672a68f2-1e66-4362-ba55-0133bfc92254",
@@ -996,7 +1352,11 @@
         "qty": 20,
         "user": "admin@lightpos.com",
         "reason": "Routine Audit",
-        "sync_status": 1
+        "sync_status": 1,
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "3503d36e640dbaafb34dca6f86480990"
     },
     {
         "id": "3e8a2719-5e2a-46cd-9579-e2ff721a2f78-001c8bed-b8f0-4f33-adda-e1581bbd9223",
@@ -1007,7 +1367,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "3e8a2719-5e2a-46cd-9579-e2ff721a2f78",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "73397e250559263f5f85155b3b87d896"
     },
     {
         "id": "3e8a2719-5e2a-46cd-9579-e2ff721a2f78-002da6b6-5112-44e6-a01b-bc305752f915",
@@ -1018,7 +1382,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "3e8a2719-5e2a-46cd-9579-e2ff721a2f78",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "78bb4bbf39e6907299aef245c7ea8b49"
     },
     {
         "id": "3e8a2719-5e2a-46cd-9579-e2ff721a2f78-005590b6-62e5-4cbb-8573-5dbcc9354cc1",
@@ -1029,7 +1397,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "3e8a2719-5e2a-46cd-9579-e2ff721a2f78",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "b39ccfcb053a18542b308ae12bd1b970"
     },
     {
         "id": "621b5f83-989a-434f-bcc9-9108cb777dce-001c8bed-b8f0-4f33-adda-e1581bbd9223",
@@ -1040,7 +1412,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "621b5f83-989a-434f-bcc9-9108cb777dce",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "71dc7c49821344f9cd76ee1cb2957a53"
     },
     {
         "id": "621b5f83-989a-434f-bcc9-9108cb777dce-002da6b6-5112-44e6-a01b-bc305752f915",
@@ -1051,7 +1427,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "621b5f83-989a-434f-bcc9-9108cb777dce",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "7fa4a8b108d87e6ba658683779e2264f"
     },
     {
         "id": "621b5f83-989a-434f-bcc9-9108cb777dce-005590b6-62e5-4cbb-8573-5dbcc9354cc1",
@@ -1062,7 +1442,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "621b5f83-989a-434f-bcc9-9108cb777dce",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "61f827b74c56286f6eb2f0f0a35eb9ef"
     },
     {
         "id": "621b5f83-989a-434f-bcc9-9108cb777dce-0078db4b-4e64-4601-84ab-d03a7ed782a1",
@@ -1073,7 +1457,11 @@
         "qty": -1,
         "user": "admin@lightpos.com",
         "transaction_id": "621b5f83-989a-434f-bcc9-9108cb777dce",
-        "reason": "Customer Purchase"
+        "reason": "Customer Purchase",
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "6ccf0cd1b495e3e581e24fc61374d8e9"
     },
     {
         "id": "5c3c5cff-8ea6-4e93-a0dc-24dd54bf498c",
@@ -1084,7 +1472,11 @@
         "qty": 900,
         "user": "Super Admin",
         "reason": "Supplier Delivery",
-        "sync_status": 1
+        "sync_status": 1,
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "5960eea714f81cfb6fba73dba93e8b41"
     },
     {
         "id": "b535e1f7-4777-46ae-bc91-d209cfac9abf",
@@ -1095,7 +1487,11 @@
         "qty": 100,
         "user": "Super Admin",
         "reason": "Supplier Delivery",
-        "sync_status": 1
+        "sync_status": 1,
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "c46fc1d5e8d30c0615565e16e2045eb2"
     },
     {
         "id": "fd7a1888-6128-4bfc-ae3d-f35a661a68a9",
@@ -1106,7 +1502,11 @@
         "qty": 100,
         "user": "Super Admin",
         "reason": "Supplier Delivery",
-        "sync_status": 1
+        "sync_status": 1,
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "1875ffd2db953089cd24f30463f90894"
     },
     {
         "id": "953a8b2d-2dd7-4d38-8987-0815f5ee4f7f",
@@ -1117,7 +1517,11 @@
         "qty": 50,
         "user": "Super Admin",
         "reason": "Supplier Delivery",
-        "sync_status": 1
+        "sync_status": 1,
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "ef29df8f734511c0649f430adc88c755"
     },
     {
         "id": "ed8e5aba-d31f-468e-b05d-87836b01c622-002da6b6-5112-44e6-a01b-bc305752f915",
@@ -1129,7 +1533,11 @@
         "user": "admin@lightpos.com",
         "transaction_id": "ed8e5aba-d31f-468e-b05d-87836b01c622",
         "reason": "Customer Purchase",
-        "sync_status": 1
+        "sync_status": 1,
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "c06e494ce0b014bed1c2b2ec200997c0"
     },
     {
         "id": "ed8e5aba-d31f-468e-b05d-87836b01c622-005590b6-62e5-4cbb-8573-5dbcc9354cc1",
@@ -1141,7 +1549,11 @@
         "user": "admin@lightpos.com",
         "transaction_id": "ed8e5aba-d31f-468e-b05d-87836b01c622",
         "reason": "Customer Purchase",
-        "sync_status": 1
+        "sync_status": 1,
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "62d1d079d26b119801a9e0fe3e9a96b8"
     },
     {
         "id": "ed8e5aba-d31f-468e-b05d-87836b01c622-0078db4b-4e64-4601-84ab-d03a7ed782a1",
@@ -1153,7 +1565,11 @@
         "user": "admin@lightpos.com",
         "transaction_id": "ed8e5aba-d31f-468e-b05d-87836b01c622",
         "reason": "Customer Purchase",
-        "sync_status": 1
+        "sync_status": 1,
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "72f6f354b45ca3289abee0ccca3e0415"
     },
     {
         "id": "fe20e6ce-3332-4cd7-af55-1e01b35c7db0",
@@ -1164,6 +1580,10 @@
         "qty": 45,
         "user": "Super Admin",
         "reason": "Supplier Delivery",
-        "sync_status": 1
+        "sync_status": 1,
+        "_version": 1,
+        "_updatedAt": 1767556255,
+        "_deleted": false,
+        "_hash": "7b195d7b1c09f8402531a6895d7e4726"
     }
 ]
