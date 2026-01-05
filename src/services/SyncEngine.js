@@ -14,6 +14,11 @@ export const SyncEngine = {
             window.dispatchEvent(new CustomEvent('sync-started'));
             console.log("Sync started...");
             try {
+                // Ensure the database is open and schema is applied.
+                // If the database was deleted externally, this helps Dexie 
+                // recreate the object stores before we attempt to use them.
+                await db.open();
+
                 await this.push();
                 await this.pull();
                 localStorage.setItem('last_sync_timestamp', new Date().toISOString());
@@ -63,7 +68,8 @@ export const SyncEngine = {
         for (const [collection, items] of Object.entries(deltas)) {
             if (!db[collection]) continue;
 
-            await db.transaction('rw', db[collection], async () => {
+            // Include outbox in the transaction scope to avoid NotFoundError
+            await db.transaction('rw', [db[collection], db.outbox], async () => {
                 for (const item of items) {
                     const idField = db[collection].schema.primKey.name;
                     const local = await db[collection].get(item[idField]);

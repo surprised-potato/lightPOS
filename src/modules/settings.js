@@ -232,6 +232,7 @@ export async function loadSettingsView() {
                         <div class="mt-6 pt-6 border-t">
                             <h4 class="text-xs font-bold text-gray-500 uppercase mb-2">Developer Tools</h4>
                             <button type="button" id="btn-run-tests" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded transition text-sm shadow-sm">Run Sync Architecture Tests</button>
+                            <button type="button" id="btn-diagnostic-export" class="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition text-sm shadow-sm">Export Diagnostic Report</button>
                             <p class="text-[10px] text-gray-400 mt-1">Verifies Outbox, LWW Conflict Resolution, and Web Locks.</p>
                                 </div>
                             </div>
@@ -440,6 +441,8 @@ function setupEventListeners() {
         alert("Architecture tests completed. Please check the browser console (F12) for detailed logs.");
     });
 
+    document.getElementById("btn-diagnostic-export")?.addEventListener("click", runDiagnosticExport);
+
     document.getElementById("btn-nuclear-reset")?.addEventListener("click", async () => {
         if (confirm("ARE YOU ABSOLUTELY SURE? This cannot be undone. All sales and inventory data will be lost.")) {
             if (confirm("Final confirmation: Delete everything?")) {
@@ -605,8 +608,16 @@ async function handleSave(e) {
     };
 
     try {
+        // Fetch existing to maintain versioning for the SyncEngine
+        const existing = await Repository.get('sync_metadata', 'settings');
+        
         // Save locally first
-        await Repository.upsert('sync_metadata', { key: 'settings', value: settings });
+        await Repository.upsert('sync_metadata', { 
+            key: 'settings', 
+            value: settings,
+            _version: (existing?._version || 0) + 1,
+            _updatedAt: Date.now()
+        });
 
         // Trigger background sync
         SyncEngine.sync();
@@ -1010,4 +1021,119 @@ function downloadSample(type) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a"); a.href = url; a.download = filename;
     document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+
+export async function runDiagnosticExport() {
+    const btn = document.getElementById("btn-diagnostic-export");
+    const originalText = btn ? btn.innerHTML : "";
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = "⌛ Generating Report...";
+    }
+
+    const entities = [
+        'items', 'transactions', 'suppliers', 'customers', 
+        'expenses', 'returns', 'shifts', 'stock_movements', 
+        'adjustments', 'stock_in_history', 'suspended_transactions'
+    ];
+    
+    try {
+        const report = {
+            timestamp: new Date().toISOString(),
+            environment: {
+                userAgent: navigator.userAgent,
+                online: navigator.onLine,
+                localStorage: {
+                    last_sync_timestamp: localStorage.getItem('last_sync_timestamp')
+                }
+            },
+            syncStatus: {
+                lastPullTimestamp: (await db.sync_metadata.get('last_pull_timestamp'))?.value,
+                outboxCount: await db.outbox.count(),
+                outboxPreview: await db.outbox.toArray()
+            },
+            serverData: {},
+            localData: {},
+            discrepancies: {}
+        };
+
+        // 1. Settings comparison
+        const sSetRes = await fetch(`${API_URL}?file=settings`);
+        let sSet = sSetRes.ok ? await sSetRes.json() : null;
+        
+        // Unwrap sync envelope if present
+        if (sSet && sSet.deltas && sSet.deltas.settings) {
+            sSet = sSet.deltas.settings;
+        }
+
+        // If the server returned a full record, extract just the settings value
+        const sSetVal = (sSet && sSet.value) ? sSet.value : sSet;
+        const lSet = (await db.sync_metadata.get('settings'))?.value;
+
+        report.serverData.settings = sSetVal;
+        report.localData.settings = lSet;
+
+        // Compare only the actual settings content, ignoring metadata
+        if (JSON.stringify(sSetVal) !== JSON.stringify(lSet)) {
+            report.discrepancies.settings = "Mismatch between server settings.json and local sync_metadata['settings']";
+        }
+
+        // 2. Entity comparison
+        for (const entity of entities) {
+            if (!db[entity]) continue;
+
+            const sRes = await fetch(`${API_URL}?file=${entity}`);
+            let sData = sRes.ok ? await sRes.json() : [];
+            
+            // Unwrap sync envelope if present
+            if (sData && !Array.isArray(sData) && sData.deltas && sData.deltas[entity]) {
+                sData = sData.deltas[entity];
+            }
+
+            if (!Array.isArray(sData)) sData = [];
+            const lData = await db[entity].toArray();
+
+            report.serverData[entity] = sData;
+            report.localData[entity] = lData;
+
+            const sMap = new Map(sData.map(i => [i.id, i]));
+            const lMap = new Map(lData.map(i => [i.id, i]));
+            
+            const onlyInServer = sData.filter(i => !lMap.has(i.id)).map(i => i.id);
+            const onlyInLocal = lData.filter(i => !sMap.has(i.id)).map(i => i.id);
+            const contentMismatch = sData.filter(s => {
+                const l = lMap.get(s.id);
+                return l && JSON.stringify(s) !== JSON.stringify(l);
+            }).map(s => s.id);
+
+            if (onlyInServer.length > 0 || onlyInLocal.length > 0 || contentMismatch.length > 0) {
+                report.discrepancies[entity] = {
+                    missingInLocalCount: onlyInServer.length,
+                    missingInLocalIds: onlyInServer,
+                    missingInServerCount: onlyInLocal.length,
+                    missingInServerIds: onlyInLocal,
+                    mismatchCount: contentMismatch.length,
+                    mismatchIds: contentMismatch
+                };
+            }
+        }
+
+        const blob = new Blob([JSON.stringify(report, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `lightpos-diagnostic-${new Date().getTime()}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+
+        return report;
+    } catch (error) {
+        console.error("Diagnostic export failed:", error);
+        alert("Failed to generate diagnostic report.");
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    }
 }
