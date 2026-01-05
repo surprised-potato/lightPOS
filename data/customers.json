@@ -2080,5 +2080,19 @@
         "_updatedAt": 1767612073015,
         "_deleted": false,
         "_hash": "96821b442ee0b2fe108a0faa52117804"
+    },
+    {
+        "id": "68cede1e-5504-4b06-b3d8-410720b8ef2e",
+        "account_number": "asd",
+        "name": "dsf",
+        "phone": "345345",
+        "email": "",
+        "loyalty_points": 0,
+        "timestamp": "2026-01-05T15:13:41.886Z",
+        "sync_status": 0,
+        "_version": 1,
+        "_updatedAt": 1767626021887,
+        "_deleted": false,
+        "_hash": "425a7ba9098e4e18b3a3cc41c0495c7c"
     }
 ]

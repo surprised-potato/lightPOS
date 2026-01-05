@@ -650,18 +650,17 @@ async function refreshItemInsights() {
     startDate.setDate(startDate.getDate() - chartDays);
     const startStr = startDate.toISOString();
 
-    // 1. Fetch Transactions for this item (Optimized with multi-entry index)
-    // This assumes an index on 'item_ids' exists: transactions: '..., *item_ids'
+    // 1. Fetch Transactions for this item
+    // Using timestamp index as item_ids is not indexed in the schema
     const itemSales = await db.transactions
-        .where('item_ids').equals(item.id)
-        .filter(t => t.timestamp >= startStr && !t._deleted && !t.is_voided)
+        .where('timestamp').aboveOrEqual(startStr)
+        .filter(t => !t._deleted && !t.is_voided && t.items.some(it => it.id === item.id))
         .toArray();
 
-    // 1b. Fetch Total Sold All Time (Optimized with index and .each to minimize memory footprint)
+    // 1b. Fetch Total Sold All Time
     let totalSoldAllTime = 0;
     await db.transactions
-        .where('item_ids').equals(item.id)
-        .filter(t => !t._deleted && !t.is_voided)
+        .filter(t => !t._deleted && !t.is_voided && t.items.some(it => it.id === item.id))
         .each(t => {
             const entry = t.items.find(it => it.id === item.id);
             if (entry) totalSoldAllTime += entry.qty;

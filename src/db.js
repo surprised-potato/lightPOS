@@ -6,9 +6,9 @@ export const db = new Dexie('lightPOS_DB');
 // Define schema: 
 // ++id is auto-incrementing if needed, 
 // but usually, you'll use the 'id' from your cloud DB.
-db.version(30).stores({
+db.version(31).stores({
     items: '++id, name, barcode, category, updatedAt, sync_status, _version, _updatedAt, _deleted',
-    transactions: '++id, timestamp, customer_id, sync_status, _version, _updatedAt, _deleted',
+    transactions: '++id, timestamp, customer_id, *item_ids, sync_status, _version, _updatedAt, _deleted',
     stock_movements: '++id, item_id, timestamp, sync_status, _version, _updatedAt, _deleted',
     stock_logs: '++id, timestamp, sync_status, _version, _updatedAt, _deleted',
     adjustments: '++id, item_id, timestamp, sync_status, _version, _updatedAt, _deleted',
@@ -23,6 +23,15 @@ db.version(30).stores({
     suppliers: '++id, name, sync_status, _version, _updatedAt, _deleted',
     users: 'email, name, is_active, sync_status, _version, _updatedAt, _deleted',
     outbox: '++id, collection, docId, type'
+}).upgrade(tx => {
+    // Migration: Populate item_ids array from the items objects for existing data
+    return tx.transactions.toCollection().modify(transaction => {
+        if (transaction.items && Array.isArray(transaction.items)) {
+            transaction.item_ids = transaction.items.map(item => item.id);
+        } else {
+            transaction.item_ids = [];
+        }
+    });
 });
 
 // Global error handler for unhandled database exceptions
