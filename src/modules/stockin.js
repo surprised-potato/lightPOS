@@ -232,7 +232,7 @@ function handleSearch(e) {
     }
 
     const results = allItems.filter(item =>
-        item.name.toLowerCase().includes(lowerQuery) ||
+        (item.name || "").toLowerCase().includes(lowerQuery) ||
         (item.barcode && item.barcode.includes(lowerQuery))
     ).slice(0, 10);
 

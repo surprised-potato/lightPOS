@@ -6,6 +6,9 @@ import { generateUUID } from "../utils.js";
 import { Repository } from "../services/Repository.js";
 import { SyncEngine } from "../services/SyncEngine.js";
 
+let activeCartIndex = null;
+let qtyBuffer = "";
+
 // Global shortcut listener for POS
 document.addEventListener("keydown", (e) => {
     const searchInput = document.getElementById("pos-search");
@@ -13,6 +16,58 @@ document.addEventListener("keydown", (e) => {
     
     // Only run if POS elements are present
     if (!searchInput || !custInput) return;
+
+    // Cart Navigation Mode (F3)
+    if (activeCartIndex !== null && cart.length > 0) {
+        if (e.key === "ArrowDown") {
+            e.preventDefault();
+            activeCartIndex = (activeCartIndex + 1) % cart.length;
+            qtyBuffer = "";
+            renderCart();
+            return;
+        } else if (e.key === "ArrowUp") {
+            e.preventDefault();
+            activeCartIndex = (activeCartIndex - 1 + cart.length) % cart.length;
+            qtyBuffer = "";
+            renderCart();
+            return;
+        } else if (e.key >= "0" && e.key <= "9") {
+            e.preventDefault();
+            qtyBuffer += e.key;
+            renderCart();
+            return;
+        } else if (e.key === "Backspace") {
+            e.preventDefault();
+            if (qtyBuffer.length > 0) {
+                qtyBuffer = qtyBuffer.slice(0, -1);
+                renderCart();
+            } else {
+                removeFromCart(activeCartIndex);
+                activeCartIndex = null;
+                renderCart();
+                searchInput.focus();
+            }
+            return;
+        } else if (e.key === "Delete") {
+            e.preventDefault();
+            removeFromCart(activeCartIndex);
+            activeCartIndex = null;
+            qtyBuffer = "";
+            renderCart();
+            searchInput.focus();
+            return;
+        } else if (e.key === "Escape" || e.key === "Enter") {
+            e.preventDefault();
+            if (e.key === "Enter" && qtyBuffer !== "") {
+                updateQty(activeCartIndex, parseInt(qtyBuffer));
+            }
+            activeCartIndex = null;
+            qtyBuffer = "";
+            renderCart();
+            searchInput.focus();
+            return;
+        }
+    }
 
     if (e.key === "F1") {
         e.preventDefault();
@@ -22,11 +77,12 @@ document.addEventListener("keydown", (e) => {
         custInput.focus();
     } else if (e.key === "F3") {
         e.preventDefault();
-        // Focus on the first quantity input in the cart
-        const firstQtyInput = document.querySelector("#pos-cart-items .cart-qty-input");
-        if (firstQtyInput) {
-            firstQtyInput.focus();
-            firstQtyInput.select();
+        if (cart.length > 0) {
+            activeCartIndex = 0;
+            qtyBuffer = "";
+            renderCart();
+            // Scroll to top of cart
+            document.getElementById("pos-cart-items").scrollTop = 0;
         }
     } else if (e.key === "F4") {
         e.preventDefault();
@@ -42,6 +98,37 @@ document.addEventListener("keydown", (e) => {
         e.preventDefault();
         document.getElementById("modal-suspended")?.classList.add("hidden");
         document.getElementById("modal-pos-history")?.classList.add("hidden");
+    }
+});
+
+let isResizing = false;
+
+/**
+ * Resizing logic for the POS cart
+ */
+document.addEventListener('mousemove', (e) => {
+    if (!isResizing) return;
+    const cart = document.getElementById('pos-cart-container');
+    const container = cart?.parentElement;
+    if (!cart || !container) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const newWidth = containerRect.right - e.clientX;
+    const minWidth = 320;
+    const maxWidth = containerRect.width * 0.6;
+
+    if (newWidth >= minWidth && newWidth <= maxWidth) {
+        const widthStr = `${newWidth}px`;
+        cart.style.width = widthStr;
+        localStorage.setItem('pos_cart_width', widthStr);
+    }
+});
+
+document.addEventListener('mouseup', () => {
+    if (isResizing) {
+        isResizing = false;
+        document.body.style.cursor = 'default';
+        document.body.classList.remove('select-none');
     }
 });
 
@@ -64,38 +151,59 @@ export async function loadPosView() {
 }
 
 async function renderPosInterface(content) {
+    const savedCartWidth = localStorage.getItem('pos_cart_width') || '33.33%';
+    const savedCols = localStorage.getItem('pos_grid_cols') || '3';
+    const savedCompact = localStorage.getItem('pos_compact_mode') || 'false';
+
     // Full height layout minus header padding
     content.innerHTML = `
-        <div class="flex flex-col md:flex-row h-[calc(100vh-140px)] gap-4">
+        <div class="flex flex-col md:flex-row h-[calc(100vh-140px)] gap-0 overflow-hidden">
             <!-- Left Column: Item Grid -->
-            <div class="w-full md:w-2/3 flex flex-col bg-white rounded-lg shadow-md overflow-hidden">
+            <div id="pos-grid-container" class="flex-1 flex flex-col bg-white rounded-l-lg shadow-md overflow-hidden">
                 <!-- Search Bar -->
-                <div class="p-4 border-b bg-gray-50">
-                    <div class="relative">
+                <div class="p-4 border-b bg-gray-50 flex gap-4 items-center">
+                    <div class="relative flex-1">
                         <input type="text" id="pos-search" placeholder="Search items (F1)..." 
                             class="w-full pl-10 p-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg"
                             autocomplete="off">
                         <svg class="w-6 h-6 absolute left-3 top-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                     </div>
+                    <div class="flex items-center gap-2 shrink-0 ml-2">
+                        <label class="text-[10px] font-bold text-gray-400 uppercase cursor-pointer select-none" for="pos-compact-mode">Compact:</label>
+                        <input type="checkbox" id="pos-compact-mode" ${savedCompact === 'true' ? 'checked' : ''} class="form-checkbox h-4 w-4 text-blue-600 cursor-pointer">
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <label class="text-[10px] font-bold text-gray-400 uppercase">Cols:</label>
+                        <select id="pos-grid-cols" class="border rounded p-1 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                            <option value="1" ${savedCols === '1' ? 'selected' : ''}>1</option>
+                            <option value="2" ${savedCols === '2' ? 'selected' : ''}>2</option>
+                            <option value="3" ${savedCols === '3' ? 'selected' : ''}>3</option>
+                            <option value="4" ${savedCols === '4' ? 'selected' : ''}>4</option>
+                            <option value="5" ${savedCols === '5' ? 'selected' : ''}>5</option>
+                        </select>
+                    </div>
                 </div>
                 
                 <!-- Grid -->
-                <div id="pos-grid" class="flex-1 p-4 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 content-start bg-gray-100">
+                <div id="pos-grid" class="flex-1 p-4 overflow-y-auto grid gap-2 content-start bg-gray-100">
                     <!-- Items injected here -->
                     <div class="col-span-full text-center text-gray-500 mt-10">Loading items from local database...</div>
                 </div>
             </div>
 
+            <!-- Resize Handle -->
+            <div id="pos-resizer" class="hidden md:block w-1.5 bg-gray-200 hover:bg-blue-400 cursor-col-resize transition-colors z-10"></div>
+
             <!-- Right Column: Cart -->
-            <div class="w-full md:w-1/3 flex flex-col bg-white rounded-lg shadow-md overflow-hidden border-l h-full">
+            <div id="pos-cart-container" class="w-full md:flex flex-col bg-white rounded-r-lg shadow-md overflow-hidden border-l h-full" style="width: ${savedCartWidth}">
                 <div class="p-4 bg-blue-700 text-white shadow-md flex justify-between items-center">
                     <h2 class="text-xl font-bold tracking-wide">Current Sale <span class="text-xs font-normal opacity-75 ml-1">(F3: Qty)</span></h2>
                     <div class="grid grid-cols-2 gap-1 shrink-0">
-                        <button id="btn-view-suspended" class="text-[10px] bg-yellow-600 hover:bg-yellow-700 px-2 py-1 rounded transition w-24 h-8 flex items-center justify-center" title="View Suspended Sales">Suspended</button>
-                        <button id="btn-pos-history" class="text-[10px] bg-indigo-600 hover:bg-indigo-700 px-2 py-1 rounded transition w-24 h-8 flex items-center justify-center" title="Transaction History">History</button>
-                        <button id="btn-suspend-sale" class="text-[10px] bg-orange-500 hover:bg-orange-600 px-2 py-1 rounded transition w-24 h-8 flex items-center justify-center" title="Suspend Current Sale">Suspend</button>
-                        <button id="btn-pos-close-shift" class="text-[10px] bg-red-500 hover:bg-red-600 px-2 py-1 rounded transition w-24 h-8 flex items-center justify-center">Close Shift</button>
-                        <button id="btn-clear-cart" class="text-[10px] bg-blue-800 hover:bg-blue-900 px-2 py-1 rounded transition w-24 h-8 flex items-center justify-center">Clear</button>
+                        <button id="btn-view-suspended" class="text-[10px] bg-yellow-600 hover:bg-yellow-700 px-2 py-1 rounded transition w-24 h-8 flex items-center justify-center font-bold" title="View Suspended Sales">SUSPENDED</button>
+                        <button id="btn-pos-history" class="text-[10px] bg-indigo-600 hover:bg-indigo-700 px-2 py-1 rounded transition w-24 h-8 flex items-center justify-center font-bold" title="Transaction History">HISTORY</button>
+                        <button id="btn-suspend-sale" class="text-[10px] bg-orange-500 hover:bg-orange-600 px-2 py-1 rounded transition w-24 h-8 flex items-center justify-center font-bold" title="Suspend Current Sale">HOLD</button>
+                        <button id="btn-pos-close-shift" class="text-[10px] bg-red-500 hover:bg-red-600 px-2 py-1 rounded transition w-24 h-8 flex items-center justify-center font-bold" title="End your current shift">CLOSE SHIFT</button>
+                        <button id="btn-clear-cart" class="text-[10px] bg-blue-800 hover:bg-blue-900 px-2 py-1 rounded transition w-24 h-8 flex items-center justify-center font-bold" title="Empty the cart">CLEAR</button>
                     </div>
                 </div>
                 
@@ -154,6 +262,15 @@ async function renderPosInterface(content) {
                         <span>PAY NOW (F4)</span>
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                     </button>
+
+                    <!-- Shortcut Legend -->
+                    <div class="mt-4 pt-2 border-t flex justify-between items-center text-[9px] font-bold text-gray-400 uppercase tracking-tighter">
+                        <span><b class="text-blue-500">F1</b> Search</span>
+                        <span><b class="text-blue-500">F2</b> Cust</span>
+                        <span><b class="text-blue-500">F3</b> Cart</span>
+                        <span><b class="text-blue-500">F4</b> Pay</span>
+                        <span><b class="text-blue-500">F8</b> Print</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -270,6 +387,7 @@ async function renderPosInterface(content) {
     let searchTimeout;
 
     searchInput.addEventListener("input", (e) => {
+        activeCartIndex = null;
         clearTimeout(searchTimeout);
         searchTimeout = setTimeout(() => {
             const { term } = parseSearchTerm(e.target.value);
@@ -277,7 +395,16 @@ async function renderPosInterface(content) {
         }, 150); // Debounce to handle rapid scanner input
     });
 
+    searchInput.addEventListener("focus", () => {
+        if (activeCartIndex !== null) {
+            activeCartIndex = null;
+            renderCart();
+        }
+    });
+
     searchInput.addEventListener("keydown", (e) => {
+        if (activeCartIndex !== null) return;
+
         if (e.key === "ArrowDown") {
             e.preventDefault();
             const firstCard = document.querySelector("#pos-grid > div[tabindex='0']");
@@ -293,13 +420,13 @@ async function renderPosInterface(content) {
             // 1. Exact Barcode
             let item = barcodeMap.get(term);
             // 2. Exact Name
-            if (!item) item = allItems.find(i => i.name.toLowerCase() === term.toLowerCase());
+            if (!item) item = allItems.find(i => (i.name || "").toLowerCase() === term.toLowerCase());
             // 3. Single result
             if (!item) {
                 const lowerTerm = term.toLowerCase();
                 const terms = lowerTerm.split(/\s+/).filter(t => t.length > 0);
                 const filtered = allItems.filter(i => {
-                    const name = i.name.toLowerCase();
+                    const name = (i.name || "").toLowerCase();
                     const barcode = (i.barcode || "").toLowerCase();
                     return terms.every(t => name.includes(t) || barcode.includes(t));
                 });
@@ -392,8 +519,18 @@ async function renderPosInterface(content) {
     custInput.addEventListener("focus", async () => {
         await fetchCustomersFromDexie();
         const term = custInput.value.toLowerCase();
-        const filtered = term ? allCustomers.filter(c => c.name.toLowerCase().includes(term) || c.phone.includes(term)) : allCustomers;
+        const filtered = term ? allCustomers.filter(c => 
+            (c.name || "").toLowerCase().includes(term) || 
+            (c.phone || "").includes(term)
+        ) : allCustomers;
         renderCustomerDropdown(filtered);
+    });
+
+    custInput.addEventListener("focus", () => {
+        if (activeCartIndex !== null) {
+            activeCartIndex = null;
+            renderCart();
+        }
     });
 
     custInput.addEventListener("blur", () => {
@@ -406,6 +543,8 @@ async function renderPosInterface(content) {
     });
 
     custInput.addEventListener("keydown", (e) => {
+        if (activeCartIndex !== null) return;
+
         if (e.key === "ArrowDown") {
             const first = custResults.querySelector("div[tabindex='0']");
             if (first) {
@@ -417,7 +556,10 @@ async function renderPosInterface(content) {
 
     custInput.addEventListener("input", (e) => {
         const term = e.target.value.toLowerCase();
-        const filtered = allCustomers.filter(c => c.name.toLowerCase().includes(term) || c.phone.includes(term));
+        const filtered = allCustomers.filter(c => 
+            (c.name || "").toLowerCase().includes(term) || 
+            (c.phone || "").includes(term)
+        );
         renderCustomerDropdown(filtered);
     });
 
@@ -486,6 +628,39 @@ async function renderPosInterface(content) {
     
     // Auto-focus search on load
     setTimeout(() => searchInput.focus(), 100);
+    initResizer();
+
+    const gridColsSelect = document.getElementById("pos-grid-cols");
+    gridColsSelect.addEventListener("change", (e) => {
+        const cols = e.target.value;
+        localStorage.setItem('pos_grid_cols', cols);
+        updateGridColumns(cols);
+    });
+    
+    const compactToggle = document.getElementById("pos-compact-mode");
+    compactToggle.addEventListener("change", (e) => {
+        localStorage.setItem('pos_compact_mode', e.target.checked);
+        fetchItemsFromDexie(); // Re-render grid
+    });
+
+    updateGridColumns(savedCols);
+}
+
+function initResizer() {
+    const resizer = document.getElementById('pos-resizer');
+    if (!resizer) return;
+
+    resizer.addEventListener('mousedown', (e) => {
+        isResizing = true;
+        document.body.style.cursor = 'col-resize';
+        document.body.classList.add('select-none');
+    });
+}
+
+function updateGridColumns(cols) {
+    const grid = document.getElementById("pos-grid");
+    if (!grid) return;
+    grid.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
 }
 
 async function fetchItemsFromDexie() {
@@ -543,10 +718,13 @@ function renderGrid(items) {
 
     // Limit rendering to top 100 items to maintain performance during rapid searches/scans
     const itemsToRender = items.slice(0, 100);
+    const isCompact = localStorage.getItem('pos_compact_mode') === 'true';
 
     itemsToRender.forEach((item, index) => {
         const card = document.createElement("div");
-        card.className = "bg-white border rounded-lg p-3 shadow-sm hover:shadow-md cursor-pointer transition duration-150 flex flex-col justify-between h-36 hover:border-blue-400 active:bg-blue-50 select-none relative overflow-hidden group focus:outline-none focus:ring-2 focus:ring-blue-500";
+        card.className = isCompact 
+            ? "bg-white border rounded p-1.5 shadow-sm hover:shadow-md cursor-pointer transition duration-150 flex flex-col justify-between h-16 hover:border-blue-400 active:bg-blue-50 select-none relative overflow-hidden group focus:outline-none focus:ring-1 focus:ring-blue-500"
+            : "bg-white border rounded-lg p-3 shadow-sm hover:shadow-md cursor-pointer transition duration-150 flex flex-col justify-between h-24 hover:border-blue-400 active:bg-blue-50 select-none relative overflow-hidden group focus:outline-none focus:ring-2 focus:ring-blue-500";
         card.setAttribute("tabindex", "0");
         
         // Stock Indicator Color
@@ -557,14 +735,20 @@ function renderGrid(items) {
             stockColor = 'text-yellow-600';
         }
         
+        const titleClass = isCompact ? "font-bold text-gray-800 leading-tight line-clamp-1 text-[11px]" : "font-bold text-gray-800 leading-tight line-clamp-2 text-sm mb-1";
+        const barcodeClass = isCompact ? "text-[9px] text-gray-400 font-mono" : "text-xs text-gray-400 font-mono";
+        const footerClass = isCompact ? "flex justify-between items-center mt-1 border-t pt-1" : "flex justify-between items-end mt-2 border-t pt-2";
+        const stockClass = isCompact ? "text-[9px] font-semibold" : "text-xs font-semibold";
+        const priceClass = isCompact ? "font-bold text-blue-600 text-xs" : "font-bold text-blue-600";
+
         card.innerHTML = `
             <div>
-                <div class="font-bold text-gray-800 leading-tight line-clamp-2 text-sm mb-1">${item.name}</div>
-                <div class="text-xs text-gray-400 font-mono">${item.barcode}</div>
+                <div class="${titleClass}">${item.name || "Unnamed Item"}</div>
+                <div class="${barcodeClass}">${item.barcode || "No Barcode"}</div>
             </div>
-            <div class="flex justify-between items-end mt-2 border-t pt-2">
-                <div class="text-xs font-semibold ${stockColor}">Stock: ${item.stock_level}</div>
-                <div class="font-bold text-blue-600">₱${item.selling_price.toFixed(2)}</div>
+            <div class="${footerClass}">
+                <div class="${stockClass} ${stockColor}">Stock: ${item.stock_level}</div>
+                <div class="${priceClass}">₱${item.selling_price.toFixed(2)}</div>
             </div>
             <!-- Hover Effect Overlay -->
             <div class="absolute inset-0 bg-blue-600 bg-opacity-0 group-hover:bg-opacity-5 transition duration-150"></div>
@@ -576,6 +760,8 @@ function renderGrid(items) {
         });
 
         card.addEventListener("keydown", (e) => {
+            if (activeCartIndex !== null) return;
+
             if (e.key === "Enter") {
                 e.preventDefault();
                 addToCart(item, 1);
@@ -603,7 +789,7 @@ function filterItems(term) {
     term = term.toLowerCase();
     const terms = term.split(/\s+/).filter(t => t.length > 0);
     const filtered = allItems.filter(i => {
-        const name = i.name.toLowerCase();
+        const name = (i.name || "").toLowerCase();
         const barcode = (i.barcode || "").toLowerCase();
         return terms.every(t => name.includes(t) || barcode.includes(t));
     });
@@ -611,7 +797,7 @@ function filterItems(term) {
 }
 
 function handleGridNavigation(e, index, totalItems) {
-    const cols = window.innerWidth >= 1024 ? 4 : (window.innerWidth >= 640 ? 3 : 2);
+    const cols = parseInt(localStorage.getItem('pos_grid_cols') || '3');
     let nextIndex = index;
 
     if (e.key === "ArrowRight") nextIndex++;
@@ -706,19 +892,22 @@ function renderCart() {
     }
 
     cart.forEach((item, index) => {
-        const itemTotal = item.selling_price * item.qty;
+        const row = document.createElement("div");
+        const isHighlighted = index === activeCartIndex;
+        const displayQty = isHighlighted ? qtyBuffer : item.qty;
+        const itemTotal = item.selling_price * (isHighlighted && qtyBuffer !== "" ? parseInt(qtyBuffer) || 0 : item.qty);
+        
         total += itemTotal;
 
-        const row = document.createElement("div");
-        row.className = "flex justify-between items-center bg-white p-2 rounded shadow-sm text-sm border-b last:border-b-0";
-        row.innerHTML = `
+        row.className = `flex justify-between items-center bg-white p-2 rounded shadow-sm text-sm border-2 transition-all ${isHighlighted ? 'border-blue-500 bg-blue-50 scale-[1.02] z-10' : 'border-transparent'}`;
+        row.innerHTML = ` 
             <div class="flex-1 overflow-hidden mr-2">
                 <div class="font-bold truncate text-gray-800">${item.name}</div>
-                <div class="text-gray-500 text-xs">₱${item.selling_price.toFixed(2)} x ${item.qty}</div>
+                <div class="text-gray-500 text-xs">₱${item.selling_price.toFixed(2)} x ${displayQty}</div>
             </div>
             <div class="flex items-center gap-2">
                 <div class="font-bold text-blue-600 mr-2">₱${itemTotal.toFixed(2)}</div>
-                <input type="number" min="1" class="w-16 border rounded text-center text-sm py-1 cart-qty-input" data-index="${index}" value="${item.qty}">
+                <input type="number" min="1" class="w-16 border rounded text-center text-sm py-1 cart-qty-input" data-index="${index}" value="${displayQty}">
                 <button class="text-red-400 hover:text-red-600 ml-1 btn-remove p-1" data-index="${index}">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                 </button>
@@ -752,6 +941,11 @@ function renderCart() {
         row.querySelector(".btn-remove").addEventListener("click", () => removeFromCart(index));
 
         cartContainer.appendChild(row);
+        
+        // Ensure highlighted item is visible
+        if (isHighlighted) {
+            row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
     });
 
     totalEl.textContent = `₱${total.toFixed(2)}`;
@@ -1245,7 +1439,10 @@ async function requestQuickCustomer(tx) {
                 resultsDiv.classList.add("hidden");
                 return;
             }
-            const filtered = allCustomers.filter(c => c.name.toLowerCase().includes(term) || c.phone.includes(term));
+            const filtered = allCustomers.filter(c => 
+                (c.name || "").toLowerCase().includes(term) || 
+                (c.phone || "").includes(term)
+            );
             resultsDiv.innerHTML = "";
             if (filtered.length > 0) {
                 resultsDiv.classList.remove("hidden");

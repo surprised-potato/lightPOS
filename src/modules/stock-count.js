@@ -144,7 +144,7 @@ function setupEventListeners() {
 
         let filtered = itemsData.filter(i => {
             const matchesTerm = term.length === 0 || 
-                               i.name.toLowerCase().includes(term) || 
+                               (i.name || "").toLowerCase().includes(term) || 
                                (i.barcode && i.barcode.includes(term));
             const matchesLowStock = !lowStockOnly || (i.stock_level <= (i.min_stock || 10));
             return matchesTerm && matchesLowStock;
