@@ -1922,8 +1922,8 @@ async function showShiftTransactions(shiftId) {
     });
 
     try {
-        const startTime = shift.start_time;
-        const endTime = shift.end_time || new Date().toISOString();
+        const startTime = shift.start_time instanceof Date ? shift.start_time.toISOString() : shift.start_time;
+        const endTime = (shift.end_time instanceof Date ? shift.end_time.toISOString() : shift.end_time) || new Date().toISOString();
         
         const txs = await db.transactions
             .where('timestamp')
