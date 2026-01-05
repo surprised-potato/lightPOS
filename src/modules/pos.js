@@ -1060,7 +1060,7 @@ async function processTransaction() {
         customer_id: selectedCustomer.id,
         customer_name: selectedCustomer.name,
         points_earned: pointsEarned,
-        timestamp: new Date(),
+        timestamp: new Date().toISOString(),
         is_voided: false
     };
 
@@ -1073,6 +1073,19 @@ async function processTransaction() {
             const current = await Repository.get('items', item.id);
             if (current) {
                 await Repository.upsert('items', { ...current, stock_level: current.stock_level - item.qty });
+                
+                // Record Stock Movement
+                await Repository.upsert('stock_movements', {
+                    id: generateUUID(),
+                    item_id: item.id,
+                    item_name: item.name,
+                    timestamp: transaction.timestamp,
+                    type: 'Sale',
+                    qty: -item.qty,
+                    user: transaction.user_email,
+                    transaction_id: transaction.id,
+                    reason: "POS Sale"
+                });
             }
         }
 
@@ -1185,7 +1198,7 @@ async function voidTransaction(id) {
         await Repository.upsert('transactions', { 
             ...tx,
             is_voided: true, 
-            voided_at: new Date(),
+            voided_at: new Date().toISOString(),
             voided_by: user ? user.email : "System",
             void_reason: reason || "No reason provided"
         });
@@ -1202,7 +1215,7 @@ async function voidTransaction(id) {
         SyncEngine.sync();
 
         showToast("Transaction voided and stock reversed.");
-        await addNotification('Void', `Transaction ${txId} was voided by ${user ? user.email : "System"}`);
+        await addNotification('Void', `Transaction ${id} was voided by ${user ? user.email : "System"}`);
         openHistoryModal(); // Refresh list
         fetchItemsFromDexie(); // Refresh grid
     } catch (error) {

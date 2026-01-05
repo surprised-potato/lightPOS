@@ -972,34 +972,41 @@ async function generateReport() {
     const startDate = drp.startDate.clone().startOf('day').toDate();
     const endDate = drp.endDate.clone().endOf('day').toDate();
     const daysInRange = Math.max(1, Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)));
+    const startStr = startDate.toISOString();
+    const endStr = endDate.toISOString();
 
     usersBody.innerHTML = `<tr><td colspan="3" class="py-3 px-6 text-center">Loading data from cloud...</td></tr>`;
 
     const settings = await getSystemSettings();
 
+    const currentUser = JSON.parse(localStorage.getItem('pos_user')) || {};
+    const isAdminOrManager = checkPermission('users', 'read') || checkPermission('reports', 'read');
+
     try {
         // Query Dexie instead of Firestore
-        let transactions = await db.transactions
+        let rawTransactions = await db.transactions
             .where('timestamp')
-            .between(startDate, endDate, true, true)
+            .between(startStr, endStr, true, true)
             .and(t => !t._deleted)
             .toArray();
         
         // Also fetch transactions voided in this period but purchased earlier
         const historicalVoids = await db.transactions
-            .filter(t => !t._deleted && t.is_voided && t.voided_at && new Date(t.voided_at) >= startDate && new Date(t.voided_at) <= endDate)
+            .filter(t => !t._deleted && t.is_voided && t.voided_at && t.voided_at >= startStr && t.voided_at <= endStr)
             .toArray();
 
         const txMap = new Map();
-        transactions.forEach(t => txMap.set(t.id, t));
-        historicalVoids.forEach(t => txMap.set(t.id, t));
-        transactions = Array.from(txMap.values());
+        [...rawTransactions, ...historicalVoids].forEach(t => {
+            txMap.set(t.id, t);
+        });
+        let transactions = Array.from(txMap.values());
 
-        const returns = await db.returns
+        let returns = await db.returns
             .where('timestamp')
-            .between(startDate, endDate, true, true)
+            .between(startStr, endStr, true, true)
             .and(r => !r._deleted)
             .toArray();
+        
         
         const localStockIn = await Repository.getAll('stockins');
         const allItems = await Repository.getAll('items');
@@ -1020,24 +1027,86 @@ async function generateReport() {
         const stockInHistory = Array.from(historyMap.values());
 
         const filteredShifts = (Array.isArray(shifts) ? shifts : []).filter(s => {
-            const d = new Date(s.start_time);
-            return d >= startDate && d <= endDate;
-        });
+            const d = s.start_time instanceof Date ? s.start_time.toISOString() : s.start_time;
+            const inRange = d >= startStr && d <= endStr;
+            
+            // If not admin/manager, only show own shifts
+            if (!isAdminOrManager) {
+                return inRange && s.user_id === currentUser.email;
+            }
+            return inRange;
+        }).sort((a, b) => new Date(b.start_time) - new Date(a.start_time));
 
         const filteredStockIn = stockInHistory.filter(s => {
-            const d = new Date(s.timestamp);
-            return d >= startDate && d <= endDate;
-        });
+            const d = s.timestamp instanceof Date ? s.timestamp.toISOString() : s.timestamp;
+            const inRange = d >= startStr && d <= endStr;
+            return inRange;
+        }).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
         const filteredAdjustments = adjustments.filter(a => {
-            const d = new Date(a.timestamp);
-            return d >= startDate && d <= endDate;
+            const d = a.timestamp instanceof Date ? a.timestamp.toISOString() : a.timestamp;
+            const inRange = d >= startStr && d <= endStr;
+            return inRange;
+        }).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+        // Synthesize movements from transactions to ensure the log is complete
+        // This ensures the report is accurate even if movements weren't explicitly recorded in pos.js
+        const salesMovements = transactions.filter(t => !t.is_voided).flatMap(t => 
+            t.items.map(item => ({
+                id: `sale-${t.id}-${item.id}`,
+                item_id: item.id,
+                item_name: item.name,
+                timestamp: t.timestamp,
+                type: 'Sale',
+                qty: -item.qty,
+                user: t.user_email,
+                transaction_id: t.id,
+                reason: "POS Sale"
+            }))
+        );
+
+        // Synthesize movements from returns
+        const returnMovements = returns.flatMap(r => {
+            const moves = [{
+                id: `return-${r.id}`,
+                item_id: r.item_id,
+                item_name: r.item_name,
+                timestamp: r.timestamp,
+                type: 'Return',
+                qty: r.qty,
+                user: r.processed_by,
+                transaction_id: r.transaction_id,
+                reason: `${r.reason} (${r.condition})`
+            }];
+            
+            if (r.condition === 'damaged') {
+                moves.push({
+                    id: `return-shrink-${r.id}`,
+                    item_id: r.item_id,
+                    item_name: r.item_name,
+                    timestamp: r.timestamp,
+                    type: 'Shrinkage',
+                    qty: -r.qty,
+                    user: r.processed_by,
+                    transaction_id: r.transaction_id,
+                    reason: `Return Write-off: ${r.reason}`
+                });
+            }
+            return moves;
         });
 
-        const filteredMovements = stockMovements.filter(m => {
-            const d = new Date(m.timestamp);
-            return d >= startDate && d <= endDate;
+        // Combine with explicit movements, filtering out synthesized types to avoid duplicates
+        const otherMovements = stockMovements.filter(m => {
+            const isTypeMatch = !['Sale', 'Return', 'Shrinkage'].includes(m.type);
+            const isUserMatch = true;
+            return isTypeMatch && isUserMatch;
         });
+        const allMovements = [...otherMovements, ...salesMovements, ...returnMovements];
+
+        const filteredMovements = allMovements.filter(m => {
+            const d = m.timestamp instanceof Date ? m.timestamp.toISOString() : m.timestamp;
+            return d >= startStr && d <= endStr;
+        }).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
         let grossSales = 0;
         let totalTax = 0;
@@ -1132,7 +1201,7 @@ async function generateReport() {
             }
         });
 
-        reportData.returns = returns;
+        reportData.returns = returns.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
         reportData.returnReasons = Object.entries(reasonStats).map(([reason, count]) => ({ reason, count }));
         reportData.defectiveSuppliers = Object.entries(defectiveBySupplier).map(([name, count]) => ({ name, count }));
 
@@ -1245,14 +1314,14 @@ async function generateReport() {
         });
         reportData.ledger = custStats;
         reportData.vip = [...custStats].sort((a, b) => b.totalSpent - a.totalSpent).slice(0, 10);
-
+        
         // Supplier Data
         reportData.vendorPerf = suppliers.map(s => {
             const bought = stockInHistory.reduce((sum, entry) => sum + entry.items.filter(i => allItems.find(m => m.id === i.item_id)?.supplier_id === s.id).reduce((s2, i) => s2 + (i.quantity || 0), 0), 0);
             const sold = transactions.reduce((sum, tx) => sum + tx.items.filter(i => allItems.find(m => m.id === i.id)?.supplier_id === s.id).reduce((s2, i) => s2 + (i.qty || 0), 0), 0);
             return { name: s.name, bought, sold, pct: bought > 0 ? (sold / bought * 100) : 0 };
         });
-        reportData.purchaseHistory = stockInHistory.map(h => ({ ...h, vendorName: h.supplier_id_override ? (suppliers.find(s => s.id === h.supplier_id_override)?.name || 'Unknown') : 'Mixed', total: h.items.reduce((sum, i) => sum + ((i.quantity || 0) * (i.cost_price || 0)), 0) }));
+        reportData.purchaseHistory = stockInHistory.map(h => ({ ...h, vendorName: h.supplier_id_override ? (suppliers.find(s => s.id === h.supplier_id_override)?.name || 'Unknown') : 'Mixed', total: h.items.reduce((sum, i) => sum + ((i.quantity || 0) * (i.cost_price || 0)), 0) })).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
         reportData.landedCost = allItems.filter(i => i.supplier_id).map(i => ({ ...i, vendorName: suppliers.find(s => s.id === i.supplier_id)?.name || '-' }));
 
         // Initial Render
@@ -1853,8 +1922,8 @@ async function showShiftTransactions(shiftId) {
     });
 
     try {
-        const startTime = new Date(shift.start_time);
-        const endTime = shift.end_time ? new Date(shift.end_time) : new Date();
+        const startTime = shift.start_time;
+        const endTime = shift.end_time || new Date().toISOString();
         
         const txs = await db.transactions
             .where('timestamp')
@@ -2413,6 +2482,7 @@ function renderStockMovement(data) {
         else if (type === 'return') badgeClass = "bg-orange-100 text-orange-700";
         else if (type === 'adjustment') badgeClass = "bg-yellow-100 text-yellow-700";
         else if (type === 'stock-in' || type === 'initial stock') badgeClass = "bg-green-100 text-green-700";
+        else if (type === 'shrinkage') badgeClass = "bg-purple-100 text-purple-700";
 
         row.innerHTML = `
             <td class="py-2 px-4">${new Date(m.timestamp).toLocaleString()}</td>

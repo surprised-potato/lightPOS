@@ -251,26 +251,51 @@ async function handleReturnSubmit(e) {
             refund_amount: item.selling_price * qty,
             condition,
             reason,
-            timestamp: new Date(),
-            processed_by: JSON.parse(localStorage.getItem('pos_user'))?.email || 'unknown',
-            sync_status: 0
+            timestamp: new Date().toISOString(),
+            processed_by: JSON.parse(localStorage.getItem('pos_user'))?.email || 'unknown'
         };
         await Repository.upsert('returns', returnRecord);
 
         // Record Stock Movement Locally
-        const movement = {
+        await Repository.upsert('stock_movements', {
             id: generateUUID(),
             item_id: item.id,
             item_name: item.name,
-            timestamp: new Date(),
+            timestamp: returnRecord.timestamp,
             type: 'Return',
-            qty: condition === 'restockable' ? qty : 0,
-            user: JSON.parse(localStorage.getItem('pos_user'))?.email || 'unknown',
+            qty: qty,
+            user: returnRecord.processed_by,
             transaction_id: selectedTransaction.id,
-            reason: `${reason} (${condition})`,
-            sync_status: 0
-        };
-        await Repository.upsert('stock_movements', movement);
+            reason: `${reason} (${condition})`
+        });
+
+        if (condition === 'damaged') {
+            // Record an additional movement for the loss to keep ledger balanced
+            await Repository.upsert('stock_movements', {
+                id: generateUUID(),
+                item_id: item.id,
+                item_name: item.name,
+                timestamp: returnRecord.timestamp,
+                type: 'Shrinkage',
+                qty: -qty,
+                user: returnRecord.processed_by,
+                transaction_id: selectedTransaction.id,
+                reason: `Return Write-off: ${reason}`
+            });
+            
+            // Also log to adjustments so it shows in shrinkage reports
+            await Repository.upsert('adjustments', {
+                id: generateUUID(),
+                item_id: item.id,
+                item_name: item.name,
+                old_stock: 0, 
+                new_stock: 0,
+                difference: -qty,
+                reason: 'Spoilage/Damage',
+                user: returnRecord.processed_by,
+                timestamp: returnRecord.timestamp
+            });
+        }
 
         // 4. Trigger Sync
         SyncEngine.sync();
