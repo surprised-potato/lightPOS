@@ -5,6 +5,8 @@ import { generateUUID } from "../utils.js";
 import { Repository } from "../services/Repository.js";
 import { SyncEngine } from "../services/SyncEngine.js";
 
+const API_URL = 'api/sync.php';
+
 export async function loadSettingsView() {
     const content = document.getElementById("main-content");
     const canWrite = checkPermission("settings", "write");
@@ -856,11 +858,12 @@ async function analyzeSync() {
     btnAnalyze.classList.add("opacity-50");
     try {
         const [serverRes, localData] = await Promise.all([
-            fetch(`api/sync.php?collection=items`), 
+            fetch(`${API_URL}?since=0`), 
             Repository.getAll('items')
         ]);
-        let serverData = await serverRes.json();
-        if (!Array.isArray(serverData)) serverData = [];
+        const response = await serverRes.json();
+        const serverData = response.deltas?.items || [];
+
         document.getElementById("count-server").textContent = serverData.length;
         document.getElementById("count-local").textContent = localData.length;
         const serverMap = new Map(serverData.map(i => [i.id, i]));
@@ -889,12 +892,22 @@ async function analyzeSync() {
                 });
                 tbody.appendChild(tr);
             };
-            if (onlyInServer.length > 0) renderRow("Missing in Local DB", onlyInServer.length, "Download to Local", "bg-blue-500", async () => await db.items.bulkPut(onlyInServer));
-            if (onlyInLocal.length > 0) renderRow("Missing in Server DB", onlyInLocal.length, "Upload to Server", "bg-green-500", async () => {
-                const newServerList = [...serverData, ...onlyInLocal];
-                await fetch(`${API_URL}?file=items`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newServerList) });
+            if (onlyInServer.length > 0) renderRow("Missing in Local DB", onlyInServer.length, "Download to Local", "bg-blue-500", async () => {
+                for (const item of onlyInServer) {
+                    await Repository.upsert('items', item);
+                }
             });
-            if (conflicts.length > 0) renderRow("Data Mismatch / Conflicts", conflicts.length, "Overwrite Local (Trust Server)", "bg-orange-500", async () => await db.items.bulkPut(conflicts));
+            if (onlyInLocal.length > 0) renderRow("Missing in Server DB", onlyInLocal.length, "Upload to Server", "bg-green-500", async () => {
+                for (const item of onlyInLocal) {
+                    await Repository.upsert('items', item);
+                }
+                await SyncEngine.sync();
+            });
+            if (conflicts.length > 0) renderRow("Data Mismatch / Conflicts", conflicts.length, "Overwrite Local (Trust Server)", "bg-orange-500", async () => {
+                for (const item of conflicts) {
+                    await Repository.upsert('items', item);
+                }
+            });
         }
     } catch (e) {
         console.error(e);

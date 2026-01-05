@@ -10,7 +10,7 @@ Use this checklist to track your progress through the development phases.
 - [x] Create `api/router.php` (Simple backend handler).
 - [x] Create `data/` directory with empty JSON files (`items.json`, `users.json`, `stock_movement.json`, `adjustments.json`, etc.).
 
-### 1.2 Backend Setup (Apache/PHP 8)
+### 1.2 Backend Setup (Apache/PHP 7.4+)
 - [x] Implement `GET` logic in `router.php` to read JSON files.
 - [x] Implement `POST` logic in `router.php` to write to JSON files.
 - [x] Implement file locking (`flock`) to ensure data integrity.

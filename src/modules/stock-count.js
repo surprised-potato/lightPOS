@@ -35,7 +35,7 @@ export async function loadStockCountView() {
                             <select id="audit-sort" class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500">
                                 <option value="name">Name</option>
                                 <option value="stock_level">Quantity</option>
-                                <option value="updatedAt">Modify Date</option>
+                                <option value="_updatedAt">Modify Date</option>
                             </select>
                         </div>
                         <div class="sm:w-32">
@@ -157,8 +157,8 @@ function setupEventListeners() {
                 comparison = a.name.localeCompare(b.name);
             } else if (sortBy === 'stock_level') {
                 comparison = (a.stock_level || 0) - (b.stock_level || 0);
-            } else if (sortBy === 'updatedAt') {
-                comparison = new Date(a.updatedAt || 0) - new Date(b.updatedAt || 0);
+            } else if (sortBy === '_updatedAt') {
+                comparison = (a._updatedAt || 0) - (b._updatedAt || 0);
             }
             return order === 'asc' ? comparison : -comparison;
         });

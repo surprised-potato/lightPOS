@@ -11,6 +11,21 @@ $store = new JsonStore();
 $method = $_SERVER['REQUEST_METHOD'];
 
 if ($method === 'POST') {
+    // Handle Nuclear Reset
+    if (isset($_GET['action']) && $_GET['action'] === 'reset_all') {
+        // List of collections to wipe (excluding users as per UI requirements)
+        $toWipe = [
+            'items', 'transactions', 'shifts', 'expenses', 'stock_movements', 
+            'adjustments', 'customers', 'suppliers', 'stockins', 
+            'suspended_transactions', 'returns', 'notifications', 'stock_logs'
+        ];
+        foreach ($toWipe as $col) {
+            $store->write($col, []);
+        }
+        echo json_encode(['status' => 'success', 'message' => 'Data wiped successfully']);
+        exit;
+    }
+
     // PUSH: Apply incoming changes from client outbox
     $input = json_decode(file_get_contents('php://input'), true);
     $outbox = $input['outbox'] ?? [];
@@ -70,7 +85,11 @@ if ($method === 'POST') {
 if ($method === 'GET') {
     // PULL: Return deltas based on timestamp
     $since = isset($_GET['since']) ? (int)$_GET['since'] : 0;
-    $collections = ['items', 'transactions', 'shifts', 'expenses', 'users', 'stock_movements', 'adjustments', 'customers', 'suppliers'];
+    $collections = [
+        'items', 'transactions', 'shifts', 'expenses', 'users', 'stock_movements', 
+        'adjustments', 'customers', 'suppliers', 'stockins', 'suspended_transactions', 
+        'returns', 'notifications', 'stock_logs', 'sync_metadata'
+    ];
     $response = [];
 
     foreach ($collections as $col) {

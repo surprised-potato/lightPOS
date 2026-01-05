@@ -2,7 +2,7 @@
 
 ## 1. System Architecture
 - **Frontend:** Single Page Application (SPA) hosted on Apache Web Server.
-- **Backend:** Minimal PHP 8+ script for file I/O (Read/Write JSON).
+- **Backend:** Minimal PHP 7.4+ script for file I/O (Read/Write JSON).
 - **Database:** JSON files stored in a protected `/data` directory on the server.
 - **Local Persistence (Offline):** Dexie.js (IndexedDB) for local caching of items and queuing transactions.
 - **Sync Strategy:** Delta-based synchronization (Subtract quantities) to handle multi-terminal offline sales.

@@ -18,14 +18,14 @@ export async function bulkAddCustomersFromCSV(csvContent) {
         const line = lines[i].trim();
         if (!line) continue;
 
-        // Split by comma and handle NULL values and quotes
-        const values = line.split(',').map(v => {
-            v = v.trim();
-            if (v.toUpperCase() === 'NULL') return null;
-            return v.replace(/^"|"$/g, ''); // Remove surrounding quotes
+        // Robust CSV split: handles commas inside quotes and unquoted NULL
+        const values = line.match(/(".*?"|NULL|[^,]+)/g).map(part => {
+            part = part.trim();
+            if (part.toUpperCase() === 'NULL') return null;
+            return part.replace(/^"|"$/g, ''); // Remove surrounding quotes
         });
 
-        if (values.length < 4) continue;
+        if (!values || values.length < 4) continue;
 
         const [firstName, lastName, accountNumber, points] = values;
 

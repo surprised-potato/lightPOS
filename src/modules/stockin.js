@@ -518,7 +518,7 @@ async function loadStockInHistory() {
 }
 
 function showStockInDetails(id) {
-    const entry = historyCache.find(e => e.id == id);
+    const entry = historyCache.find(e => e.id === id);
     if (!entry) return;
 
     let modal = document.getElementById('stockin-details-modal');
@@ -529,7 +529,7 @@ function showStockInDetails(id) {
         document.body.appendChild(modal);
     }
 
-    const itemRows = entry.items.map(item => {
+    const itemRows = (entry.items || []).map(item => {
         const qty = item.quantity || item.qty || 0;
         const cost = item.cost_price || 0;
         return `

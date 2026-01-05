@@ -76,6 +76,12 @@ export const SyncEngine = {
                     // Apply change if local is missing or server version is higher (LWW)
                     if (!local || serverVersion > localVersion || (serverVersion === localVersion && serverUpdated > localUpdated)) {
                         await db[collection].put(item);
+                        
+                        // If we just applied a newer server version, remove any stale pending 
+                        // changes for this specific record from the outbox.
+                        await db.outbox
+                            .where({ collection: collection, docId: item[idField] })
+                            .delete();
                     }
                 }
             });

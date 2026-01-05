@@ -1425,6 +1425,7 @@ async function generateReport() {
         });
 
         reportData.dailyCashflow = Object.entries(dailyCashflow).map(([date, vals]) => ({ date, ...vals }));
+        reportData.valuationHistory = []; // Will be populated by generateValuationHistory
         reportData.grossSales = grossSales;
         reportData.totalExpenses = totalExpenses;
         reportData.expenses = filteredExpenses;
@@ -1737,6 +1738,7 @@ function renderTable(tableId) {
         case 'lowStock': renderLowStockReport(reportData.lowStock); break;
         case 'cashflow': renderCashflowReport(reportData.grossSales, reportData.totalExpenses, reportData.expenses, reportData.dailyCashflow); break;
         case 'shiftReports': renderShiftReports(reportData.variance.filter(s => s.status === 'closed')); break;
+        case 'valuationHistory': renderValuationHistoryTable(reportData.valuationHistory); break;
         case 'quadrantDetails': renderQuadrantDetails(); break;
         case 'variance': renderCashVariance(reportData.variance); break;
         case 'stockIn':
@@ -3039,11 +3041,12 @@ function renderShrinkageAnalysis(summary, products) {
             <span class="font-bold text-red-600">${s.qty} units</span>
         </div>
     `).join('');
-
+    
+    const limit = parseInt(document.getElementById("report-row-limit")?.value) || 50;
     const topShrinkage = [...products]
         .filter(p => p.shrinkageQty > 0)
         .sort((a, b) => b.shrinkageQty - a.shrinkageQty)
-        .slice(0, 10);
+        .slice(0, limit);
 
     itemsBody.innerHTML = topShrinkage.length ? topShrinkage.map(p => `
         <tr class="border-b last:border-0">

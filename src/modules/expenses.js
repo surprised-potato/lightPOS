@@ -142,7 +142,7 @@ async function saveExpense() {
         category: category,
         supplier_id: supplierId,
         supplier_name: supplierName,
-        date: new Date(dateVal),
+        date: dateVal, // Store as ISO string for consistent serialization
         user_id: user,
         created_at: new Date()
     };
