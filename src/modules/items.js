@@ -1,6 +1,7 @@
 import { checkPermission } from "../auth.js";
 import { generateUUID } from "../utils.js";
 import { Repository } from "../services/Repository.js";
+import { db } from "../db.js";
 
 let itemsData = [];
 let suppliersList = [];
@@ -208,10 +209,12 @@ export async function loadItemsView() {
         e.preventDefault();
         
         const itemId = document.getElementById("item-id").value;
+        const barcode = document.getElementById("item-barcode").value.trim();
+        const name = document.getElementById("item-name").value.trim();
         
         const itemData = {
-            name: document.getElementById("item-name").value,
-            barcode: document.getElementById("item-barcode").value,
+            name: name,
+            barcode: barcode,
             supplier_id: document.getElementById("item-supplier").value,
             cost_price: parseFloat(document.getElementById("item-cost").value),
             selling_price: parseFloat(document.getElementById("item-price").value),
@@ -221,6 +224,38 @@ export async function loadItemsView() {
             parent_id: document.getElementById("item-parent-id").value || null,
             conv_factor: document.getElementById("item-conv").value ? parseFloat(document.getElementById("item-conv").value) : 1
         };
+
+        // 1. Check for duplicate/deleted barcodes
+        const existingBarcode = await db.items.where('barcode').equals(barcode).first();
+        if (existingBarcode && existingBarcode.id !== itemId) {
+            if (existingBarcode._deleted) {
+                if (confirm(`An item with barcode "${barcode}" ("${existingBarcode.name}") was previously deleted. Would you like to restore it with these new details?`)) {
+                    await Repository.upsert('items', { ...itemData, id: existingBarcode.id, _deleted: false });
+                    modal.classList.add("hidden");
+                    fetchItems();
+                }
+                return;
+            } else {
+                alert(`Validation Error: Barcode "${barcode}" is already assigned to "${existingBarcode.name}".`);
+                return;
+            }
+        }
+
+        // 2. Check for duplicate/deleted names (case-insensitive)
+        const existingName = await db.items.where('name').equalsIgnoreCase(name).first();
+        if (existingName && existingName.id !== itemId) {
+            if (existingName._deleted) {
+                if (confirm(`An item named "${name}" was previously deleted. Would you like to restore it?`)) {
+                    await Repository.upsert('items', { ...itemData, id: existingName.id, _deleted: false });
+                    modal.classList.add("hidden");
+                    fetchItems();
+                }
+                return;
+            } else {
+                alert(`Validation Error: An item named "${name}" already exists.`);
+                return;
+            }
+        }
 
         try {
             const finalData = itemId ? { ...itemData, id: itemId } : { ...itemData, id: generateUUID() };
