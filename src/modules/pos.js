@@ -47,6 +47,7 @@ document.addEventListener("keydown", (e) => {
 });
 
 let allItems = [];
+let barcodeMap = new Map(); // Fast lookup for scanner
 let allCustomers = [];
 let cart = [];
 let lastTransactionData = null;
@@ -291,7 +292,7 @@ async function renderPosInterface(content) {
             if (!term.trim()) return;
 
             // 1. Exact Barcode
-            let item = allItems.find(i => i.barcode === term);
+            let item = barcodeMap.get(term);
             // 2. Exact Name
             if (!item) item = allItems.find(i => i.name.toLowerCase() === term.toLowerCase());
             // 3. Single result
@@ -491,6 +492,11 @@ async function renderPosInterface(content) {
 async function fetchItemsFromDexie() {
     try {
         allItems = await Repository.getAll('items');
+        // Rebuild barcode map for O(1) lookup
+        barcodeMap.clear();
+        allItems.forEach(item => {
+            if (item.barcode) barcodeMap.set(item.barcode, item);
+        });
         renderGrid(allItems);
     } catch (error) {
         console.error("Error loading items from Dexie:", error);
@@ -528,6 +534,7 @@ function selectCustomer(customer) {
 
 function renderGrid(items) {
     const grid = document.getElementById("pos-grid");
+    const fragment = document.createDocumentFragment();
     grid.innerHTML = "";
 
     if (items.length === 0) {
@@ -578,15 +585,19 @@ function renderGrid(items) {
             }
         });
         
-        grid.appendChild(card);
+        fragment.appendChild(card);
     });
 
     if (items.length > 100) {
         const moreInfo = document.createElement("div");
         moreInfo.className = "col-span-full text-center text-gray-400 text-xs py-4";
         moreInfo.textContent = `Showing 100 of ${items.length} items. Refine search to find more.`;
-        grid.appendChild(moreInfo);
+        fragment.appendChild(moreInfo);
     }
+
+    requestAnimationFrame(() => {
+        grid.appendChild(fragment);
+    });
 }
 
 function filterItems(term) {
