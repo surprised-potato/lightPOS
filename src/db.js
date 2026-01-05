@@ -6,12 +6,12 @@ export const db = new Dexie('lightPOS_DB');
 // Define schema: 
 // ++id is auto-incrementing if needed, 
 // but usually, you'll use the 'id' from your cloud DB.
-db.version(27).stores({
+db.version(30).stores({
     items: '++id, name, barcode, category, updatedAt, sync_status, _version, _updatedAt, _deleted',
-    transactions: '++id, timestamp, sync_status, _version, _updatedAt, _deleted',
+    transactions: '++id, timestamp, customer_id, sync_status, _version, _updatedAt, _deleted',
     stock_movements: '++id, item_id, timestamp, sync_status, _version, _updatedAt, _deleted',
     stock_logs: '++id, timestamp, sync_status, _version, _updatedAt, _deleted',
-    adjustments: '++id, timestamp, sync_status, _version, _updatedAt, _deleted',
+    adjustments: '++id, item_id, timestamp, sync_status, _version, _updatedAt, _deleted',
     sync_metadata: 'key, _version, _updatedAt, _deleted',
     customers: '++id, name, phone, account_number, sync_status, _version, _updatedAt, _deleted',
     stockins: '++id, timestamp, sync_status, _version, _updatedAt, _deleted',

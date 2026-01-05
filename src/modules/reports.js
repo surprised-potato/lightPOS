@@ -115,6 +115,7 @@ export async function loadReportsView() {
                                         <th class="py-3 px-6 text-left cursor-pointer hover:bg-gray-200" data-sort="user_id" data-table="variance">User</th>
                                         <th class="py-3 px-6 text-center cursor-pointer hover:bg-gray-200" data-sort="status" data-table="variance">Status</th>
                                         <th class="py-3 px-6 text-right cursor-pointer hover:bg-gray-200" data-sort="opening_cash" data-table="variance">Opening</th>
+                                        <th class="py-3 px-6 text-right cursor-pointer hover:bg-gray-200" data-sort="cashout" data-table="variance">Cashout</th>
                                         <th class="py-3 px-6 text-right cursor-pointer hover:bg-gray-200" data-sort="expected_cash" data-table="variance">Expected</th>
                                         <th class="py-3 px-6 text-right cursor-pointer hover:bg-gray-200" data-sort="closing_cash" data-table="variance">Actual</th>
                                         <th class="py-3 px-6 text-right cursor-pointer hover:bg-gray-200" data-sort="variance" data-table="variance">Variance</th>
@@ -1379,9 +1380,18 @@ async function generateReport() {
                 }
             });
 
+            const expected = (s.opening_cash || 0) + totalSales;
+            const cashout = s.cashout || 0;
+            const receipts = s.closing_receipts || [];
+            const totalExpenses = receipts.reduce((sum, r) => sum + (r.amount || 0), 0);
+            const turnover = (s.closing_cash || 0) + totalExpenses + cashout;
+
             return { 
                 ...s, 
-                variance: isClosed ? (s.closing_cash || 0) - (s.expected_cash || 0) : null,
+                expected_cash: expected,
+                totalExpenses,
+                turnover,
+                variance: isClosed ? turnover - expected : null,
                 totalSales,
                 totalCogs,
                 grossProfit: totalSales - totalCogs
@@ -2104,6 +2114,11 @@ async function showShiftReportDetails(shiftId) {
     const shift = reportData.variance.find(s => s.id === shiftId);
     if (!shift) return;
 
+    const cashout = shift.cashout || 0;
+    const turnover = (shift.closing_cash || 0) + (shift.totalExpenses || 0) + cashout;
+    const variance = turnover - (shift.expected_cash || 0);
+    const diffClass = variance < 0 ? "text-red-600" : (variance > 0 ? "text-green-600" : "text-gray-800");
+
     let modal = document.getElementById('report-shift-details-modal');
     if (!modal) {
         modal = document.createElement('div');
@@ -2112,9 +2127,19 @@ async function showShiftReportDetails(shiftId) {
         document.body.appendChild(modal);
     }
 
-    const receiptsHtml = (shift.closing_receipts || []).map(r => `
+    const receipts = shift.closing_receipts || [];
+    const totalExpenses = receipts.reduce((sum, r) => sum + (r.amount || 0), 0);
+
+    const receiptsHtml = receipts.map(r => `
         <tr class="border-b">
             <td class="p-2">${r.description}</td>
+            <td class="p-2 text-right">₱${r.amount.toFixed(2)}</td>
+        </tr>
+    `).join('');
+
+    const remittancesHtml = (shift.remittances || []).map(r => `
+        <tr class="border-b">
+            <td class="p-2">${new Date(r.timestamp).toLocaleTimeString()} - ${r.reason}</td>
             <td class="p-2 text-right">₱${r.amount.toFixed(2)}</td>
         </tr>
     `).join('');
@@ -2134,10 +2159,33 @@ async function showShiftReportDetails(shiftId) {
                 <div class="border rounded overflow-hidden">
                     <table class="w-full text-sm">
                         <tr class="bg-gray-50 border-b"><td class="p-2">Opening Cash</td><td class="p-2 text-right">₱${(shift.opening_cash || 0).toFixed(2)}</td></tr>
-                        <tr class="border-b"><td class="p-2">Expected Cash</td><td class="p-2 text-right">₱${(shift.expected_cash || 0).toFixed(2)}</td></tr>
-                        <tr class="font-bold"><td class="p-2">Physical Cash Count</td><td class="p-2 text-right">₱${(shift.closing_cash || 0).toFixed(2)}</td></tr>
+                        <tr class="border-b"><td class="p-2">Total Sales</td><td class="p-2 text-right">₱${(shift.totalSales || 0).toFixed(2)}</td></tr>
+                        <tr class="bg-blue-50 border-b font-bold"><td class="p-2">Expected Amount</td><td class="p-2 text-right">₱${(shift.expected_cash || 0).toFixed(2)}</td></tr>
+                        <tr class="border-b"><td class="p-2">Physical Cash Count</td><td class="p-2 text-right">₱${(shift.closing_cash || 0).toFixed(2)}</td></tr>
+                        ${shift.precounted_bills ? `
+                            <tr class="border-b text-xs text-gray-500 italic"><td class="p-2 pl-6">- Precounted Bills</td><td class="p-2 text-right">₱${shift.precounted_bills.toFixed(2)}</td></tr>
+                        ` : ''}
+                        ${shift.precounted_coins ? `
+                            <tr class="border-b text-xs text-gray-500 italic"><td class="p-2 pl-6">- Precounted Coins</td><td class="p-2 text-right">₱${shift.precounted_coins.toFixed(2)}</td></tr>
+                        ` : ''}
+                        ${cashout ? `
+                            <tr class="border-b"><td class="p-2">Cashout (Remittance)</td><td class="p-2 text-right">₱${cashout.toFixed(2)}</td></tr>
+                        ` : ''}
+                        <tr class="border-b"><td class="p-2">Total Expenses</td><td class="p-2 text-right">₱${totalExpenses.toFixed(2)}</td></tr>
+                        <tr class="font-bold ${diffClass}"><td class="p-2">Variance</td><td class="p-2 text-right">₱${variance.toFixed(2)}</td></tr>
                     </table>
                 </div>
+
+                ${remittancesHtml ? `
+                    <div>
+                        <h4 class="text-xs font-bold text-gray-500 uppercase mb-1">Remittances (Cashouts)</h4>
+                        <div class="border rounded overflow-hidden">
+                            <table class="w-full text-xs">
+                                <tbody class="bg-white">${remittancesHtml}</tbody>
+                            </table>
+                        </div>
+                    </div>
+                ` : ''}
 
                 ${receiptsHtml ? `
                     <div>
@@ -2152,7 +2200,7 @@ async function showShiftReportDetails(shiftId) {
 
                 <div class="pt-3 border-t flex justify-between items-center">
                     <span class="font-bold text-gray-800">Total Turnover:</span>
-                    <span class="text-2xl font-bold text-blue-600">₱${(shift.total_closing_amount || shift.closing_cash || 0).toFixed(2)}</span>
+                    <span class="text-2xl font-bold text-blue-600">₱${turnover.toFixed(2)}</span>
                 </div>
             </div>
             <div class="mt-6 flex justify-end">
@@ -2444,7 +2492,7 @@ async function voidTransactionFromReports(id) {
     }
 }
 
-async function printTransactionReceipt(tx, isReplacement = false, isReprint = true) {
+export async function printTransactionReceipt(tx, isReplacement = false, isReprint = true) {
     const settings = await getSystemSettings();
     const store = settings.store || { name: "LightPOS", data: "" };
     
@@ -2662,7 +2710,7 @@ function renderCashVariance(shifts) {
 
     processed.forEach(s => {
         const isClosed = s.status === 'closed';
-        const variance = isClosed ? (s.closing_cash || 0) - (s.expected_cash || 0) : 0;
+        const variance = s.variance || 0;
         const diffClass = !isClosed ? "text-gray-400" : (variance < 0 ? "text-red-600 font-bold" : (variance > 0 ? "text-green-600 font-bold" : "text-gray-500"));
         const statusClass = s.status === 'open' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700';
         
@@ -2674,6 +2722,7 @@ function renderCashVariance(shifts) {
             <td class="py-3 px-6 text-left">${s.user_id}</td>
             <td class="py-3 px-6 text-center"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${statusClass}">${s.status}</span></td>
             <td class="py-3 px-6 text-right">₱${(s.opening_cash || 0).toFixed(2)}</td>
+            <td class="py-3 px-6 text-right">₱${(s.cashout || 0).toFixed(2)}</td>
             <td class="py-3 px-6 text-right">₱${(s.expected_cash || 0).toFixed(2)}</td>
             <td class="py-3 px-6 text-right">${isClosed ? `₱${(s.closing_cash || 0).toFixed(2)}` : '-'}</td>
             <td class="py-3 px-6 text-right ${diffClass}">${isClosed ? `₱${variance.toFixed(2)}` : '-'}</td>

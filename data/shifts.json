@@ -163,5 +163,42 @@
         "_updatedAt": 1767601423720,
         "_deleted": false,
         "_hash": "1b531769474903f80b8ab8529086a243"
+    },
+    {
+        "id": "fc2f5b6d-fd90-4e6d-b002-74cf3de198ed",
+        "user_id": "admin@lightpos.com",
+        "start_time": "2026-01-05T12:38:02.864Z",
+        "end_time": "2026-01-05T13:02:27.264Z",
+        "opening_cash": 1000,
+        "closing_cash": 1102,
+        "expected_cash": 1000,
+        "status": "closed",
+        "adjustments": [],
+        "_version": 2,
+        "_updatedAt": 1767618147264,
+        "_deleted": false,
+        "cashout": 500,
+        "closing_receipts": [],
+        "total_closing_amount": 1602,
+        "precounted_bills": 1,
+        "precounted_coins": 1,
+        "_hash": "1958a61060eeb18623b4c84c3e7858e5"
+    },
+    {
+        "id": "39d537f3-6ff2-4b70-bebe-fa82554923b8",
+        "user_id": "admin@lightpos.com",
+        "start_time": "2026-01-05T13:46:30.836Z",
+        "end_time": null,
+        "opening_cash": 0,
+        "closing_cash": 0,
+        "cashout": 0,
+        "expected_cash": 0,
+        "status": "open",
+        "adjustments": [],
+        "remittances": [],
+        "_version": 1,
+        "_updatedAt": 1767620790837,
+        "_deleted": false,
+        "_hash": "74e75440c563ed54fc785c1aa487f1cc"
     }
 ]

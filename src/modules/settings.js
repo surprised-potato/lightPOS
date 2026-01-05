@@ -305,6 +305,32 @@ export async function loadSettingsView() {
                     </div>
 
                     <div class="bg-white p-6 rounded-lg shadow-sm border">
+                        <h3 class="text-lg font-bold text-gray-700 mb-2">Import Items with Suppliers</h3>
+                        <p class="text-sm text-gray-600 mb-4">CSV Format: "barcode","item_name","category","cost_price","unit_price","supplier_name","supplier_account"</p>
+                        <div class="flex flex-col gap-4">
+                            <div class="flex items-center gap-4">
+                                <input type="file" id="import-items-suppliers-file" accept=".csv" class="text-sm">
+                                <button type="button" id="btn-import-items-suppliers" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded shadow transition disabled:opacity-50" disabled>
+                                    Import Items & Links
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-lg shadow-sm border">
+                        <h3 class="text-lg font-bold text-gray-700 mb-2">Import Supplier Master</h3>
+                        <p class="text-sm text-gray-600 mb-4">CSV Format: "company_name","agency_name","account_number","first_name","last_name","email","phone_number","address","city"</p>
+                        <div class="flex flex-col gap-4">
+                            <div class="flex items-center gap-4">
+                                <input type="file" id="import-suppliers-master-file" accept=".csv" class="text-sm">
+                                <button type="button" id="btn-import-suppliers-master" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded shadow transition disabled:opacity-50" disabled>
+                                    Import Suppliers
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-lg shadow-sm border">
                         <h3 class="text-lg font-bold text-gray-700 mb-2">Bulk Import Customers</h3>
                         <p class="text-sm text-gray-600 mb-4">Upload a CSV file to bulk add customers. Format: "first_name","last_name","account_number","points"</p>
                         
@@ -768,6 +794,99 @@ function setupMigrationEventListeners() {
         btnImportCust.disabled = true;
     });
 
+    // Items with Suppliers Import
+    const itemsSupFile = document.getElementById("import-items-suppliers-file");
+    const btnImportItemsSup = document.getElementById("btn-import-items-suppliers");
+    itemsSupFile?.addEventListener("change", () => btnImportItemsSup.disabled = itemsSupFile.files.length === 0);
+    btnImportItemsSup?.addEventListener("click", async () => {
+        const file = itemsSupFile.files[0];
+        if (!file) return;
+        const text = await file.text();
+        const rows = parseGenericCSV(text);
+        
+        let count = 0;
+        for (const row of rows) {
+            const name = row.item_name;
+            if (!name || name === 'NULL') continue;
+
+            let supplierId = null;
+            if (row.supplier_name && row.supplier_name !== 'NULL') {
+                let sup = await db.suppliers.where('name').equalsIgnoreCase(row.supplier_name).first();
+                if (!sup) {
+                    sup = { id: generateUUID(), name: row.supplier_name };
+                    await Repository.upsert('suppliers', sup);
+                }
+                supplierId = sup.id;
+            }
+
+            // Check for duplicates
+            let existing = null;
+            if (row.barcode && row.barcode !== 'NULL') {
+                existing = await db.items.where('barcode').equals(row.barcode).first();
+            }
+            if (!existing) {
+                existing = await db.items.where('name').equalsIgnoreCase(name).first();
+            }
+
+            if (existing) {
+                // Update existing
+                existing.category = (row.category && row.category !== 'NULL') ? row.category : existing.category;
+                existing.supplier_id = supplierId || existing.supplier_id;
+                await Repository.upsert('items', existing);
+            } else {
+                // Create new
+                const newItem = {
+                    id: generateUUID(),
+                    barcode: (row.barcode && row.barcode !== 'NULL') ? row.barcode : "",
+                    name: name,
+                    category: (row.category && row.category !== 'NULL') ? row.category : "",
+                    cost_price: parseFloat(row.cost_price) || 0,
+                    selling_price: parseFloat(row.unit_price) || 0,
+                    supplier_id: supplierId,
+                    stock_level: 0,
+                    min_stock: 10
+                };
+                await Repository.upsert('items', newItem);
+            }
+            count++;
+        }
+        alert(`Processed ${count} items.`);
+        SyncEngine.sync();
+    });
+
+    // Supplier Master Import
+    const supMasterFile = document.getElementById("import-suppliers-master-file");
+    const btnImportSupMaster = document.getElementById("btn-import-suppliers-master");
+    supMasterFile?.addEventListener("change", () => btnImportSupMaster.disabled = supMasterFile.files.length === 0);
+    btnImportSupMaster?.addEventListener("click", async () => {
+        const file = supMasterFile.files[0];
+        if (!file) return;
+        const text = await file.text();
+        const rows = parseGenericCSV(text);
+        
+        let count = 0;
+        for (const row of rows) {
+            const name = row.company_name || row.agency_name;
+            if (!name || name === 'NULL') continue;
+
+            let existing = await db.suppliers.where('name').equalsIgnoreCase(name).first();
+            const supData = {
+                name: name,
+                contact: `${row.first_name !== 'NULL' ? row.first_name : ''} ${row.last_name !== 'NULL' ? row.last_name : ''}`.trim() || null,
+                email: row.email && row.email !== 'NULL' ? row.email : (row.phone_number !== 'NULL' ? row.phone_number : null)
+            };
+
+            if (existing) {
+                await Repository.upsert('suppliers', { ...existing, ...supData });
+            } else {
+                await Repository.upsert('suppliers', { id: generateUUID(), ...supData });
+            }
+            count++;
+        }
+        alert(`Processed ${count} suppliers.`);
+        SyncEngine.sync();
+    });
+
     btnImport.addEventListener("click", async () => {
         const file = fileInput.files[0];
         if (!file) return;
@@ -800,6 +919,25 @@ function setupMigrationEventListeners() {
             btnImport.disabled = false;
         }
     });
+}
+
+function parseGenericCSV(text) {
+    const lines = text.split(/\r?\n/).filter(line => line.trim() !== "");
+    if (lines.length < 2) return [];
+    const delimiter = lines[0].includes('\t') ? '\t' : ',';
+    const clean = (val) => val ? val.trim().replace(/^"|"$/g, '') : "";
+    const headers = lines[0].split(delimiter).map(h => clean(h).toLowerCase());
+    const results = [];
+    for (let i = 1; i < lines.length; i++) {
+        const values = lines[i].split(delimiter).map(v => clean(v));
+        const row = {};
+        headers.forEach((header, index) => {
+            const val = values[index];
+            row[header] = (val === 'NULL' || val === undefined) ? null : val;
+        });
+        results.push(row);
+    }
+    return results;
 }
 
 function parseCSV(text) {

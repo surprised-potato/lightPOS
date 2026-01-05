@@ -1,5 +1,5 @@
 import { checkPermission, requestManagerApproval } from "../auth.js";
-import { checkActiveShift, requireShift, showCloseShiftModal } from "./shift.js";
+import { checkActiveShift, requireShift, showCloseShiftModal, recordRemittance } from "./shift.js";
 import { addNotification } from "../services/notification-service.js";
 import { getSystemSettings } from "./settings.js";
 import { generateUUID } from "../utils.js";
@@ -237,6 +237,7 @@ async function renderPosInterface(content) {
                         <div class="flex gap-1 shrink-0">
                             <button id="btn-view-suspended" class="text-[9px] bg-yellow-600 hover:bg-yellow-700 px-1.5 py-1 rounded font-bold" title="Suspended Sales">SUSP</button>
                             <button id="btn-pos-history" class="text-[9px] bg-indigo-600 hover:bg-indigo-700 px-1.5 py-1 rounded font-bold" title="History">HIST</button>
+                            <button id="btn-remit-cash" class="text-[9px] bg-purple-600 hover:bg-purple-700 px-1.5 py-1 rounded font-bold" title="Remit Cash">REMIT</button>
                             <button id="btn-suspend-sale" class="text-[9px] bg-orange-500 hover:bg-orange-600 px-1.5 py-1 rounded font-bold" title="Hold">HOLD</button>
                             <button id="btn-pos-close-shift" class="text-[9px] bg-red-500 hover:bg-red-600 px-1.5 py-1 rounded font-bold" title="Close Shift">CLOSE</button>
                             <button id="btn-clear-cart" class="text-[9px] bg-blue-800 hover:bg-blue-900 px-1.5 py-1 rounded font-bold" title="Clear Cart">CLR</button>
@@ -403,6 +404,29 @@ async function renderPosInterface(content) {
             </div>
         </div>
 
+        <!-- Remittance Modal -->
+        <div id="modal-remittance" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center z-50">
+            <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+                <h3 class="text-xl font-bold mb-4 text-gray-800">Cash Remittance (Cashout)</h3>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Amount to Remit</label>
+                    <input type="number" id="remit-amount" class="w-full p-2 border rounded text-lg focus:ring-2 focus:ring-blue-500 outline-none" step="0.01" placeholder="0.00">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Reason / Reference</label>
+                    <input type="text" id="remit-reason" class="w-full p-2 border rounded text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="e.g. Mid-day turnover">
+                </div>
+                <div class="mb-4">
+                    <h4 class="text-xs font-bold text-gray-400 uppercase mb-2">Remittance History</h4>
+                    <div id="remittance-history-list" class="max-h-32 overflow-y-auto border rounded p-2 text-xs space-y-1 bg-gray-50"></div>
+                </div>
+                <div class="flex gap-2">
+                    <button id="btn-cancel-remit" class="w-1/2 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 rounded">Cancel</button>
+                    <button id="btn-save-remit" class="w-1/2 bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 rounded">Record Remittance</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Close Shift Modal -->
         <div id="modal-close-shift" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center z-50">
             <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
@@ -415,6 +439,20 @@ async function renderPosInterface(content) {
                     </div>
                     <div class="space-y-1 mb-4" id="cash-counter-grid">
                         <!-- Denominations injected here -->
+                    </div>
+                    <div class="space-y-1 mb-4 border-t pt-2">
+                        <div class="flex items-center gap-2 py-1">
+                            <label class="w-32 text-xs font-bold text-gray-500">Precounted Bills</label>
+                            <input type="number" id="precounted-bills" min="0" step="0.01" class="flex-1 border rounded p-1 text-sm text-right focus:ring-2 focus:ring-blue-500 outline-none" placeholder="0.00">
+                        </div>
+                        <div class="flex items-center gap-2 py-1">
+                            <label class="w-32 text-xs font-bold text-gray-500">Precounted Coins</label>
+                            <input type="number" id="precounted-coins" min="0" step="0.01" class="flex-1 border rounded p-1 text-sm text-right focus:ring-2 focus:ring-blue-500 outline-none" placeholder="0.00">
+                        </div>
+                        <div class="flex items-center gap-2 py-1">
+                            <label class="w-32 text-xs font-bold text-gray-500">Cashout (Remittance)</label>
+                            <input type="number" id="shift-cashout" min="0" step="0.01" class="flex-1 border rounded p-1 text-sm text-right focus:ring-2 focus:ring-blue-500 outline-none" placeholder="0.00">
+                        </div>
                     </div>
                     <div class="pt-2 border-t flex justify-between items-center mb-6">
                         <span class="font-bold text-gray-600 text-sm">Physical Cash:</span>
@@ -650,6 +688,9 @@ async function renderPosInterface(content) {
         const labels = ["1000", "500", "200", "100", "50", "20", "10", "5", "1", "Cents"];
         
         receiptsList.innerHTML = ""; // Clear receipts
+        document.getElementById("precounted-bills").value = "";
+        document.getElementById("precounted-coins").value = "";
+        document.getElementById("shift-cashout").value = "";
         
         grid.innerHTML = denoms.map((d, i) => `
             <div class="flex items-center gap-2 py-1 border-b border-gray-50 last:border-0">
@@ -673,6 +714,11 @@ async function renderPosInterface(content) {
                 cashTotal += subtotal;
                 input.nextElementSibling.textContent = `₱${subtotal.toFixed(2)}`;
             });
+
+            const preBills = parseFloat(document.getElementById("precounted-bills").value) || 0;
+            const preCoins = parseFloat(document.getElementById("precounted-coins").value) || 0;
+            cashTotal += preBills + preCoins;
+
             document.getElementById("cash-counter-total").textContent = `₱${cashTotal.toFixed(2)}`;
             
             let receiptTotal = 0;
@@ -681,9 +727,12 @@ async function renderPosInterface(content) {
                 receiptTotal += amt;
             });
 
-            const grandTotal = cashTotal + receiptTotal;
+            const cashout = parseFloat(document.getElementById("shift-cashout").value) || 0;
+            const grandTotal = cashTotal + receiptTotal + cashout;
+
             document.getElementById("shift-total-turnover").textContent = `₱${grandTotal.toFixed(2)}`;
             modal.dataset.cashTotal = cashTotal;
+            modal.dataset.cashout = cashout;
             modal.dataset.grandTotal = grandTotal;
         };
 
@@ -704,6 +753,10 @@ async function renderPosInterface(content) {
             receiptsList.appendChild(row);
             row.querySelector(".receipt-desc").focus();
         };
+
+        document.getElementById("precounted-bills").addEventListener("input", updateTotals);
+        document.getElementById("precounted-coins").addEventListener("input", updateTotals);
+        document.getElementById("shift-cashout").addEventListener("input", updateTotals);
 
         grid.querySelectorAll(".denom-input").forEach(input => {
             input.addEventListener("input", updateTotals);
@@ -729,6 +782,7 @@ async function renderPosInterface(content) {
     document.getElementById("btn-confirm-close-shift").addEventListener("click", async () => {
         const modal = document.getElementById("modal-close-shift");
         const cashTotal = parseFloat(modal.dataset.cashTotal) || 0;
+        const cashout = parseFloat(modal.dataset.cashout) || 0;
         const grandTotal = parseFloat(modal.dataset.grandTotal) || 0;
         
         const receipts = [];
@@ -748,8 +802,11 @@ async function renderPosInterface(content) {
                 activeShift.status = 'closed';
                 activeShift.end_time = new Date().toISOString();
                 activeShift.closing_cash = cashTotal;
+                activeShift.cashout = cashout;
                 activeShift.closing_receipts = receipts;
                 activeShift.total_closing_amount = grandTotal;
+                activeShift.precounted_bills = parseFloat(document.getElementById("precounted-bills").value) || 0;
+                activeShift.precounted_coins = parseFloat(document.getElementById("precounted-coins").value) || 0;
                 
                 await Repository.upsert('shifts', activeShift);
                 await SyncEngine.sync();
@@ -818,6 +875,15 @@ async function renderPosInterface(content) {
                     <tr><td>Opening Cash</td><td class="text-right">₱${(shift.opening_cash || 0).toFixed(2)}</td></tr>
                     <tr><td>Expected Cash</td><td class="text-right">₱${(shift.expected_cash || 0).toFixed(2)}</td></tr>
                     <tr class="bold"><td>Physical Cash</td><td class="text-right">₱${(shift.closing_cash || 0).toFixed(2)}</td></tr>
+                    ${shift.precounted_bills ? `
+                        <tr><td style="font-size: 10px; padding-left: 10px;">- Precounted Bills</td><td class="text-right" style="font-size: 10px;">₱${shift.precounted_bills.toFixed(2)}</td></tr>
+                    ` : ''}
+                    ${shift.precounted_coins ? `
+                        <tr><td style="font-size: 10px; padding-left: 10px;">- Precounted Coins</td><td class="text-right" style="font-size: 10px;">₱${shift.precounted_coins.toFixed(2)}</td></tr>
+                    ` : ''}
+                    ${shift.cashout ? `
+                        <tr><td>Cashout</td><td class="text-right">₱${shift.cashout.toFixed(2)}</td></tr>
+                    ` : ''}
                 </table>
                 ${receiptsHtml ? `
                     <div class="hr"></div>

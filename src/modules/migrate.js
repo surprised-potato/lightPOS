@@ -1,6 +1,7 @@
 import { checkPermission } from "../auth.js";
 import { db } from "../db.js";
 import { generateUUID } from "../utils.js";
+import { Repository } from "../services/Repository.js";
 
 const API_URL = 'api/router.php';
 
@@ -69,6 +70,30 @@ export function loadMigrateView() {
                         <div id="progress-bar" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
                     </div>
                     <p id="progress-text" class="text-xs text-gray-600 text-center">Processing...</p>
+                </div>
+            </div>
+
+            <!-- Specialized Imports -->
+            <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-6">
+                <h3 class="text-lg font-semibold text-gray-700 mb-4">Specialized CSV Imports</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-2">Items + Suppliers CSV</label>
+                        <input type="file" id="import-items-suppliers-file" accept=".csv" class="text-sm mb-2">
+                        <button id="btn-import-items-suppliers" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50" disabled>
+                            Import Items & Links
+                        </button>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-2">Supplier Master CSV</label>
+                        <input type="file" id="import-suppliers-master-file" accept=".csv" class="text-sm mb-2">
+                        <button id="btn-import-suppliers-master" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50" disabled>
+                            Import Suppliers
+                        </button>
+                    </div>
+                </div>
+                <div class="mt-4 p-3 bg-blue-50 rounded text-[10px] text-blue-700">
+                    <p><strong>Note:</strong> Item import checks for duplicates by barcode or name. If found, it updates the category and supplier relationship.</p>
                 </div>
             </div>
 
@@ -144,6 +169,87 @@ function setupEventListeners() {
     document.getElementById("btn-trigger-restore").addEventListener("click", () => restoreFileInput.click());
     restoreFileInput.addEventListener("change", handleRestoreBackup);
 
+    // Specialized Import Listeners
+    const itemsSupFile = document.getElementById("import-items-suppliers-file");
+    const btnItemsSup = document.getElementById("btn-import-items-suppliers");
+    itemsSupFile?.addEventListener("change", () => btnItemsSup.disabled = itemsSupFile.files.length === 0);
+    btnItemsSup?.addEventListener("click", async () => {
+        const text = await itemsSupFile.files[0].text();
+        const rows = parseGenericCSV(text);
+        let count = 0;
+        for (const row of rows) {
+            const name = row.item_name;
+            if (!name || name === 'NULL') continue;
+
+            let supplierId = null;
+            if (row.supplier_name && row.supplier_name !== 'NULL') {
+                let sup = await db.suppliers.where('name').equalsIgnoreCase(row.supplier_name).first();
+                if (!sup) {
+                    sup = { id: generateUUID(), name: row.supplier_name };
+                    await Repository.upsert('suppliers', sup);
+                }
+                supplierId = sup.id;
+            }
+
+            let existing = null;
+            if (row.barcode && row.barcode !== 'NULL') {
+                existing = await db.items.where('barcode').equals(row.barcode).first();
+            }
+            if (!existing) {
+                existing = await db.items.where('name').equalsIgnoreCase(name).first();
+            }
+
+            if (existing) {
+                existing.category = (row.category && row.category !== 'NULL') ? row.category : existing.category;
+                existing.supplier_id = supplierId || existing.supplier_id;
+                await Repository.upsert('items', existing);
+            } else {
+                const newItem = {
+                    id: generateUUID(),
+                    barcode: (row.barcode && row.barcode !== 'NULL') ? row.barcode : "",
+                    name: name,
+                    category: (row.category && row.category !== 'NULL') ? row.category : "",
+                    cost_price: parseFloat(row.cost_price) || 0,
+                    selling_price: parseFloat(row.unit_price) || 0,
+                    supplier_id: supplierId,
+                    stock_level: 0,
+                    min_stock: 10
+                };
+                await Repository.upsert('items', newItem);
+            }
+            count++;
+        }
+        alert(`Imported/Updated ${count} items.`);
+    });
+
+    const supMasterFile = document.getElementById("import-suppliers-master-file");
+    const btnSupMaster = document.getElementById("btn-import-suppliers-master");
+    supMasterFile?.addEventListener("change", () => btnSupMaster.disabled = supMasterFile.files.length === 0);
+    btnSupMaster?.addEventListener("click", async () => {
+        const text = await supMasterFile.files[0].text();
+        const rows = parseGenericCSV(text);
+        let count = 0;
+        for (const row of rows) {
+            const name = row.company_name || row.agency_name;
+            if (!name || name === 'NULL') continue;
+
+            let existing = await db.suppliers.where('name').equalsIgnoreCase(name).first();
+            const supData = {
+                name: name,
+                contact: `${row.first_name !== 'NULL' ? row.first_name : ''} ${row.last_name !== 'NULL' ? row.last_name : ''}`.trim() || null,
+                email: row.email && row.email !== 'NULL' ? row.email : (row.phone_number !== 'NULL' ? row.phone_number : null)
+            };
+
+            if (existing) {
+                await Repository.upsert('suppliers', { ...existing, ...supData });
+            } else {
+                await Repository.upsert('suppliers', { id: generateUUID(), ...supData });
+            }
+            count++;
+        }
+        alert(`Processed ${count} suppliers.`);
+    });
+
     btnImport.addEventListener("click", async () => {
         const file = fileInput.files[0];
         if (!file) return;
@@ -176,6 +282,25 @@ function setupEventListeners() {
             btnImport.disabled = false;
         }
     });
+}
+
+function parseGenericCSV(text) {
+    const lines = text.split(/\r?\n/).filter(line => line.trim() !== "");
+    if (lines.length < 2) return [];
+    const delimiter = lines[0].includes('\t') ? '\t' : ',';
+    const clean = (val) => val ? val.trim().replace(/^"|"$/g, '') : "";
+    const headers = lines[0].split(delimiter).map(h => clean(h).toLowerCase());
+    const results = [];
+    for (let i = 1; i < lines.length; i++) {
+        const values = lines[i].split(delimiter).map(v => clean(v));
+        const row = {};
+        headers.forEach((header, index) => {
+            const val = values[index];
+            row[header] = (val === 'NULL' || val === undefined) ? null : val;
+        });
+        results.push(row);
+    }
+    return results;
 }
 
 function parseCSV(text) {

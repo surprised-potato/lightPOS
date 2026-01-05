@@ -50,9 +50,11 @@ export async function startShift(openingCash) {
         end_time: null,
         opening_cash: parseFloat(openingCash),
         closing_cash: 0,
+        cashout: 0,
         expected_cash: parseFloat(openingCash),
         status: "open",
-        adjustments: []
+        adjustments: [],
+        remittances: []
     };
 
     try {
@@ -94,46 +96,39 @@ export async function calculateExpectedCash(shift = currentShift) {
 
     let totalSales = 0;
     transactions.forEach(tx => {
-        if (tx.payment_method === 'Cash') {
-            totalSales += tx.total_amount || 0;
-        }
+        totalSales += tx.total_amount || 0;
     });
 
-    let totalExchangePayments = 0;
-    allTransactions.forEach(tx => {
-        if (!tx.is_voided && tx.payment_method === 'Cash' && tx.exchanges) {
-            tx.exchanges.forEach(ex => {
-                const exTime = new Date(ex.timestamp);
-                if (exTime >= startTime && exTime <= endTime && ex.processed_by === userEmail) {
-                    const retVal = ex.returned.reduce((sum, i) => sum + i.selling_price, 0);
-                    const takeVal = ex.taken.reduce((sum, i) => sum + i.selling_price, 0);
-                    totalExchangePayments += (takeVal - retVal);
-                }
-            });
-        }
-    });
+    return (shift.opening_cash || 0) + totalSales;
+}
 
-    const allReturns = await Repository.getAll('returns');
-    const returns = allReturns.filter(r => {
-        const rTime = new Date(r.timestamp);
-        return rTime >= startTime && rTime <= endTime && 
-               r.processed_by === userEmail;
-    });
+export async function recordRemittance(amount, reason) {
+    const user = getCurrentUser();
+    if (!user) return;
 
-    let totalRefunds = 0;
-    for (const r of returns) {
-        const originalTx = await Repository.get('transactions', r.transaction_id);
-        if (originalTx && originalTx.payment_method === 'Cash') {
-            totalRefunds += r.refund_amount || 0;
-        }
-    }
+    const active = await checkActiveShift();
+    if (!active) throw new Error("No active shift");
+
+    const remittance = {
+        id: generateUUID(),
+        amount: parseFloat(amount),
+        reason: reason,
+        timestamp: new Date().toISOString(),
+        user: user.email
+    };
+
+    if (!active.remittances) active.remittances = [];
+    active.remittances.push(remittance);
     
-    let totalAdjustments = 0;
-    if (shift.adjustments && Array.isArray(shift.adjustments)) {
-        shift.adjustments.forEach(adj => totalAdjustments += (adj.amount || 0));
-    }
+    active.cashout = (active.cashout || 0) + remittance.amount;
+
+    await Repository.upsert('shifts', active);
+    currentShift = active;
+    SyncEngine.sync();
     
-    return (shift.opening_cash || 0) + totalSales + totalExchangePayments - totalRefunds + totalAdjustments;
+    await addNotification('Remittance', `Cash remittance of ₱${remittance.amount.toFixed(2)} recorded by ${user.email}`);
+    
+    return remittance;
 }
 
 export async function closeShift(closingCash) {
@@ -198,6 +193,7 @@ export async function loadShiftsView() {
                             <th class="py-3 px-6 text-left">End Time</th>
                             <th class="py-3 px-6 text-right">Opening</th>
                             <th class="py-3 px-6 text-right">Closing</th>
+                            <th class="py-3 px-6 text-right">Cashout</th>
                             <th class="py-3 px-6 text-right">Expected</th>
                             <th class="py-3 px-6 text-right">Diff</th>
                             <th class="py-3 px-6 text-center">Status</th>
@@ -205,7 +201,7 @@ export async function loadShiftsView() {
                         </tr>
                     </thead>
                     <tbody id="shifts-table-body" class="text-gray-600 text-sm font-light">
-                        <tr><td colspan="7" class="py-3 px-6 text-center">Loading...</td></tr>
+                        <tr><td colspan="9" class="py-3 px-6 text-center">Loading...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -219,7 +215,7 @@ async function fetchShifts() {
     const tbody = document.getElementById("shifts-table-body");
     const user = getCurrentUser();
     if (!user) {
-         tbody.innerHTML = `<tr><td colspan="7" class="py-3 px-6 text-center">Please login to view shifts.</td></tr>`;
+         tbody.innerHTML = `<tr><td colspan="8" class="py-3 px-6 text-center">Please login to view shifts.</td></tr>`;
          return;
     }
 
@@ -246,7 +242,7 @@ async function fetchShifts() {
         tbody.innerHTML = "";
 
         if (userShifts.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="7" class="py-3 px-6 text-center">No shifts found.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="8" class="py-3 px-6 text-center">No shifts found.</td></tr>`;
             return;
         }
 
@@ -258,7 +254,13 @@ async function fetchShifts() {
             
             const isClosed = data.status === 'closed';
             const expected = isClosed ? (data.expected_cash || 0) : await calculateExpectedCash(data);
-            const variance = isClosed ? (data.closing_cash || 0) - expected : 0;
+            
+            const cashout = data.cashout || 0;
+            const receipts = data.closing_receipts || [];
+            const totalExpenses = receipts.reduce((sum, r) => sum + (r.amount || 0), 0);
+            const turnover = (data.closing_cash || 0) + totalExpenses + cashout;
+            
+            const variance = isClosed ? turnover - expected : 0;
             const diffClass = isClosed ? (variance < 0 ? "text-red-600" : (variance > 0 ? "text-green-600" : "")) : "";
             
             const row = document.createElement("tr");
@@ -268,6 +270,7 @@ async function fetchShifts() {
                 <td class="py-3 px-6 text-left whitespace-nowrap">${end}</td>
                 <td class="py-3 px-6 text-right">₱${(data.opening_cash || 0).toFixed(2)}</td>
                 <td class="py-3 px-6 text-right">₱${(data.closing_cash || 0).toFixed(2)}</td>
+                <td class="py-3 px-6 text-right">₱${cashout.toFixed(2)}</td>
                 <td class="py-3 px-6 text-right">₱${expected.toFixed(2)}</td>
                 <td class="py-3 px-6 text-right font-bold ${diffClass}">${isClosed ? `₱${variance.toFixed(2)}` : '-'}</td>
                 <td class="py-3 px-6 text-center">
@@ -275,6 +278,7 @@ async function fetchShifts() {
                 </td>
                 <td class="py-3 px-6 text-center flex justify-center gap-3">
                     ${canAdjust ? `<button class="btn-adjust-shift text-blue-600 hover:text-blue-900 font-medium" title="Adjust Cash">Adjust</button>` : ''}
+                    <button class="btn-view-remittances text-purple-600 hover:text-purple-900 font-medium" title="View Remittances">Remit</button>
                     <button class="btn-view-history text-gray-600 hover:text-gray-900 font-medium" title="View History">History</button>
                 </td>
             `;
@@ -285,6 +289,10 @@ async function fetchShifts() {
                     showAdjustCashModal(data.id);
                 });
             }
+
+            row.querySelector(".btn-view-remittances").addEventListener("click", () => {
+                showRemittanceHistoryModal(data.remittances || []);
+            });
 
             row.querySelector(".btn-view-history").addEventListener("click", () => {
                 showShiftHistoryModal(data.adjustments || []);
@@ -583,6 +591,57 @@ export function showShiftHistoryModal(adjustments) {
     const closeModal = () => div.remove();
     document.getElementById("close-history-modal-x").addEventListener("click", closeModal);
     document.getElementById("btn-close-history").addEventListener("click", closeModal);
+}
+
+export function showRemittanceHistoryModal(remittances) {
+    let modal = document.getElementById("modal-remittance-history");
+    if (modal) modal.remove();
+
+    const div = document.createElement("div");
+    div.id = "modal-remittance-history";
+    div.className = "fixed inset-0 bg-gray-900 bg-opacity-90 flex items-center justify-center z-50";
+    
+    let rows = remittances && remittances.length > 0 
+        ? remittances.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).map(r => `
+            <tr class="border-b border-gray-100 hover:bg-gray-50 transition">
+                <td class="py-3 px-4 text-xs text-gray-500">${new Date(r.timestamp).toLocaleString()}</td>
+                <td class="py-3 px-4 text-sm font-medium text-gray-700">${r.user || 'System'}</td>
+                <td class="py-3 px-4 text-sm text-gray-600">${r.reason}</td>
+                <td class="py-3 px-4 text-right font-bold text-purple-600">₱${r.amount.toFixed(2)}</td>
+            </tr>
+        `).join("")
+        : `<tr><td colspan="4" class="py-8 text-center text-gray-500 italic">No remittances recorded for this shift.</td></tr>`;
+
+    div.innerHTML = `
+        <div class="bg-white rounded-lg shadow-2xl p-6 w-full max-w-2xl">
+            <div class="flex justify-between items-center mb-6 border-b pb-4">
+                <h2 class="text-xl font-bold text-gray-800">Shift Remittance History</h2>
+                <button id="close-remit-modal-x" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+            </div>
+            <div class="overflow-x-auto max-h-[60vh] rounded-lg border border-gray-200">
+                <table class="min-w-full table-auto">
+                    <thead class="bg-gray-50">
+                        <tr class="text-xs uppercase text-gray-500 font-bold tracking-wider">
+                            <th class="py-3 px-4 text-left">Date & Time</th>
+                            <th class="py-3 px-4 text-left">User</th>
+                            <th class="py-3 px-4 text-left">Reason</th>
+                            <th class="py-3 px-4 text-right">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        ${rows}
+                    </tbody>
+                </table>
+            </div>
+            <div class="mt-8 flex justify-end">
+                <button id="btn-close-remit-history" class="bg-gray-800 hover:bg-gray-900 text-white px-6 py-2 rounded-lg font-bold transition shadow-md">Close</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(div);
+    const closeModal = () => div.remove();
+    document.getElementById("close-remit-modal-x").addEventListener("click", closeModal);
+    document.getElementById("btn-close-remit-history").addEventListener("click", closeModal);
 }
 
 export async function showXReport() {
