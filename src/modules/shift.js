@@ -1,10 +1,9 @@
-import { db } from "../db.js";
 import { checkPermission, requestManagerApproval } from "../auth.js";
 import { addNotification } from "../services/notification-service.js";
 import { generateUUID } from "../utils.js";
-import { syncCollection } from "../services/sync-service.js";
-
-const API_URL = 'api/router.php';
+import { Repository } from "../services/Repository.js";
+import { SyncEngine } from "../services/SyncEngine.js";
+import { getSystemSettings } from "./settings.js";
 
 let currentShift = null;
 
@@ -17,16 +16,10 @@ export async function checkActiveShift() {
     if (!user) return null;
 
     try {
-        const response = await fetch(`${API_URL}?file=shifts`);
-        let shifts = await response.json();
-        if (!Array.isArray(shifts)) shifts = [];
-
-        // Sync to local DB for dashboard visibility
-        await db.shifts.clear();
-        if (shifts.length > 0) {
-            await db.shifts.bulkPut(shifts);
-        }
-
+        // Ensure we have latest data from server
+        await SyncEngine.sync();
+        
+        const shifts = await Repository.getAll('shifts');
         // Find open shift for this user
         const active = shifts.find(s => s.user_id === user.email && s.status === "open");
 
@@ -59,19 +52,13 @@ export async function startShift(openingCash) {
         closing_cash: 0,
         expected_cash: parseFloat(openingCash),
         status: "open",
-        adjustments: [],
-        sync_status: 0
+        adjustments: []
     };
 
     try {
-        // Save locally first to allow offline operation
-        await db.shifts.add(shiftData);
-
-        if (navigator.onLine) {
-            syncCollection('shifts', shiftData.id, shiftData).then(success => {
-                if (success) db.shifts.update(shiftData.id, { sync_status: 1 });
-            });
-        }
+        // Save locally and queue for sync
+        await Repository.upsert('shifts', shiftData);
+        SyncEngine.sync(); // Background sync
 
         currentShift = shiftData;
         window.dispatchEvent(new CustomEvent('shift-updated'));
@@ -98,10 +85,12 @@ export async function calculateExpectedCash(shift = currentShift) {
     const endTime = shift.end_time ? new Date(shift.end_time) : new Date();
     const userEmail = shift.user_id;
 
-    const transactions = await db.transactions
-        .where('timestamp').between(startTime, endTime, true, true)
-        .filter(tx => tx.user_email === userEmail && !tx.is_voided)
-        .toArray();
+    const allTransactions = await Repository.getAll('transactions');
+    const transactions = allTransactions.filter(tx => {
+        const txTime = new Date(tx.timestamp);
+        return txTime >= startTime && txTime <= endTime && 
+               tx.user_email === userEmail && !tx.is_voided;
+    });
 
     let totalSales = 0;
     transactions.forEach(tx => {
@@ -110,15 +99,16 @@ export async function calculateExpectedCash(shift = currentShift) {
         }
     });
 
-    // Query returns processed during this shift
-    const returns = await db.returns
-        .where('timestamp').between(startTime, endTime, true, true)
-        .filter(r => r.processed_by === userEmail)
-        .toArray();
+    const allReturns = await Repository.getAll('returns');
+    const returns = allReturns.filter(r => {
+        const rTime = new Date(r.timestamp);
+        return rTime >= startTime && rTime <= endTime && 
+               r.processed_by === userEmail;
+    });
 
     let totalRefunds = 0;
     for (const r of returns) {
-        const originalTx = await db.transactions.get(r.transaction_id);
+        const originalTx = await Repository.get('transactions', r.transaction_id);
         if (originalTx && originalTx.payment_method === 'Cash') {
             totalRefunds += r.refund_amount || 0;
         }
@@ -143,24 +133,17 @@ export async function closeShift(closingCash) {
         end_time: new Date(),
         closing_cash: closing,
         expected_cash: expected,
-        status: "closed",
-        sync_status: 0
+        status: "closed"
     };
 
-    await db.shifts.put(updatedShift);
-
-    if (navigator.onLine) {
-        syncCollection('shifts', updatedShift.id, updatedShift).then(success => {
-            if (success) db.shifts.update(updatedShift.id, { sync_status: 1 });
-        });
-    }
+    await Repository.upsert('shifts', updatedShift);
+    SyncEngine.sync();
 
     window.dispatchEvent(new CustomEvent('shift-updated'));
 
     // Check for discrepancy notification threshold
     try {
-        const settingsRes = await fetch(`${API_URL}?file=settings`);
-        const settings = await settingsRes.json();
+        const settings = await getSystemSettings();
         const threshold = parseFloat(settings?.shift?.threshold) || 0;
         
         if (Math.abs(closing - expected) > threshold) {
@@ -239,10 +222,7 @@ async function fetchShifts() {
     }
 
     try {
-        const response = await fetch(`${API_URL}?file=shifts`);
-        let shifts = await response.json();
-        if (!Array.isArray(shifts)) shifts = [];
-
+        const shifts = await Repository.getAll('shifts');
         // Filter by user and sort desc
         const userShifts = shifts
             .filter(s => s.user_id === user.email)
@@ -500,7 +480,7 @@ async function adjustCash(shiftId, amount, reason) {
     };
     
     // Optimistic update: Update local DB first
-    const shift = await db.shifts.get(shiftId);
+    const shift = await Repository.get('shifts', shiftId);
     if (shift) {
         if (!shift.adjustments) shift.adjustments = [];
         shift.adjustments.push(adjustment);
@@ -511,14 +491,8 @@ async function adjustCash(shiftId, amount, reason) {
             shift.expected_cash = (shift.expected_cash || 0) + adjustment.amount;
         }
         
-        shift.sync_status = 0;
-        await db.shifts.put(shift);
-
-        if (navigator.onLine) {
-            syncCollection('shifts', shift.id, shift).then(success => {
-                if (success) db.shifts.update(shift.id, { sync_status: 1 });
-            });
-        }
+        await Repository.upsert('shifts', shift);
+        SyncEngine.sync();
     }
 
     await addNotification('Adjustment', `Cash adjustment of ₱${adjustment.amount} for shift ${shiftId} by ${user ? user.email : 'unknown'}`);

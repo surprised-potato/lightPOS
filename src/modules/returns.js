@@ -1,11 +1,9 @@
-import { db } from "../db.js";
 import { checkPermission, requestManagerApproval } from "../auth.js";
 import { addNotification } from "../services/notification-service.js";
 import { generateUUID } from "../utils.js";
 import { checkActiveShift, requireShift } from "./shift.js";
-import { syncCollection } from "../services/sync-service.js";
-
-const API_URL = 'api/router.php';
+import { Repository } from "../services/Repository.js";
+import { SyncEngine } from "../services/SyncEngine.js";
 
 let selectedTransaction = null;
 
@@ -128,12 +126,12 @@ async function findTransaction() {
     resultsDiv.classList.remove("hidden");
 
     try {
-        // Search by ID or Customer Name
-        const txs = await db.transactions
+        // Search by ID or Customer Name using Repository
+        const allTxs = await Repository.getAll('transactions');
+        const txs = allTxs
             .filter(t => t.id?.toString().includes(term) || t.customer_name?.toLowerCase().includes(term.toLowerCase()))
-            .reverse()
-            .limit(5)
-            .toArray();
+            .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+            .slice(0, 5);
 
         if (txs.length === 0) {
             resultsDiv.innerHTML = `<p class="text-sm text-red-500 p-2">No transactions found.</p>`;
@@ -160,7 +158,7 @@ async function findTransaction() {
 
 async function displayTransaction(id) {
     const txId = isNaN(id) ? id : parseInt(id);
-    selectedTransaction = await db.transactions.get(txId);
+    selectedTransaction = await Repository.get('transactions', txId);
     if (!selectedTransaction) return;
 
     document.getElementById("search-results").classList.add("hidden");
@@ -231,15 +229,15 @@ async function handleReturnSubmit(e) {
         // 1. Update Transaction Record (track returned qty)
         const returnId = generateUUID();
         selectedTransaction.items[index].returned_qty = (selectedTransaction.items[index].returned_qty || 0) + qty;
-        await db.transactions.put(selectedTransaction);
+        await Repository.upsert('transactions', selectedTransaction);
 
         // 2. Update Inventory if restockable
         let updatedMasterItem = null;
         if (condition === 'restockable') {
-            updatedMasterItem = await db.items.get(item.id);
+            updatedMasterItem = await Repository.get('items', item.id);
             if (updatedMasterItem) {
                 updatedMasterItem.stock_level += qty;
-                await db.items.put(updatedMasterItem);
+                await Repository.upsert('items', updatedMasterItem);
             }
         }
 
@@ -257,7 +255,7 @@ async function handleReturnSubmit(e) {
             processed_by: JSON.parse(localStorage.getItem('pos_user'))?.email || 'unknown',
             sync_status: 0
         };
-        await db.returns.add(returnRecord);
+        await Repository.upsert('returns', returnRecord);
 
         // Record Stock Movement Locally
         const movement = {
@@ -272,22 +270,10 @@ async function handleReturnSubmit(e) {
             reason: `${reason} (${condition})`,
             sync_status: 0
         };
-        await db.stock_movements.add(movement);
+        await Repository.upsert('stock_movements', movement);
 
-        // 4. Sync to Server using centralized service
-        if (navigator.onLine) {
-            syncCollection('returns', returnRecord.id, returnRecord).then(success => {
-                if (success) db.returns.update(returnRecord.id, { sync_status: 1 });
-            });
-            syncCollection('stock_movements', movement.id, movement).then(success => {
-                if (success) db.stock_movements.update(movement.id, { sync_status: 1 });
-            });
-            syncCollection('transactions', selectedTransaction.id, selectedTransaction);
-            
-            if (updatedMasterItem) {
-                syncCollection('items', updatedMasterItem.id, updatedMasterItem);
-            }
-        }
+        // 4. Trigger Sync
+        SyncEngine.sync();
 
         await addNotification('Return', `Refund of ₱${returnRecord.refund_amount.toFixed(2)} processed for ${item.name} (${reason})`);
         

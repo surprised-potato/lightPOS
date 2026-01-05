@@ -1,9 +1,8 @@
-import { db } from "../db.js";
 import { checkPermission } from "../auth.js";
 import { generateUUID } from "../utils.js";
-import { syncCollection } from "../services/sync-service.js";
+import { Repository } from "../services/Repository.js";
+import { SyncEngine } from "../services/SyncEngine.js";
 
-const API_URL = 'api/router.php';
 let customersData = [];
 
 export async function loadCustomersView() {
@@ -138,7 +137,7 @@ async function fetchCustomers() {
     const tbody = document.getElementById("customers-table-body");
     try {
         // Fetch from Dexie for immediate display and offline support
-        customersData = await db.customers.toArray();
+        customersData = await Repository.getAll('customers');
         renderCustomers(customersData);
         // sync-service.js handles background synchronization from server
     } catch (error) {
@@ -201,15 +200,11 @@ async function handleSaveCustomer(e) {
         sync_status: 0
     };
 
-    // 1. Save to Dexie
-    await db.customers.put(customerData);
+    // 1. Save to Repository (Offline First + Outbox)
+    await Repository.upsert('customers', customerData);
 
-    // 2. Sync with Server
-    if (navigator.onLine) {
-        syncCollection('customers', customerData.id, customerData).then(success => {
-            if (success) db.customers.update(customerData.id, { sync_status: 1 });
-        });
-    }
+    // 2. Trigger Sync
+    SyncEngine.sync();
 
     document.getElementById("modal-add-customer").classList.add("hidden");
     fetchCustomers();
@@ -226,11 +221,9 @@ async function viewCustomerHistory(customer) {
     modal.classList.remove("hidden");
     
     try {
-        // Fetch transactions from server for full history
-        const response = await fetch(`${API_URL}?file=transactions`);
-        let transactions = await response.json();
-        if (!Array.isArray(transactions)) transactions = [];
-        
+        // Use Repository for offline-first history
+        const transactions = await Repository.getAll('transactions');
+
         const custTx = transactions.filter(t => t.customer_id === customer.id);
         
         // Sort desc

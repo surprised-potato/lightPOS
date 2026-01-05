@@ -278,7 +278,10 @@ function applyFiltersAndSort() {
         return 0;
     });
 
-    renderItems(filtered);
+    // Limit to 50 items for performance
+    const totalCount = filtered.length;
+    const limited = filtered.slice(0, 50);
+    renderItems(limited, totalCount);
 }
 
 async function fetchSuppliers() {
@@ -316,7 +319,7 @@ async function fetchItems() {
     }
 }
 
-function renderItems(items) {
+function renderItems(items, totalCount) {
     const tbody = document.getElementById("items-table-body");
     const canWrite = checkPermission("items", "write");
     tbody.innerHTML = "";
@@ -397,4 +400,10 @@ function renderItems(items) {
 
         tbody.appendChild(row);
     });
+
+    if (totalCount > 50) {
+        const row = document.createElement("tr");
+        row.innerHTML = `<td colspan="7" class="py-4 text-center text-gray-500 italic bg-gray-50">Showing top 50 of ${totalCount} items. Refine search to see more.</td>`;
+        tbody.appendChild(row);
+    }
 }

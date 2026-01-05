@@ -1,8 +1,8 @@
-import { db } from "../db.js";
 import { checkPermission } from "../auth.js";
 import { addNotification } from "../services/notification-service.js";
 import { generateUUID } from "../utils.js";
-import { syncCollection, processQueue } from "../services/sync-service.js";
+import { Repository } from "../services/Repository.js";
+import { SyncEngine } from "../services/SyncEngine.js";
 
 let itemsData = [];
 let selectedItem = null;
@@ -112,7 +112,7 @@ export async function loadStockCountView() {
 
 async function fetchItems() {
     try {
-        itemsData = await db.items.toArray();
+        itemsData = await Repository.getAll('items');
         if (!Array.isArray(itemsData)) itemsData = [];
     } catch (error) {
         console.error("Error fetching items:", error);
@@ -294,9 +294,7 @@ async function processAdjustment(newStock, reason) {
 
         // 1. Update local item stock
         selectedItem.stock_level = newStock;
-        selectedItem.updatedAt = new Date().toISOString();
-        selectedItem.sync_status = 0;
-        await db.items.put(selectedItem);
+        await Repository.upsert('items', selectedItem);
 
         // 2. Log to adjustments locally
         const adjustment = {
@@ -308,35 +306,25 @@ async function processAdjustment(newStock, reason) {
             difference: difference,
             reason: reason,
             user: user,
-            timestamp: new Date().toISOString(),
-            sync_status: 0
+            timestamp: new Date().toISOString()
         };
-        await db.adjustments.add(adjustment);
+        await Repository.upsert('adjustments', adjustment);
 
         // 3. Record Stock Movement Locally
         const movement = {
             id: generateUUID(),
             item_id: selectedItem.id,
             item_name: selectedItem.name,
-            timestamp: new Date(),
+            timestamp: new Date().toISOString(),
             type: 'Adjustment',
             qty: difference,
             user: user,
-            reason: reason,
-            sync_status: 0
+            reason: reason
         };
-        await db.stock_movements.add(movement);
+        await Repository.upsert('stock_movements', movement);
 
         // 4. Sync with Server
-        syncCollection('items', selectedItem.id, selectedItem).then(success => {
-            if (success) db.items.update(selectedItem.id, { sync_status: 1 });
-        });
-        syncCollection('adjustments', adjustment.id, adjustment).then(success => {
-            if (success) db.adjustments.update(adjustment.id, { sync_status: 1 });
-        });
-        syncCollection('stock_movements', movement.id, movement).then(success => {
-            if (success) db.stock_movements.update(movement.id, { sync_status: 1 });
-        });
+        SyncEngine.sync();
 
         await addNotification('Stock Count', `Stock adjustment for ${selectedItem.name}: ${difference > 0 ? '+' : ''}${difference} units by ${user}`);
 
@@ -361,7 +349,7 @@ async function processAdjustment(newStock, reason) {
 async function fetchAdjustmentLogs() {
     const tbody = document.getElementById("adjustment-logs-table-body");
     try {
-        let logs = await db.adjustments.toArray();
+        let logs = await Repository.getAll('adjustments');
 
         // Sort by timestamp descending and take top 15 for the sidebar
         logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));

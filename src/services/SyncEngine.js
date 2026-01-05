@@ -10,17 +10,27 @@ export const SyncEngine = {
     async sync() {
         if (!navigator.onLine) return;
 
-        // Use Web Locks API to ensure only one tab performs sync
-        return await navigator.locks.request('sync_lock', async () => {
+        const performSync = async () => {
+            window.dispatchEvent(new CustomEvent('sync-started'));
             console.log("Sync started...");
             try {
                 await this.push();
                 await this.pull();
+                localStorage.setItem('last_sync_timestamp', new Date().toISOString());
+                window.dispatchEvent(new CustomEvent('sync-updated'));
                 console.log("Sync completed.");
             } catch (error) {
+                window.dispatchEvent(new CustomEvent('sync-failed'));
                 console.error("Sync failed:", error);
             }
-        });
+        };
+
+        // Use Web Locks API to ensure only one tab performs sync (requires Secure Context/HTTPS)
+        if (navigator.locks) {
+            return await navigator.locks.request('sync_lock', performSync);
+        } else {
+            return await performSync();
+        }
     },
 
     async push() {
@@ -55,7 +65,7 @@ export const SyncEngine = {
 
             await db.transaction('rw', db[collection], async () => {
                 for (const item of items) {
-                    const idField = (collection === 'users') ? 'email' : 'id';
+                    const idField = db[collection].schema.primKey.name;
                     const local = await db[collection].get(item[idField]);
                     
                     // Apply change if local is missing or server version is higher

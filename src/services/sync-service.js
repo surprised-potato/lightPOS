@@ -59,5 +59,23 @@ export const SyncService = {
                 await Repository.upsert(collectionName, record);
             }
         }
+    },
+
+    /**
+     * Legacy wrapper to sync a single collection.
+     * Fetches data from the server and processes it through the self-healing logic.
+     */
+    async syncCollection(collectionName) {
+        try {
+            const response = await fetch(`api.php?action=pull&collection=${collectionName}`);
+            const remoteRecords = await response.json();
+            if (Array.isArray(remoteRecords)) {
+                await this.processIncoming(collectionName, remoteRecords);
+            }
+        } catch (error) {
+            console.error(`Failed to sync collection ${collectionName}:`, error);
+        }
     }
 };
+
+export const syncCollection = SyncService.syncCollection.bind(SyncService);

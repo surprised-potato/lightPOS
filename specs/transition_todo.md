@@ -34,26 +34,27 @@
     - [ ] Implement `calculateHash()`: Verify data integrity (Optional/Advanced).
 
 ## Phase 4: Application Refactoring
-- [ ] **Refactor `src/modules/items.js`**
-    - [ ] Replace `db.items.put` with `Repository.upsert('items', ...)`.
-- [ ] **Refactor `src/modules/users.js`**
-    - [ ] Replace `db.users.put` with `Repository.upsert('users', ...)`.
-- [ ] **Refactor `src/modules/pos.js`**
-    - [ ] Ensure transactions use the new Repository pattern.
-- [ ] **Refactor `src/modules/stockin.js`**
-    - [ ] Ensure stock updates use the new Repository pattern.
-- [ ] stock-count, 
-- [ ] returns, 
-- [ ] customers, 
-- [ ] suppliers, 
-- [ ] expenses, 
-- [ ] shifts, and 
-- [ ] adjustments
+ [x] **Refactor `src/modules/items.js`**
+    - [x] Replace `db.items.put` with `Repository.upsert('items', ...)`.
+ [x] **Refactor `src/modules/users.js`**
+    - [x] Replace `db.users.put` with `Repository.upsert('users', ...)`.
+ [x] **Refactor `src/modules/pos.js`**
+    - [x] Ensure transactions use the new Repository pattern.
+- [x] **Refactor `src/modules/stockin.js`**
+    - [x] Ensure stock updates use the new Repository pattern.
+- [x] stock-count, 
+- [x] reports,
+- [x] returns, 
+- [x] customers, 
+- [x] suppliers, 
+- [x] expenses, 
+- [x] shifts, and 
+- [x] adjustments
 
 ## Phase 5: UI & Testing
-- [ ] **UI Components**
-    - [ ] Add Sync Status Indicator (Green/Yellow/Red) in `src/layout.js`.
-    - [ ] Add "Force Sync" button.
+- [x] **UI Components**
+    - [x] Add Sync Status Indicator (Green/Yellow/Red) in `src/layout.js`.
+    - [x] Add "Force Sync" button.
 - [ ] **Testing Scenarios**
     - [ ] **Offline Creation:** Create item offline -> Refresh -> Online -> Verify Sync.
     - [ ] **Conflict:** Edit Item A on Device 1 (Offline). Edit Item A on Device 2 (Online). Connect Device 1. Verify Device 2's edit wins (or higher version wins).

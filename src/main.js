@@ -1,7 +1,7 @@
 import { login, logout, monitorAuthState } from "./auth.js";
 import { renderSidebar, renderLoginBranding } from "./layout.js";
 import { initRouter } from "./router.js";
-import { startRealtimeSync } from "./services/sync-service.js";
+import { SyncEngine } from "./services/SyncEngine.js";
 
 // DOM Elements
 const loginView = document.getElementById("login-view");
@@ -19,7 +19,7 @@ function showApp(user) {
     // Initialize App Shell
     renderSidebar();
     initRouter();
-    startRealtimeSync();
+    SyncEngine.sync();
 }
 
 function showLogin() {

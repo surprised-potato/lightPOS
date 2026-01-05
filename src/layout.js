@@ -2,6 +2,7 @@ import { db } from "./db.js";
 import { checkPermission, logout, getUserProfile } from "./auth.js";
 import { checkActiveShift } from "./modules/shift.js";
 import { getRecentNotifications, markAllAsRead, toggleNotificationRead } from "./services/notification-service.js";
+import { SyncEngine } from "./services/SyncEngine.js";
 
 export function renderSidebar() {
     renderHeader();
@@ -253,27 +254,7 @@ export async function renderHeader() {
     const btnSync = document.getElementById("btn-manual-sync");
     if (btnSync) {
         btnSync.addEventListener("click", async () => {
-            if (!navigator.onLine) return;
-            console.log("Manual sync button clicked.");
-            const icon = document.getElementById("sync-icon-svg");
-            const dot = document.getElementById("sync-indicator-dot");
-            const label = document.getElementById("last-sync-label");
-            if (icon.classList.contains("animate-spin")) return;
-
-            icon.classList.add("animate-spin");
-            if (label) label.textContent = "Syncing...";
-            dot.classList.replace("bg-green-500", "bg-yellow-500");
-            
-            try {
-                const { syncAll } = await import("./services/sync-service.js");
-                await syncAll();
-                console.log("Manual sync completed.");
-            } catch (e) {
-                console.error("Manual sync failed", e);
-            } finally {
-                icon.classList.remove("animate-spin");
-                dot.classList.replace("bg-yellow-500", "bg-green-500");
-            }
+            SyncEngine.sync();
         });
     }
 
@@ -322,6 +303,30 @@ export async function renderHeader() {
     updateSyncUI();
 }
 
+window.addEventListener('sync-started', () => {
+    const icon = document.getElementById("sync-icon-svg");
+    const dot = document.getElementById("sync-indicator-dot");
+    const label = document.getElementById("last-sync-label");
+    if (icon) icon.classList.add("animate-spin");
+    if (label) label.textContent = "Syncing...";
+    if (dot) {
+        dot.classList.remove("bg-green-500", "bg-red-500");
+        dot.classList.add("bg-yellow-500");
+    }
+});
+
+window.addEventListener('sync-failed', () => {
+    const icon = document.getElementById("sync-icon-svg");
+    const dot = document.getElementById("sync-indicator-dot");
+    const label = document.getElementById("last-sync-label");
+    if (icon) icon.classList.remove("animate-spin");
+    if (dot) {
+        dot.classList.remove("bg-yellow-500", "bg-green-500");
+        dot.classList.add("bg-red-500");
+    }
+    if (label) label.textContent = "Sync Failed";
+});
+
 window.addEventListener('sync-updated', updateSyncUI);
 window.addEventListener('online', () => {
     const dot = document.getElementById("sync-indicator-dot");
@@ -341,6 +346,14 @@ window.addEventListener('offline', () => {
 function updateSyncUI() {
     const label = document.getElementById('last-sync-label');
     if (!label) return;
+
+    const icon = document.getElementById("sync-icon-svg");
+    const dot = document.getElementById("sync-indicator-dot");
+    if (icon) icon.classList.remove("animate-spin");
+    if (dot && navigator.onLine) {
+        dot.classList.remove("bg-yellow-500", "bg-red-500");
+        dot.classList.add("bg-green-500");
+    }
 
     const lastSync = localStorage.getItem('last_sync_timestamp');
     const date = new Date(lastSync);

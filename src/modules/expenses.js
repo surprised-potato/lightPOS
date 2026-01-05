@@ -1,9 +1,7 @@
-import { db } from "../db.js";
 import { checkPermission } from "../auth.js";
 import { generateUUID } from "../utils.js";
-import { syncCollection } from "../services/sync-service.js";
-
-const API_URL = 'api/router.php';
+import { Repository } from "../services/Repository.js";
+import { SyncEngine } from "../services/SyncEngine.js";
 
 let suppliersList = [];
 
@@ -111,7 +109,7 @@ export async function loadExpensesView() {
 
 async function fetchSuppliers() {
     try {
-        suppliersList = await db.suppliers.toArray();
+        suppliersList = await Repository.getAll('suppliers');
 
         const select = document.getElementById("exp-supplier");
         select.innerHTML = '<option value="">None</option>';
@@ -146,16 +144,12 @@ async function saveExpense() {
         supplier_name: supplierName,
         date: new Date(dateVal),
         user_id: user,
-        created_at: new Date(),
-        sync_status: 0
+        created_at: new Date()
     };
 
     try {
-        await db.expenses.add(expenseData);
-
-        syncCollection('expenses', expenseData.id, expenseData).then(success => {
-            if (success) db.expenses.update(expenseData.id, { sync_status: 1 });
-        });
+        await Repository.upsert('expenses', expenseData);
+        SyncEngine.sync();
 
         document.getElementById("modal-add-expense").classList.add("hidden");
         document.getElementById("form-add-expense").reset();
@@ -180,9 +174,7 @@ async function fetchExpenses() {
     tbody.innerHTML = `<tr><td colspan="7" class="py-3 px-6 text-center">Loading...</td></tr>`;
 
     try {
-        // Data is now synced in the background by sync-service.js
-
-        let expenses = await db.expenses.toArray();
+        let expenses = await Repository.getAll('expenses');
 
         // Sort by date desc and limit to 50
         expenses.sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -218,16 +210,8 @@ async function fetchExpenses() {
                 if (confirm("Delete this expense record?")) {
                     const id = e.currentTarget.getAttribute("data-id");
                     
-                    await db.expenses.delete(id);
-                    
-                    syncCollection('expenses', id, null, true).then(success => {
-                        if (!success) {
-                            db.syncQueue.add({
-                                action: 'delete_item',
-                                data: { id, fileName: 'expenses' }
-                            });
-                        }
-                    });
+                    await Repository.remove('expenses', id);
+                    SyncEngine.sync();
 
                     fetchExpenses();
                 }

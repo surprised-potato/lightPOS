@@ -1,8 +1,7 @@
 import { checkPermission } from "../auth.js";
-import { syncCollection } from "../services/sync-service.js";
-import { db } from "../db.js";
+import { Repository } from "../services/Repository.js";
+import { SyncEngine } from "../services/SyncEngine.js";
 
-const API_URL = 'api/router.php';
 const MODULES = ['pos', 'customers', 'shifts', 'items', 'suppliers', 'stockin', 'stock-count', 'expenses', 'reports', 'users', 'migrate', 'returns', 'settings'];
 
 const ROLES = {
@@ -182,14 +181,11 @@ async function fetchAndRenderUsers(filter = "all") {
     const tbody = document.getElementById("users-table-body");
     const canWrite = checkPermission("users", "write");
     try {
-        let users;
         if (navigator.onLine) {
-            const response = await fetch(`${API_URL}?file=users`);
-            users = await response.json();
-            if (db.isOpen()) await db.users.bulkPut(users);
-        } else {
-            users = await db.users.toArray();
+            await SyncEngine.sync();
         }
+        
+        const users = await Repository.getAll('users');
         
         tbody.innerHTML = "";
         
@@ -318,7 +314,7 @@ function openUserModal(user = null) {
     };
 
     // If any individual checkbox is changed, set role to custom
-    permBody.querySelectorAll(".perm-check").forEach(cb => {
+    modal.querySelectorAll(".perm-check").forEach(cb => {
         cb.addEventListener("change", () => {
             roleSelect.value = "custom";
         });
@@ -370,7 +366,7 @@ async function handleUserSubmit(e) {
     });
 
     // To preserve existing password if not changed during edit, we need the full user list
-    const existingUser = await db.users.get(email);
+    const existingUser = await Repository.get('users', email);
 
     if (!isEdit && existingUser) {
         alert("User already exists.");
@@ -383,8 +379,7 @@ async function handleUserSubmit(e) {
         name,
         phone,
         is_active: isActive,
-        permissions,
-        sync_status: 0
+        permissions
     };
     
     // Only update password if provided
@@ -400,12 +395,11 @@ async function handleUserSubmit(e) {
 
     try {
         // Optimistic UI: save locally first
-        await db.users.put(userData);
+        await Repository.upsert('users', userData);
 
         // Let the background sync service handle it
         if (navigator.onLine) {
-            const { processQueue } = await import("../services/sync-service.js");
-            processQueue();
+            SyncEngine.sync();
         }
         
         alert("User saved. Will sync with server.");

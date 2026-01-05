@@ -1,7 +1,7 @@
 import { checkPermission, getUserProfile } from "../auth.js";
-import { db } from "../db.js";
 import { generateUUID } from "../utils.js";
-import { syncCollection, processQueue } from "../services/sync-service.js";
+import { Repository } from "../services/Repository.js";
+import { SyncEngine } from "../services/SyncEngine.js";
 
 // Module-level state for the cart
 let stockInCart = [];
@@ -22,12 +22,12 @@ export async function loadStockInView() {
 }
 
 async function loadAllItems() {
-    allItems = await db.items.toArray();
+    allItems = await Repository.getAll('items');
 }
 
 async function fetchSuppliers() {
     try {
-        suppliersList = await db.suppliers.toArray();
+        suppliersList = await Repository.getAll('suppliers');
         if (!Array.isArray(suppliersList)) suppliersList = [];
     } catch (error) {
         console.error("Error fetching suppliers:", error);
@@ -396,22 +396,17 @@ async function saveStockIn() {
 
     try {
         // 1. Update local items DB
-        const itemIds = stockInCart.map(item => item.id);
-        const itemsToUpdate = (await db.items.bulkGet(itemIds)).filter(i => i !== undefined);
-        const cartMap = new Map(stockInCart.map(i => [i.id, i]));
-
-        itemsToUpdate.forEach(item => {
-            const cartItem = cartMap.get(item.id);
-            if (cartItem) {
+        for (const cartItem of stockInCart) {
+            const item = await Repository.get('items', cartItem.id);
+            if (item) {
                 item.stock_level = (item.stock_level || 0) + cartItem.quantity;
                 item.cost_price = cartItem.cost_price;
                 if (supplierId && !item.supplier_id) {
                     item.supplier_id = supplierId;
                 }
-                item.sync_status = 0;
+                await Repository.upsert('items', item);
             }
-        });
-        await db.items.bulkPut(itemsToUpdate);
+        }
         await loadAllItems();
 
         // 2. Create local history and movement records
@@ -428,10 +423,9 @@ async function saveStockIn() {
             })),
             timestamp: new Date().toISOString(),
             item_count: stockInCart.reduce((sum, item) => sum + item.quantity, 0),
-            supplier_id_override: supplierId || null,
-            sync_status: 0
+            supplier_id_override: supplierId || null
         };
-        await db.stockins.add(historyRecord);
+        await Repository.upsert('stockins', historyRecord);
 
         const movements = [];
         for (const item of historyRecord.items) {
@@ -443,36 +437,13 @@ async function saveStockIn() {
                 type: 'Stock-In',
                 qty: item.quantity,
                 user: user.name || user.email,
-                reason: 'Supplier Delivery',
-                sync_status: 0 // Corrected
+                reason: 'Supplier Delivery'
             };
-            movements.push(movement);
-        }
-        await db.stock_movements.bulkPut(movements);
-
-        // 3. Sync to Server using centralized service
-        // Sync Items
-        for (const item of itemsToUpdate) {
-            syncCollection('items', item.id, item).then(success => {
-                if (success) db.items.update(item.id, { sync_status: 1 });
-            });
+            await Repository.upsert('stock_movements', movement);
         }
 
-        // Sync History
-        syncCollection('stock_in_history', historyRecord.id, historyRecord).then(success => {
-            if (success) db.stockins.update(historyRecord.id, { sync_status: 1 });
-        });
-
-        // Sync Movements
-        for (const m of movements) {
-            syncCollection('stock_movements', m.id, m).then(success => {
-                if (success) db.stock_movements.update(m.id, { sync_status: 1 });
-            });
-        }
-        
-        if (navigator.onLine) {
-            await processQueue();
-        }
+        // 3. Trigger Background Sync
+        SyncEngine.sync();
 
         alert('Stock-in successful! Data is saved locally and will sync with the server.');
         

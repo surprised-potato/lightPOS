@@ -3,9 +3,8 @@ import { getSystemSettings } from "./settings.js";
 import { checkPermission, requestManagerApproval } from "../auth.js";
 import { generateUUID } from "../utils.js";
 import { addNotification } from "../services/notification-service.js";
-import { syncCollection, processQueue } from "../services/sync-service.js";
-
-const API_URL = 'api/router.php';
+import { Repository } from "../services/Repository.js";
+import { SyncEngine } from "../services/SyncEngine.js";
 
 let reportData = {};
 let valuationChartInstance = null;
@@ -983,11 +982,12 @@ async function generateReport() {
         let transactions = await db.transactions
             .where('timestamp')
             .between(startDate, endDate, true, true)
+            .and(t => !t._deleted)
             .toArray();
         
         // Also fetch transactions voided in this period but purchased earlier
         const historicalVoids = await db.transactions
-            .filter(t => t.is_voided && t.voided_at && new Date(t.voided_at) >= startDate && new Date(t.voided_at) <= endDate)
+            .filter(t => !t._deleted && t.is_voided && t.voided_at && new Date(t.voided_at) >= startDate && new Date(t.voided_at) <= endDate)
             .toArray();
 
         const txMap = new Map();
@@ -998,18 +998,19 @@ async function generateReport() {
         const returns = await db.returns
             .where('timestamp')
             .between(startDate, endDate, true, true)
+            .and(r => !r._deleted)
             .toArray();
         
-        const localStockIn = await db.stockins.toArray();
-        const allItems = await db.items.toArray();
+        const localStockIn = await Repository.getAll('stockins');
+        const allItems = await Repository.getAll('items');
 
         // Fetch supporting data from local Dexie
         const [shifts, customers, suppliers, adjustments, stockMovements] = await Promise.all([
-            db.shifts.toArray(),
-            db.customers.toArray(),
-            db.suppliers.toArray(),
-            db.adjustments.toArray(),
-            db.stock_movements ? db.stock_movements.toArray() : Promise.resolve([])
+            Repository.getAll('shifts'),
+            Repository.getAll('customers'),
+            Repository.getAll('suppliers'),
+            Repository.getAll('adjustments'),
+            Repository.getAll('stock_movements')
         ]);
 
         // Merge Stock-In History (Local Dexie already contains synced server data)
@@ -1289,12 +1290,13 @@ async function generateReport() {
 
 async function calculateSlowMoving(days, itemsCache = null) {
     const thresholdDate = moment().subtract(days, 'days').startOf('day').toDate();
-    const allItems = itemsCache || await db.items.toArray();
+    const allItems = itemsCache || await Repository.getAll('items');
     
     // Get transactions in the inactivity period
     const recentTxs = await db.transactions
         .where('timestamp')
         .aboveOrEqual(thresholdDate)
+        .and(t => !t._deleted)
         .toArray();
         
     const soldItemIds = new Set();
@@ -1452,11 +1454,12 @@ async function generateInventoryLedger() {
         const snapshotDate = new Date(dateInput);
         snapshotDate.setHours(23, 59, 59, 999); // End of selected day
 
-        const allItems = await db.items.toArray();
+        const allItems = await Repository.getAll('items');
         // Fetch movements that happened AFTER the snapshot date to reverse them
         const futureMovements = await db.stock_movements
             .where('timestamp')
             .above(snapshotDate)
+            .and(m => !m._deleted)
             .toArray();
 
         let totalHistQty = 0;
@@ -1856,6 +1859,7 @@ async function showShiftTransactions(shiftId) {
         const txs = await db.transactions
             .where('timestamp')
             .between(startTime, endTime, true, true)
+            .and(t => !t._deleted)
             .filter(t => t.user_email === shift.user_id)
             .toArray();
 
@@ -1918,7 +1922,7 @@ async function showShiftTransactions(shiftId) {
 
 async function showTransactionDetail(id) {
     const txId = isNaN(id) ? id : parseInt(id);
-    const tx = await db.transactions.get(txId);
+    const tx = await Repository.get('transactions', txId);
     if (!tx) return;
 
     const hasReturns = tx.items.some(i => (i.returned_qty || 0) > 0);
@@ -2019,64 +2023,45 @@ async function voidTransactionFromReports(id) {
 
     try {
         const txId = isNaN(id) ? id : parseInt(id);
-        const tx = await db.transactions.get(txId);
+        const tx = await Repository.get('transactions', txId);
         if (!tx) return;
 
         const user = JSON.parse(localStorage.getItem('pos_user'));
 
-        // 1. Update Dexie Transaction
+        // 1. Update Transaction
         const updatedTx = {
             ...tx,
             is_voided: true, 
-            voided_at: new Date(),
+            voided_at: new Date().toISOString(),
             voided_by: user ? user.email : "System",
-            void_reason: reason || "No reason provided",
-            sync_status: 0 
+            void_reason: reason || "No reason provided"
         };
-        await db.transactions.put(updatedTx);
+        await Repository.upsert('transactions', updatedTx);
 
-        // 2. Reverse Stock in Dexie
-        const movements = [];
+        // 2. Reverse Stock
         for (const item of tx.items) {
-            const current = await db.items.get(item.id);
+            const current = await Repository.get('items', item.id);
             if (current) {
-                const newStock = current.stock_level + item.qty;
-                await db.items.update(item.id, { stock_level: newStock });
-                const updatedItem = await db.items.get(item.id);
+                const newStock = (current.stock_level || 0) + item.qty;
+                await Repository.upsert('items', { ...current, stock_level: newStock });
                 
                 const movement = {
                     id: generateUUID(),
                     item_id: item.id,
                     item_name: item.name,
-                    timestamp: new Date(),
+                    timestamp: new Date().toISOString(),
                     type: 'Void',
                     qty: item.qty,
                     user: user ? user.email : "System",
                     transaction_id: tx.id,
-                    reason: reason || "Transaction Voided",
-                    sync_status: 0
+                    reason: reason || "Transaction Voided"
                 };
-                movements.push(movement);
-                await db.stock_movements.add(movement);
-
-                if (navigator.onLine) {
-                    const itemSync = await syncCollection('items', item.id, updatedItem);
-                    if (itemSync) await db.items.update(item.id, { sync_status: 1 });
-                }
+                await Repository.upsert('stock_movements', movement);
             }
         }
 
-        // 3. Sync to Server
-        if (navigator.onLine) {
-            const txSuccess = await syncCollection('transactions', tx.id, updatedTx);
-            if (txSuccess) await db.transactions.update(txId, { sync_status: 1 });
-
-            for (const m of movements) {
-                const mSuccess = await syncCollection('stock_movements', m.id, m);
-                if (mSuccess) await db.stock_movements.update(m.id, { sync_status: 1 });
-            }
-            await processQueue();
-        }
+        // 3. Sync
+        SyncEngine.sync();
 
         await addNotification('Void', `Transaction ${txId} was voided by ${user ? user.email : "System"}`);
         alert("Transaction voided successfully.");
@@ -2541,7 +2526,7 @@ function renderQuadrantDetails() {
 }
 
 async function showQuickEditMinStock(id) {
-    const item = await db.items.get(id);
+    const item = await Repository.get('items', id);
     if (!item) return;
 
     const newMin = prompt(`Quick Edit: Min Stock Alert for "${item.name}"\n\nCurrent: ${item.min_stock || 0}`, item.min_stock || 0);
@@ -2554,14 +2539,9 @@ async function showQuickEditMinStock(id) {
         }
 
         try {
-            // Update local
-            await db.items.update(id, { min_stock: minVal });
-            
-            // Sync to server
-            if (navigator.onLine) {
-                const item = await db.items.get(id);
-                await syncCollection('items', id, item);
-            }
+            // Update local and sync
+            await Repository.upsert('items', { ...item, min_stock: minVal });
+            SyncEngine.sync();
             
             alert("Min stock updated.");
             generateReport(); // Refresh report to update low stock lists etc

@@ -1,7 +1,7 @@
-import { db } from "../db.js";
 import { checkPermission } from "../auth.js";
 import { generateUUID } from "../utils.js";
-import { syncCollection } from "../services/sync-service.js";
+import { Repository } from "../services/Repository.js";
+import { SyncEngine } from "../services/SyncEngine.js";
 
 export async function loadSuppliersView() {
     const content = document.getElementById("main-content");
@@ -81,7 +81,7 @@ async function fetchSuppliers() {
     const canWrite = checkPermission("suppliers", "write");
 
     try {
-        const suppliers = await db.suppliers.toArray();
+        const suppliers = await Repository.getAll('suppliers');
         const sortedSuppliers = suppliers.sort((a, b) => a.name.localeCompare(b.name));
 
         tbody.innerHTML = "";
@@ -127,16 +127,12 @@ async function handleAddSupplier(e) {
         id: generateUUID(),
         name,
         contact,
-        email,
-        sync_status: 0
+        email
     };
 
     try {
-        await db.suppliers.add(newSupplier);
-
-        syncCollection('suppliers', newSupplier.id, newSupplier).then(success => {
-            if (success) db.suppliers.update(newSupplier.id, { sync_status: 1 });
-        });
+        await Repository.upsert('suppliers', newSupplier);
+        SyncEngine.sync();
 
         document.getElementById("modal-add-supplier").classList.add("hidden");
         document.getElementById("form-add-supplier").reset();
@@ -151,16 +147,8 @@ async function deleteSupplier(id) {
     if (!confirm("Are you sure you want to delete this supplier?")) return;
 
     try {
-        await db.suppliers.delete(id);
-        
-        syncCollection('suppliers', id, null, true).then(success => {
-            if (!success) {
-                db.syncQueue.add({
-                    action: 'delete_item',
-                    data: { id, fileName: 'suppliers' }
-                });
-            }
-        });
+        await Repository.remove('suppliers', id);
+        SyncEngine.sync();
         fetchSuppliers();
     } catch (error) {
         console.error("Error deleting supplier:", error);

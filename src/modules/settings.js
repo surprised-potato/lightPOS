@@ -2,9 +2,8 @@ import { checkPermission } from "../auth.js";
 import { renderHeader } from "../layout.js";
 import { db } from "../db.js";
 import { generateUUID } from "../utils.js";
-import { processQueue } from "../services/sync-service.js";
-
-const API_URL = 'api/router.php';
+import { Repository } from "../services/Repository.js";
+import { SyncEngine } from "../services/SyncEngine.js";
 
 export async function loadSettingsView() {
     const content = document.getElementById("main-content");
@@ -439,16 +438,12 @@ function setupEventListeners() {
 
 async function loadSettings() {
     try {
-        let settings;
-        const localData = await db.sync_metadata.get('settings');
+        if (navigator.onLine) await SyncEngine.sync();
+
+        const localData = await Repository.get('sync_metadata', 'settings');
+        let settings = null;
         if (localData) {
             settings = localData.value;
-        } else if (navigator.onLine) {
-            const response = await fetch(`${API_URL}?file=settings`);
-            settings = await response.json();
-            if (settings) {
-                await db.sync_metadata.put({ key: 'settings', value: settings });
-            }
         }
         
         if (settings) {
@@ -584,20 +579,11 @@ async function handleSave(e) {
 
     try {
         // Save locally first
-        await db.sync_metadata.put({ key: 'settings', value: settings });
+        await Repository.upsert('sync_metadata', { key: 'settings', value: settings });
 
-        if (navigator.onLine) {
-            fetch(`${API_URL}?file=settings`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(settings)
-            }).catch(console.error);
-        } else {
-            await db.syncQueue.add({
-                action: 'update_settings',
-                data: settings
-            });
-        }
+        // Trigger background sync
+        SyncEngine.sync();
+
         alert("Settings saved.");
         renderHeader(); // Refresh title bar
     } catch (error) {
@@ -611,18 +597,10 @@ async function handleSave(e) {
  */
 export async function getSystemSettings() {
     try {
-        const localData = await db.sync_metadata.get('settings');
+        const localData = await Repository.get('sync_metadata', 'settings');
         if (localData && localData.value) {
             return localData.value;
         }
-
-        let settings = null;
-        if (navigator.onLine) {
-            const response = await fetch(`${API_URL}?file=settings`);
-            settings = await response.json();
-            if (settings) await db.sync_metadata.put({ key: 'settings', value: settings });
-        }
-        
         return settings || {
             store: { name: "LightPOS", logo: "", data: "" },
             tax: { rate: 12 },
@@ -808,18 +786,17 @@ async function processImport(items) {
         selling_price: parseFloat(item.selling_price) || 0,
         stock_level: parseFloat(item.stock_level) || 0,
         min_stock: parseFloat(item.min_stock) || 0,
-        supplier_id: item.supplier_id || "",
-        sync_status: 0
+        supplier_id: item.supplier_id || ""
     }));
     progressBar.style.width = "70%";
     progressText.textContent = "Saving to local database...";
     
-    await db.items.bulkAdd(newItems);
-    
-    if (navigator.onLine) {
-        progressText.textContent = "Syncing...";
-        processQueue();
+    for (const item of newItems) {
+        await Repository.upsert('items', item);
     }
+
+    progressText.textContent = "Syncing...";
+    SyncEngine.sync();
     
     progressBar.style.width = "100%";
     progressText.textContent = "Import Complete!";
@@ -834,7 +811,10 @@ async function analyzeSync() {
     btnAnalyze.disabled = true;
     btnAnalyze.classList.add("opacity-50");
     try {
-        const [serverRes, localData] = await Promise.all([fetch(`${API_URL}?file=items`), db.items.toArray()]);
+        const [serverRes, localData] = await Promise.all([
+            fetch(`api/sync.php?collection=items`), 
+            Repository.getAll('items')
+        ]);
         let serverData = await serverRes.json();
         if (!Array.isArray(serverData)) serverData = [];
         document.getElementById("count-server").textContent = serverData.length;
