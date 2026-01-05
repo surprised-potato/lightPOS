@@ -40,5 +40,33 @@
         "_updatedAt": 1767585191412,
         "_deleted": false,
         "_hash": "c4b73573c8775cdba5fa62dffb8626a9"
+    },
+    {
+        "id": "484a2a7b-5d2a-468f-8264-53a6d1db9efb",
+        "user_id": "JohnRoss@LP.com",
+        "username": "John",
+        "items": [
+            {
+                "item_id": "00158d13-cb3a-4d22-b221-7e7e9a58a396",
+                "name": "Nissin Wafer Choco 12g",
+                "quantity": 12,
+                "cost_price": 3,
+                "movement_id": "31c9d436-36d2-42ce-a830-d7dca678ec4b"
+            },
+            {
+                "item_id": "0c086be0-2504-466c-b1d9-2c906a406097",
+                "name": "Nissin SouperMeal Beef Brisket 90g",
+                "quantity": 10,
+                "cost_price": 30.760000000000001563194018672220408916473388671875,
+                "movement_id": "0d98707c-abb5-4899-8a25-5f5c52e440db"
+            }
+        ],
+        "timestamp": "2026-01-05T05:55:00.821Z",
+        "item_count": 22,
+        "supplier_id_override": null,
+        "_version": 1,
+        "_updatedAt": 1767592500821,
+        "_deleted": false,
+        "_hash": "3789c3c3bbca40b4760164c232be5b2d"
     }
 ]

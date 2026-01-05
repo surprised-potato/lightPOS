@@ -1095,7 +1095,7 @@ async function generateReport() {
         );
 
         // Synthesize movements from returns
-        const returnMovements = returns.flatMap(r => {
+        const returnMovements = returns.filter(r => r.condition === 'restockable').flatMap(r => {
             const moves = [{
                 id: `return-${r.id}`,
                 item_id: r.item_id,
@@ -1107,20 +1107,6 @@ async function generateReport() {
                 transaction_id: r.transaction_id,
                 reason: `${r.reason} (${r.condition})`
             }];
-            
-            if (r.condition === 'damaged') {
-                moves.push({
-                    id: `return-shrink-${r.id}`,
-                    item_id: r.item_id,
-                    item_name: r.item_name,
-                    timestamp: r.timestamp,
-                    type: 'Shrinkage',
-                    qty: -r.qty,
-                    user: r.processed_by,
-                    transaction_id: r.transaction_id,
-                    reason: `Return Write-off: ${r.reason}`
-                });
-            }
             return moves;
         });
 

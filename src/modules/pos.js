@@ -157,7 +157,7 @@ async function renderPosInterface(content) {
 
     // Full height layout minus header padding
     content.innerHTML = `
-        <div class="flex flex-col md:flex-row h-[calc(100vh-140px)] gap-0 overflow-hidden">
+        <div class="flex flex-col md:flex-row h-[calc(100vh-100px)] gap-0 overflow-hidden">
             <!-- Left Column: Item Grid -->
             <div id="pos-grid-container" class="flex-1 flex flex-col bg-white rounded-l-lg shadow-md overflow-hidden">
                 <!-- Search Bar -->
@@ -196,14 +196,19 @@ async function renderPosInterface(content) {
 
             <!-- Right Column: Cart -->
             <div id="pos-cart-container" class="w-full md:flex flex-col bg-white rounded-r-lg shadow-md overflow-hidden border-l h-full" style="width: ${savedCartWidth}">
-                <div class="p-4 bg-blue-700 text-white shadow-md flex justify-between items-center">
-                    <h2 class="text-xl font-bold tracking-wide">Current Sale <span class="text-xs font-normal opacity-75 ml-1">(F3: Qty)</span></h2>
-                    <div class="grid grid-cols-2 gap-1 shrink-0">
-                        <button id="btn-view-suspended" class="text-[10px] bg-yellow-600 hover:bg-yellow-700 px-2 py-1 rounded transition w-24 h-8 flex items-center justify-center font-bold" title="View Suspended Sales">SUSPENDED</button>
-                        <button id="btn-pos-history" class="text-[10px] bg-indigo-600 hover:bg-indigo-700 px-2 py-1 rounded transition w-24 h-8 flex items-center justify-center font-bold" title="Transaction History">HISTORY</button>
-                        <button id="btn-suspend-sale" class="text-[10px] bg-orange-500 hover:bg-orange-600 px-2 py-1 rounded transition w-24 h-8 flex items-center justify-center font-bold" title="Suspend Current Sale">HOLD</button>
-                        <button id="btn-pos-close-shift" class="text-[10px] bg-red-500 hover:bg-red-600 px-2 py-1 rounded transition w-24 h-8 flex items-center justify-center font-bold" title="End your current shift">CLOSE SHIFT</button>
-                        <button id="btn-clear-cart" class="text-[10px] bg-blue-800 hover:bg-blue-900 px-2 py-1 rounded transition w-24 h-8 flex items-center justify-center font-bold" title="Empty the cart">CLEAR</button>
+                <div class="p-2 bg-blue-700 text-white shadow-md flex flex-col gap-1">
+                    <div class="flex justify-between items-center">
+                        <div class="flex flex-col">
+                            <span class="text-[10px] uppercase font-bold opacity-75 leading-none">Total Amount</span>
+                            <div id="cart-total" class="text-2xl font-black leading-tight">₱0.00</div>
+                        </div>
+                        <div class="flex gap-1 shrink-0">
+                            <button id="btn-view-suspended" class="text-[9px] bg-yellow-600 hover:bg-yellow-700 px-1.5 py-1 rounded font-bold" title="Suspended Sales">SUSP</button>
+                            <button id="btn-pos-history" class="text-[9px] bg-indigo-600 hover:bg-indigo-700 px-1.5 py-1 rounded font-bold" title="History">HIST</button>
+                            <button id="btn-suspend-sale" class="text-[9px] bg-orange-500 hover:bg-orange-600 px-1.5 py-1 rounded font-bold" title="Hold">HOLD</button>
+                            <button id="btn-pos-close-shift" class="text-[9px] bg-red-500 hover:bg-red-600 px-1.5 py-1 rounded font-bold" title="Close Shift">CLOSE</button>
+                            <button id="btn-clear-cart" class="text-[9px] bg-blue-800 hover:bg-blue-900 px-1.5 py-1 rounded font-bold" title="Clear Cart">CLR</button>
+                        </div>
                     </div>
                 </div>
                 
@@ -228,13 +233,13 @@ async function renderPosInterface(content) {
                 </div>
                 
                 <!-- Last Transaction Summary -->
-                <div id="last-transaction" class="hidden bg-green-50 border-b border-green-200 p-4">
+                <div id="last-transaction" class="hidden bg-green-50 border-b border-green-200 p-2 md:p-4">
                     <div class="text-center">
                         <div class="text-xs text-green-600 uppercase font-bold">Change Due</div>
-                        <div id="last-change-amount" class="text-3xl font-bold text-green-700">₱0.00</div>
+                        <div id="last-change-amount" class="text-xl md:text-3xl font-bold text-green-700">₱0.00</div>
                     </div>
-                    <div class="flex justify-between mt-2 text-xs text-green-600 border-t border-green-200 pt-2">
-                        <div>Total: <span id="last-total" class="font-bold"></span></div>
+                    <div class="flex justify-between mt-1 md:mt-2 text-[10px] md:text-xs text-green-600 border-t border-green-200 pt-1 md:pt-2">
+                        <div>Tot: <span id="last-total" class="font-bold"></span></div>
                         <div>Paid: <span id="last-tendered" class="font-bold"></span></div>
                     </div>
                     <button id="btn-print-last-receipt" class="w-full mt-3 bg-gray-800 text-white py-2 rounded font-bold text-sm flex items-center justify-center gap-2 hover:bg-black transition">Print Receipt (F8)</button>
@@ -249,22 +254,14 @@ async function renderPosInterface(content) {
                 </div>
 
                 <!-- Footer / Totals -->
-                <div class="p-4 bg-white border-t shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-10">
-                    <div class="flex justify-between items-center mb-2 text-sm">
-                        <span class="text-gray-600">Subtotal</span>
-                        <span class="font-bold">₱0.00</span>
-                    </div>
-                    <div class="flex justify-between items-center mb-4 text-3xl">
-                        <span class="font-bold text-gray-800">Total</span>
-                        <span id="cart-total" class="font-bold text-blue-600">₱0.00</span>
-                    </div>
-                    <button id="btn-checkout" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-lg text-xl shadow-lg transition duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2" disabled>
+                <div class="p-2 bg-white border-t shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-10">
+                    <button id="btn-checkout" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg text-lg shadow-lg transition duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2" disabled>
                         <span>PAY NOW (F4)</span>
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                     </button>
 
                     <!-- Shortcut Legend -->
-                    <div class="mt-4 pt-2 border-t flex justify-between items-center text-[9px] font-bold text-gray-400 uppercase tracking-tighter">
+                    <div class="mt-2 pt-2 border-t flex justify-between items-center text-[9px] font-bold text-gray-400 uppercase tracking-tighter">
                         <span><b class="text-blue-500">F1</b> Search</span>
                         <span><b class="text-blue-500">F2</b> Cust</span>
                         <span><b class="text-blue-500">F3</b> Cart</span>

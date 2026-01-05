@@ -96,5 +96,37 @@
         "_updatedAt": 1767586199314,
         "_deleted": false,
         "_hash": "f67378224aef582a3dc8dde1584fb34b"
+    },
+    {
+        "id": "20c33444-7a0c-4585-871c-bf110e60ec9c",
+        "transaction_id": "8d89014f-2c32-4489-a82e-d38233a740f9",
+        "item_id": "00b55c22-8694-406d-b840-bf2bba0772fa",
+        "item_name": "Philips LED 9Watts",
+        "qty": 1,
+        "refund_amount": 142,
+        "condition": "damaged",
+        "reason": "Defective",
+        "timestamp": "2026-01-05T06:04:40.807Z",
+        "processed_by": "JohnRoss@LP.com",
+        "_version": 1,
+        "_updatedAt": 1767593080808,
+        "_deleted": false,
+        "_hash": "021e7963583a7a509717afebbaebd084"
+    },
+    {
+        "id": "74b4ba9d-698f-427f-b38d-30b9a68b63de",
+        "transaction_id": "8d89014f-2c32-4489-a82e-d38233a740f9",
+        "item_id": "00bddb2d-d017-4e72-96f6-0566f1a59fa9",
+        "item_name": "MS Oyster Sauce 150g",
+        "qty": 1,
+        "refund_amount": 42,
+        "condition": "restockable",
+        "reason": "Wrong Item",
+        "timestamp": "2026-01-05T06:06:22.355Z",
+        "processed_by": "JohnRoss@LP.com",
+        "_version": 1,
+        "_updatedAt": 1767593182355,
+        "_deleted": false,
+        "_hash": "ce26a0438fdb3b2e2c1f577cd1d38b75"
     }
 ]
