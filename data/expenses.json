@@ -10,8 +10,9 @@
         "user_id": "brad@lp.com",
         "created_at": "2026-01-06T02:18:27.050Z",
         "_version": 1,
-        "_updatedAt": 1767694396235,
-        "_deleted": false
+        "_updatedAt": 1767665907058,
+        "_deleted": false,
+        "_hash": "ca81bcc6ad53ea7979a5b915a965fe73"
     },
     {
         "id": "7f4ed31d-acab-4a39-93bb-869e3d83b149",
@@ -24,8 +25,9 @@
         "user_id": "brad@lp.com",
         "created_at": "2026-01-06T03:22:43.617Z",
         "_version": 4,
-        "_updatedAt": 1767694396235,
-        "_deleted": true
+        "_updatedAt": 1767669811275,
+        "_deleted": true,
+        "_hash": "a2427050b42f6762a94510e467f77451"
     },
     {
         "id": "8792345c-1cc7-4153-8e6b-a6cc97f7dcb1",
@@ -38,8 +40,24 @@
         "user_id": "brad@lp.com",
         "created_at": "2026-01-06T01:43:35.152Z",
         "_version": 1,
-        "_updatedAt": 1767694396235,
-        "_deleted": false
+        "_updatedAt": 1767663815158,
+        "_deleted": false,
+        "_hash": "eefd5d11f717a0465cb844667fde9ad9"
+    },
+    {
+        "id": "8d642284-0f6e-4701-ac3f-4228ba2ec886",
+        "description": "PAID BY BRADBOY",
+        "amount": 1000,
+        "category": "Procurement",
+        "supplier_id": "c3bdb70a-daea-4d49-bae2-95dddab16bbf",
+        "supplier_name": "Globe Load",
+        "date": "2026-01-06",
+        "user_id": "brad@lp.com",
+        "created_at": "2026-01-06T08:13:45.008Z",
+        "_version": 1,
+        "_updatedAt": 1767687225022,
+        "_deleted": false,
+        "_hash": "9da0a7d80a3b316e810eeff7249b5d45"
     },
     {
         "id": "c6fc05c8-ee16-4107-b033-909f4daeb392",
@@ -52,7 +70,23 @@
         "user_id": "brad@lp.com",
         "created_at": "2026-01-06T04:25:40.904Z",
         "_version": 1,
-        "_updatedAt": 1767694396235,
-        "_deleted": false
+        "_updatedAt": 1767673540908,
+        "_deleted": false,
+        "_hash": "476ab306d1c4f35503cfb7288bc60c99"
+    },
+    {
+        "id": "ccea3a68-2f1d-4ad2-abb5-70a08cc7d1c8",
+        "description": "PAID BY BRADBOY",
+        "amount": 990,
+        "category": "Procurement",
+        "supplier_id": "2336f418-1f9c-497f-85b9-ca7a4df8c321",
+        "supplier_name": "ARNAIZ AGOGO",
+        "date": "2026-01-06",
+        "user_id": "brad@lp.com",
+        "created_at": "2026-01-06T10:13:22.348Z",
+        "_version": 1,
+        "_updatedAt": 1767694402360,
+        "_deleted": false,
+        "_hash": "d4046f1c4fd2b7cb47907ca8a7ea57a8"
     }
 ]

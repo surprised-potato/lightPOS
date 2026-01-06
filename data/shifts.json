@@ -10,7 +10,7 @@
         "status": "closed",
         "adjustments": [],
         "_version": 1,
-        "_updatedAt": 1767694396235,
+        "_updatedAt": 1767707557768,
         "_deleted": false,
         "_hash": "d8f2f395db1b7750db5a9f8a71b268f4"
     },
@@ -25,9 +25,9 @@
         "status": "closed",
         "adjustments": [],
         "_version": 2,
-        "_updatedAt": 1767694396235,
+        "_updatedAt": 1767651710514,
         "_deleted": false,
-        "_hash": "1b531769474903f80b8ab8529086a243",
+        "_hash": "dbe24be96851188265ade284acd214f1",
         "cashout": 0,
         "closing_receipts": [],
         "total_closing_amount": 10000,
@@ -45,7 +45,7 @@
         "status": "closed",
         "adjustments": [],
         "_version": 2,
-        "_updatedAt": 1767694396235,
+        "_updatedAt": 1767707557768,
         "_deleted": false,
         "_hash": "9877ebfc9fab6fec5f32540473fadd6a",
         "closing_receipts": [
@@ -60,30 +60,18 @@
         "id": "39d537f3-6ff2-4b70-bebe-fa82554923b8",
         "user_id": "admin@lightpos.com",
         "start_time": "2026-01-05T13:46:30.836Z",
-        "end_time": "2026-01-06T10:37:50.061Z",
+        "end_time": null,
         "opening_cash": 0,
-        "closing_cash": 5000,
-        "cashout": 5000,
+        "closing_cash": 0,
+        "cashout": 0,
         "expected_cash": 0,
-        "status": "closed",
+        "status": "open",
         "adjustments": [],
-        "remittances": [
-            {
-                "id": "8bab8771-0ffd-4ed9-9bc4-98775f7bce67",
-                "amount": 5000,
-                "reason": "CAT@",
-                "timestamp": "2026-01-06T09:28:41.498Z",
-                "user": "admin@lightpos.com"
-            }
-        ],
-        "_version": 3,
-        "_updatedAt": 1767695870062,
+        "remittances": [],
+        "_version": 1,
+        "_updatedAt": 1767707557768,
         "_deleted": false,
-        "_hash": "ab91a6abf6316abe5ba99e5fca668df3",
-        "closing_receipts": [],
-        "total_closing_amount": 10000,
-        "precounted_bills": 0,
-        "precounted_coins": 0
+        "_hash": "74e75440c563ed54fc785c1aa487f1cc"
     },
     {
         "id": "64537e3f-025f-422c-952a-581be99c412c",
@@ -99,7 +87,7 @@
         "closing_receipts": [],
         "total_closing_amount": 0,
         "_version": 1,
-        "_updatedAt": 1767694396235,
+        "_updatedAt": 1767707557768,
         "_deleted": false,
         "_hash": "2a21e3c919e72afabcc39a3aa6bebad6"
     },
@@ -107,16 +95,21 @@
         "id": "8ec0b487-6f4e-4883-a873-236a3012a55f",
         "user_id": "cashier@lp.com",
         "start_time": "2026-01-05T05:44:47.157Z",
-        "end_time": null,
+        "end_time": "2026-01-06T12:05:17.272Z",
         "opening_cash": 1000,
-        "closing_cash": 0,
+        "closing_cash": 3648,
         "expected_cash": 1000,
-        "status": "open",
+        "status": "closed",
         "adjustments": [],
-        "_version": 1,
-        "_updatedAt": 1767694396235,
+        "_version": 2,
+        "_updatedAt": 1767707557768,
         "_deleted": false,
-        "_hash": "a25cdb53c24b8a5cf0fc50a575d6ae9f"
+        "_hash": "a25cdb53c24b8a5cf0fc50a575d6ae9f",
+        "cashout": 0,
+        "closing_receipts": [],
+        "total_closing_amount": 3648,
+        "precounted_bills": 0,
+        "precounted_coins": 0
     },
     {
         "id": "b67e2bfd-d46f-47a9-bab6-15da333ec62d",
@@ -129,7 +122,7 @@
         "status": "closed",
         "adjustments": [],
         "_version": 2,
-        "_updatedAt": 1767694396235,
+        "_updatedAt": 1767707557768,
         "_deleted": false,
         "_hash": "25ff4467363c6e79fd8216a3301e37fd",
         "closing_receipts": [],
@@ -149,7 +142,7 @@
         "closing_receipts": [],
         "total_closing_amount": 0,
         "_version": 1,
-        "_updatedAt": 1767694396235,
+        "_updatedAt": 1767707557768,
         "_deleted": false,
         "_hash": "31cbccbb2a348b8c3c3763e6962decea"
     },
@@ -164,7 +157,7 @@
         "status": "closed",
         "adjustments": [],
         "_version": 2,
-        "_updatedAt": 1767694396235,
+        "_updatedAt": 1767707557768,
         "_deleted": false,
         "_hash": "94525dbb0ad5d6deb1c5dfb516c04a02"
     },
@@ -179,25 +172,9 @@
         "status": "closed",
         "adjustments": [],
         "_version": 1,
-        "_updatedAt": 1767694396235,
+        "_updatedAt": 1767707557768,
         "_deleted": false,
         "_hash": "263a658ce865a3d3dc2bf40038f5ce58"
-    },
-    {
-        "id": "e729f100-1d37-44a6-8b9b-7f4e13fb8e65",
-        "user_id": "brad@lp.com",
-        "start_time": "2026-01-05T22:24:11.768Z",
-        "end_time": null,
-        "opening_cash": 15000,
-        "closing_cash": 0,
-        "cashout": 0,
-        "expected_cash": 15000,
-        "status": "open",
-        "adjustments": [],
-        "remittances": [],
-        "_version": 1,
-        "_updatedAt": 1767694396235,
-        "_deleted": false
     },
     {
         "id": "ee929bd4-62be-4d2a-bf4c-4d318db0c94f",
@@ -210,7 +187,7 @@
         "status": "closed",
         "adjustments": [],
         "_version": 1,
-        "_updatedAt": 1767694396235,
+        "_updatedAt": 1767707557768,
         "_deleted": false,
         "_hash": "a2ce9c984813f5ef0c6fe6a7128bd2a8"
     },
@@ -225,7 +202,7 @@
         "status": "closed",
         "adjustments": [],
         "_version": 2,
-        "_updatedAt": 1767694396235,
+        "_updatedAt": 1767707557768,
         "_deleted": false,
         "cashout": 500,
         "closing_receipts": [],
@@ -235,59 +212,9 @@
         "_hash": "1958a61060eeb18623b4c84c3e7858e5"
     },
     {
-        "id": "eaf6989a-8fcd-4949-88d8-5bcb2cd91c58",
-        "user_id": "admin@lightpos.com",
-        "start_time": "2026-01-06T10:52:26.115Z",
-        "end_time": "2026-01-06T11:04:03.799Z",
-        "opening_cash": 0,
-        "closing_cash": 2000,
-        "cashout": 0,
-        "expected_cash": 0,
-        "status": "closed",
-        "adjustments": [],
-        "remittances": [],
-        "_version": 2,
-        "_updatedAt": 1767697443800,
-        "_deleted": false,
-        "_hash": "221b18eed9f8d41c630d44885fcfc497",
-        "closing_receipts": [],
-        "total_closing_amount": 2000,
-        "precounted_bills": 0,
-        "precounted_coins": 0
-    },
-    {
-        "id": "acedcdad-88b8-4971-8f56-559a925877de",
-        "user_id": "JohnRoss@LP.com",
-        "start_time": "2026-01-06T11:06:24.565Z",
-        "end_time": "2026-01-06T11:38:15.875Z",
-        "opening_cash": 5000,
-        "closing_cash": 4009,
-        "cashout": 50,
-        "expected_cash": 5138,
-        "status": "closed",
-        "adjustments": [],
-        "remittances": [
-            {
-                "id": "c5dcaa08-f678-4963-911d-7e9fbefbb37a",
-                "amount": 50,
-                "reason": "CO DANDAN",
-                "timestamp": "2026-01-06T11:37:27.670Z",
-                "user": "JohnRoss@LP.com"
-            }
-        ],
-        "_version": 4,
-        "_updatedAt": 1767699495875,
-        "_deleted": false,
-        "closing_receipts": [],
-        "total_closing_amount": 4059,
-        "precounted_bills": 5,
-        "precounted_coins": 4,
-        "_hash": "f4776140878d2f994d6e3b491b371d0b"
-    },
-    {
-        "id": "8e9949da-7e8d-48b4-b38c-f179ef808a0e",
-        "user_id": "admin@lightpos.com",
-        "start_time": "2026-01-06T11:24:52.576Z",
+        "id": "d903ee77-14c5-430f-a8b8-b20bb1d5153d",
+        "user_id": "brad@lp.com",
+        "start_time": "2026-01-06T11:50:22.324Z",
         "end_time": null,
         "opening_cash": 0,
         "closing_cash": 0,
@@ -297,50 +224,50 @@
         "adjustments": [],
         "remittances": [],
         "_version": 1,
-        "_updatedAt": 1767698692578,
+        "_updatedAt": 1767700222327,
         "_deleted": false,
-        "_hash": "f1b6cb0daa3f413f57e14a8a8b704c79"
+        "_hash": "fe568cfdd89cd6d79910ecd6dd6d2d6a"
     },
     {
-        "id": "72a34fea-f044-4f75-89a0-d2ce1ee397d3",
-        "user_id": "JohnRoss@LP.com",
-        "start_time": "2026-01-06T11:45:37.799Z",
-        "end_time": "2026-01-06T12:00:18.137Z",
-        "opening_cash": 5000,
-        "closing_cash": 5500,
+        "id": "e729f100-1d37-44a6-8b9b-7f4e13fb8e65",
+        "user_id": "brad@lp.com",
+        "start_time": "2026-01-05T22:24:11.768Z",
+        "end_time": "2026-01-06T11:43:09.955Z",
+        "opening_cash": 15000,
+        "closing_cash": 21124,
         "cashout": 0,
-        "expected_cash": 5021,
+        "expected_cash": 15000,
         "status": "closed",
         "adjustments": [],
         "remittances": [],
-        "_version": 4,
-        "_updatedAt": 1767700818137,
+        "_version": 2,
+        "_updatedAt": 1767699789956,
         "_deleted": false,
-        "closing_receipts": [],
-        "total_closing_amount": 5500,
-        "precounted_bills": 0,
-        "precounted_coins": 0,
-        "_hash": "397d58eb2a286b52a5146d9c58c22c1f"
-    },
-    {
-        "id": "632e860d-a7e8-4841-b0a4-019541acc8bf",
-        "user_id": "JohnRoss@LP.com",
-        "start_time": "2026-01-06T12:19:24.195Z",
-        "end_time": "2026-01-06T12:21:08.093Z",
-        "opening_cash": 9000,
-        "closing_cash": 9200,
-        "cashout": 0,
-        "expected_cash": 9005,
-        "status": "closed",
-        "adjustments": [],
-        "remittances": [],
-        "_version": 3,
-        "_updatedAt": 1767702068094,
-        "_deleted": false,
-        "closing_receipts": [],
-        "total_closing_amount": 9200,
-        "precounted_bills": 0,
-        "precounted_coins": 200,
-        "_hash": "0a4a4027eff7c1a566728e234aa1c30e"
+        "closing_receipts": [
+            {
+                "description": "SYL",
+                "amount": 1234
+            },
+            {
+                "description": "PD 888 DISTRIBUTOR",
+                "amount": 4408
+            },
+            {
+                "description": "PRYCES GASS",
+                "amount": 3390
+            },
+            {
+                "description": "GLOBE LOAD",
+                "amount": 1000
+            },
+            {
+                "description": "TA-ALA FARM",
+                "amount": 4140
+            }
+        ],
+        "total_closing_amount": 35296,
+        "precounted_bills": 14000,
+        "precounted_coins": 4700,
+        "_hash": "347631a113300dc10727506cc0c87794"
     }
 ]

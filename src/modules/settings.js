@@ -383,6 +383,19 @@ export async function loadSettingsView() {
                     </div>
 
                     <div class="bg-white p-6 rounded-lg shadow-sm border">
+                        <h3 class="text-lg font-bold text-gray-700 mb-2">Manual Sync from Backup</h3>
+                        <p class="text-sm text-gray-600 mb-4">Upload a backup file (JSON) to merge its data into your local database and sync it to the server. This is useful for transferring data via USB.</p>
+                        <div class="flex flex-col gap-4">
+                            <div class="flex items-center gap-4">
+                                <input type="file" id="sync-backup-file" accept=".json" class="text-sm">
+                                <button type="button" id="btn-sync-backup" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded shadow transition disabled:opacity-50" disabled>
+                                    Merge & Sync Backup
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-lg shadow-sm border">
                         <h3 class="text-lg font-bold text-gray-700 mb-2">Bulk Import Customers</h3>
                         <p class="text-sm text-gray-600 mb-4">Upload a CSV file to bulk add customers. Format: "first_name","last_name","account_number","points"</p>
                         
@@ -874,6 +887,65 @@ function setupMigrationEventListeners() {
         }
         alert(`Processed ${count} suppliers.`);
         SyncEngine.sync();
+    });
+
+    // Manual Sync from Backup
+    const syncBackupFile = document.getElementById("sync-backup-file");
+    const btnSyncBackup = document.getElementById("btn-sync-backup");
+
+    syncBackupFile?.addEventListener("change", () => {
+        btnSyncBackup.disabled = syncBackupFile.files.length === 0;
+    });
+
+    btnSyncBackup?.addEventListener("click", async () => {
+        const file = syncBackupFile.files[0];
+        if (!file) return;
+
+        btnSyncBackup.disabled = true;
+        const originalText = btnSyncBackup.textContent;
+        btnSyncBackup.textContent = "Processing...";
+
+        try {
+            const text = await file.text();
+            const backupData = JSON.parse(text);
+            
+            let dataToProcess = backupData;
+            if (backupData.serverData && typeof backupData.serverData === 'object' && !backupData.items) {
+                dataToProcess = backupData.serverData;
+            } else if (backupData.deltas && typeof backupData.deltas === 'object' && !backupData.items) {
+                dataToProcess = backupData.deltas;
+            }
+
+            const collections = Object.entries(dataToProcess);
+            let totalProcessed = 0;
+
+            for (const [collection, items] of collections) {
+                if (!Array.isArray(items) || !db[collection]) continue;
+                const idField = db[collection].schema.primKey.name;
+                
+                await db.transaction('rw', [db[collection], db.outbox], async () => {
+                    for (const item of items) {
+                        if (!item || typeof item !== 'object' || !item[idField]) continue;
+                        const existing = await db[collection].get(item[idField]);
+                        const shouldUpdate = !existing || (item._version || 0) > (existing._version || 0) || ((item._version || 0) === (existing._version || 0) && (item._updatedAt || 0) > (existing._updatedAt || 0));
+                        if (shouldUpdate) {
+                            await db[collection].put(item);
+                            await db.outbox.put({ collection, docId: item[idField], type: 'upsert', payload: item });
+                            totalProcessed++;
+                        }
+                    }
+                });
+            }
+            alert(`Successfully merged ${totalProcessed} records. Starting sync to server...`);
+            SyncEngine.sync();
+            syncBackupFile.value = "";
+            btnSyncBackup.disabled = true;
+        } catch (error) {
+            console.error("Manual sync failed:", error);
+            alert("Failed to sync backup: " + error.message);
+        } finally {
+            btnSyncBackup.textContent = originalText;
+        }
     });
 
     btnImport.addEventListener("click", async () => {
