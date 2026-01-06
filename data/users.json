@@ -60,7 +60,7 @@
         },
         "phone": "",
         "_version": 1,
-        "_updatedAt": 1767556200,
+        "_updatedAt": 1767669515905,
         "_deleted": false,
         "_hash": "b0fe9635bf105c7aa5e4ed9c548c7766"
     },
@@ -124,10 +124,10 @@
             }
         },
         "phone": "",
-        "_version": 3,
-        "_updatedAt": 1767589581553,
+        "_version": 1,
+        "_updatedAt": 1767669515905,
         "_deleted": false,
-        "_hash": "9f219a333fc045f50001fb30310137cc"
+        "_hash": "cba27cd7ab5c1d1f9e409d5ecb876769"
     },
     {
         "email": "cashier@lp.com",
@@ -149,24 +149,24 @@
                 "write": true
             },
             "items": {
-                "read": true,
-                "write": true
+                "read": false,
+                "write": false
             },
             "suppliers": {
-                "read": true,
-                "write": true
+                "read": false,
+                "write": false
             },
             "stockin": {
-                "read": true,
-                "write": true
+                "read": false,
+                "write": false
             },
             "stock-count": {
-                "read": true,
-                "write": true
+                "read": false,
+                "write": false
             },
             "expenses": {
-                "read": true,
-                "write": true
+                "read": false,
+                "write": false
             },
             "reports": {
                 "read": false,
@@ -183,145 +183,11 @@
             "returns": {
                 "read": true,
                 "write": true
-            },
-            "settings": {
-                "read": false,
-                "write": false
             }
         },
-        "_version": 2,
-        "_updatedAt": 1767591196190,
-        "_deleted": false,
-        "_hash": "9897f0ba032aa6d0ace669ba26b5dcb5"
-    },
-    {
-        "email": "defaultCashier@lp.com",
-        "name": "PollenMart",
-        "phone": "1324165469",
-        "is_active": true,
-        "permissions": {
-            "pos": {
-                "read": true,
-                "write": true
-            },
-            "customers": {
-                "read": true,
-                "write": true
-            },
-            "shifts": {
-                "read": true,
-                "write": true
-            },
-            "items": {
-                "read": true,
-                "write": true
-            },
-            "suppliers": {
-                "read": true,
-                "write": true
-            },
-            "stockin": {
-                "read": true,
-                "write": true
-            },
-            "stock-count": {
-                "read": true,
-                "write": true
-            },
-            "expenses": {
-                "read": true,
-                "write": true
-            },
-            "reports": {
-                "read": false,
-                "write": false
-            },
-            "users": {
-                "read": false,
-                "write": false
-            },
-            "migrate": {
-                "read": false,
-                "write": false
-            },
-            "returns": {
-                "read": true,
-                "write": true
-            },
-            "settings": {
-                "read": false,
-                "write": false
-            }
-        },
-        "password": "5f4dcc3b5aa765d61d8327deb882cf99",
         "_version": 1,
-        "_updatedAt": 1767591352262,
+        "_updatedAt": 1767669515905,
         "_deleted": false,
-        "_hash": "3fa96ab746cbdf28929be64a973c18b1"
-    },
-    {
-        "email": "brad@lp.com",
-        "name": "Brad",
-        "phone": "",
-        "is_active": true,
-        "permissions": {
-            "pos": {
-                "read": true,
-                "write": true
-            },
-            "customers": {
-                "read": true,
-                "write": true
-            },
-            "shifts": {
-                "read": true,
-                "write": true
-            },
-            "items": {
-                "read": true,
-                "write": true
-            },
-            "suppliers": {
-                "read": true,
-                "write": true
-            },
-            "stockin": {
-                "read": true,
-                "write": true
-            },
-            "stock-count": {
-                "read": true,
-                "write": true
-            },
-            "expenses": {
-                "read": true,
-                "write": true
-            },
-            "reports": {
-                "read": false,
-                "write": false
-            },
-            "users": {
-                "read": false,
-                "write": false
-            },
-            "migrate": {
-                "read": false,
-                "write": false
-            },
-            "returns": {
-                "read": true,
-                "write": true
-            },
-            "settings": {
-                "read": false,
-                "write": false
-            }
-        },
-        "password": "80735228c8e9b43410f2b207f0e54fb0",
-        "_version": 1,
-        "_updatedAt": 1767600176969,
-        "_deleted": false,
-        "_hash": "4af1809224f3a0be41d9683944a030cc"
+        "_hash": "4706e03153de2be443a169f061a446ba"
     }
 ]

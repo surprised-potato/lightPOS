@@ -13,10 +13,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 $dataDir = __DIR__ . '/../data/';
 $store = new JsonStore($dataDir);
-$allowedFiles = ['items', 'users', 'suppliers', 'customers', 'transactions', 'shifts', 'expenses', 'stock_in_history', 'adjustments', 'suspended_transactions', 'returns', 'settings', 'last_sync', 'stock_movements', 'valuation_history'];
+$allowedFiles = ['items', 'users', 'suppliers', 'customers', 'transactions', 'shifts', 'expenses', 'stock_in_history', 'stockins', 'adjustments', 'suspended_transactions', 'returns', 'sync_metadata', 'last_sync', 'stock_movements', 'valuation_history', 'stock_logs', 'notifications'];
 
 $action = $_GET['action'] ?? null;
 $file = $_GET['file'] ?? null;
+$mode = $_GET['mode'] ?? 'overwrite';
+$dryRun = isset($_GET['dry_run']) && $_GET['dry_run'] === 'true';
 
 if ($file && !in_array($file, $allowedFiles)) {
     http_response_code(400);
@@ -40,8 +42,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $input = json_decode(file_get_contents("php://input"), true);
     
+    // Security: Prevent wiping data if payload is null/invalid (e.g. due to size limits)
+    if ($file && !is_array($input)) {
+        http_response_code(400);
+        echo json_encode(["error" => "Invalid payload or empty body received."]);
+        exit;
+    }
+
     if ($file) {
-        $store->write($file, $input);
+        if (!$dryRun) {
+            if ($mode === 'append') {
+                $currentData = $store->read($file);
+                if (!is_array($currentData)) $currentData = [];
+                if (is_array($input)) {
+                    $currentData = array_merge($currentData, $input);
+                }
+                $store->write($file, $currentData);
+            } else {
+                $store->write($file, $input);
+            }
+        }
         echo json_encode(["success" => true]);
     } elseif ($action === 'login') {
         $email = $input['email'] ?? '';
@@ -101,6 +121,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
         echo json_encode(["success" => true, "message" => "All data except users has been wiped."]);
+    } elseif ($action === 'restore_backup') {
+        $backupData = null;
+
+        if (is_array($input) && !empty($input)) {
+            $backupData = $input;
+        } elseif (isset($_FILES['backup_file'])) {
+            $backupFile = $_FILES['backup_file'];
+            if ($backupFile['error'] !== UPLOAD_ERR_OK) {
+                http_response_code(500);
+                echo json_encode(["error" => "File upload error: " . $backupFile['error']]);
+                exit;
+            }
+
+            $backupContent = file_get_contents($backupFile['tmp_name']);
+            $backupData = json_decode($backupContent, true);
+        }
+
+        if (is_array($backupData)) {
+            $serverTime = round(microtime(true) * 1000);
+
+            foreach ($backupData as $fileName => $data) {
+                if (in_array($fileName, $allowedFiles) && is_array($data)) {
+                    // To ensure all restored data is synced, we update the timestamp.
+                    foreach ($data as &$item) {
+                        if (is_array($item)) {
+                           $item['_updatedAt'] = $serverTime;
+                        }
+                    }
+                    unset($item); // Unset reference after loop
+                    if (!$dryRun) {
+                        $store->write($fileName, $data);
+                    }
+                }
+            }
+            echo json_encode(["success" => true, "message" => "Restore complete."]);
+        } else {
+            http_response_code(400);
+            echo json_encode(["error" => "No valid backup data received."]);
+        }
     }
 }
 ?>

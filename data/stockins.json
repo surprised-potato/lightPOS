@@ -1,26 +1,5 @@
 [
     {
-        "id": "7289718b-ca44-4931-bd40-18d7c285d8c0",
-        "user_id": "admin@lightpos.com",
-        "username": "Super Admin",
-        "items": [
-            {
-                "item_id": "0d7fd628-5b84-4753-b9ce-0bfb94a90048",
-                "name": "Bigtime Chicken",
-                "quantity": 50,
-                "cost_price": 27,
-                "movement_id": "c2f14f8e-e264-400f-8c45-29ebc58f45ab"
-            }
-        ],
-        "timestamp": "2026-01-05T03:21:49.651Z",
-        "item_count": 50,
-        "supplier_id_override": null,
-        "_version": 1,
-        "_updatedAt": 1767583309651,
-        "_deleted": false,
-        "_hash": "806d4efada218b9ba6a00f66cee2754b"
-    },
-    {
         "id": "33fef0a5-7eda-450c-9f1d-551a3d442bcc",
         "user_id": "JohnRoss@LP.com",
         "username": "John",
@@ -37,50 +16,57 @@
         "item_count": 25,
         "supplier_id_override": null,
         "_version": 1,
-        "_updatedAt": 1767585191412,
+        "_updatedAt": 1767669703060,
         "_deleted": false,
         "_hash": "c4b73573c8775cdba5fa62dffb8626a9"
     },
     {
-        "id": "e11590bb-9302-415a-bfeb-988039f03273",
-        "user_id": "admin@lightpos.com",
-        "username": "Super Admin",
+        "id": "484a2a7b-5d2a-468f-8264-53a6d1db9efb",
+        "user_id": "JohnRoss@LP.com",
+        "username": "John",
         "items": [
             {
                 "item_id": "00158d13-cb3a-4d22-b221-7e7e9a58a396",
                 "name": "Nissin Wafer Choco 12g",
                 "quantity": 12,
-                "cost_price": 2.339999999999999857891452847979962825775146484375,
-                "movement_id": "2c44a71d-0f69-4534-ab2c-84f0c69a1ded"
-            }
-        ],
-        "timestamp": "2026-01-05T05:07:54.499Z",
-        "item_count": 12,
-        "supplier_id_override": "894ccedc-10d1-4aad-8645-c20c1c8ea7a6",
-        "_version": 1,
-        "_updatedAt": 1767589674499,
-        "_deleted": false,
-        "_hash": "6b74555aba2d6983701d1bfd23a5a8a0"
-    },
-    {
-        "id": "9acb5275-48dd-40c7-be80-0884bdc9fd04",
-        "user_id": "cashier@lp.com",
-        "username": "default cashier",
-        "items": [
+                "cost_price": 3,
+                "movement_id": "31c9d436-36d2-42ce-a830-d7dca678ec4b"
+            },
             {
-                "item_id": "2ce8d5d7-8e54-4c37-a316-0c5b6601dc98",
-                "name": "egg xl",
-                "quantity": 150,
-                "cost_price": 9.75,
-                "movement_id": "55d0ef02-28c9-43d5-9eb4-f061a3697ce5"
+                "item_id": "0c086be0-2504-466c-b1d9-2c906a406097",
+                "name": "Nissin SouperMeal Beef Brisket 90g",
+                "quantity": 10,
+                "cost_price": 30.760000000000001563194018672220408916473388671875,
+                "movement_id": "0d98707c-abb5-4899-8a25-5f5c52e440db"
             }
         ],
-        "timestamp": "2026-01-05T06:35:21.917Z",
-        "item_count": 150,
+        "timestamp": "2026-01-05T05:55:00.821Z",
+        "item_count": 22,
         "supplier_id_override": null,
         "_version": 1,
-        "_updatedAt": 1767594921917,
+        "_updatedAt": 1767669703060,
         "_deleted": false,
-        "_hash": "4252d4587910b93139530595ef6b79a4"
+        "_hash": "3789c3c3bbca40b4760164c232be5b2d"
+    },
+    {
+        "id": "7289718b-ca44-4931-bd40-18d7c285d8c0",
+        "user_id": "admin@lightpos.com",
+        "username": "Super Admin",
+        "items": [
+            {
+                "item_id": "0d7fd628-5b84-4753-b9ce-0bfb94a90048",
+                "name": "Bigtime Chicken",
+                "quantity": 50,
+                "cost_price": 27,
+                "movement_id": "c2f14f8e-e264-400f-8c45-29ebc58f45ab"
+            }
+        ],
+        "timestamp": "2026-01-05T03:21:49.651Z",
+        "item_count": 50,
+        "supplier_id_override": null,
+        "_version": 1,
+        "_updatedAt": 1767669703060,
+        "_deleted": false,
+        "_hash": "806d4efada218b9ba6a00f66cee2754b"
     }
 ]

@@ -6,6 +6,9 @@ import { Repository } from "../services/Repository.js";
 import { SyncEngine } from "../services/SyncEngine.js";
 
 const API_URL = 'api/sync.php';
+// The router.php endpoint is a simple file-based store used for administrative
+// tasks like full backup and restore, which are not part of the delta sync flow.
+const ADMIN_API_URL = 'api/router.php';
 
 export async function loadSettingsView() {
     const content = document.getElementById("main-content");
@@ -253,8 +256,11 @@ export async function loadSettingsView() {
                         <h3 class="text-lg font-bold text-gray-700 mb-4">Backup & Restore</h3>
                         <p class="text-sm text-gray-600 mb-4">Download a full backup of your system data (items, transactions, settings, etc.) or restore from a previous backup file.</p>
                         <div class="flex flex-wrap gap-4">
-                            <button type="button" id="btn-download-backup" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded focus:outline-none shadow transition">
-                                📥 Download Full Backup
+                            <button type="button" id="btn-download-backup-server" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded focus:outline-none shadow transition">
+                                📥 Backup from Server
+                            </button>
+                            <button type="button" id="btn-download-backup-local" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-6 rounded focus:outline-none shadow transition">
+                                📥 Backup from Local
                             </button>
                             <div class="flex items-center gap-2">
                                 <input type="file" id="restore-file" class="hidden" accept=".json">
@@ -263,7 +269,20 @@ export async function loadSettingsView() {
                                 </button>
                             </div>
                         </div>
+                        <div class="mt-3 mb-1">
+                            <label class="inline-flex items-center cursor-pointer select-none">
+                                <input type="checkbox" id="restore-dry-run" class="form-checkbox h-4 w-4 text-orange-600 rounded border-gray-300 focus:ring-orange-500">
+                                <span class="ml-2 text-sm text-gray-700 font-medium">Simulate Restore (Dry Run)</span>
+                            </label>
+                        </div>
                         <p class="text-[10px] text-red-500 mt-2 font-bold italic">⚠️ Warning: Restoring from a backup will overwrite all current data on the server.</p>
+                        
+                        <div id="restore-progress-container" class="hidden mt-4">
+                            <div class="w-full bg-gray-200 rounded-full h-2.5 mb-2">
+                                <div id="restore-progress-bar" class="bg-orange-600 h-2.5 rounded-full" style="width: 0%"></div>
+                            </div>
+                            <p id="restore-progress-text" class="text-xs text-gray-600 text-center">Preparing restore...</p>
+                        </div>
                     </div>
 
                     <div class="bg-white p-6 rounded-lg shadow-sm border">
@@ -770,7 +789,8 @@ function setupMigrationEventListeners() {
 
     document.getElementById("btn-analyze-sync").addEventListener("click", analyzeSync);
 
-    document.getElementById("btn-download-backup").addEventListener("click", downloadFullBackup);
+    document.getElementById("btn-download-backup-server").addEventListener("click", downloadServerBackup);
+    document.getElementById("btn-download-backup-local").addEventListener("click", downloadLocalBackup);
     const restoreFileInput = document.getElementById("restore-file");
     document.getElementById("btn-trigger-restore").addEventListener("click", () => restoreFileInput.click());
     restoreFileInput.addEventListener("change", handleRestoreBackup);
@@ -1079,22 +1099,22 @@ async function analyzeSync() {
     }
 }
 
-async function downloadFullBackup() {
+async function downloadServerBackup() {
     const files = [
-        'settings', 'items', 'transactions', 'suppliers', 'customers', 
-        'expenses', 'returns', 'shifts', 'stock_movements', 
-        'adjustments', 'stock_in_history', 'suspended_transactions'
+        'sync_metadata', 'items', 'transactions', 'suppliers', 'customers',
+        'expenses', 'returns', 'shifts', 'stock_movements', 'stock_logs',
+        'adjustments', 'stockins', 'suspended_transactions', 'notifications'
     ];
     
     const backupData = {};
-    const btn = document.getElementById("btn-download-backup");
+    const btn = document.getElementById("btn-download-backup-server");
     const originalText = btn.innerHTML;
     btn.disabled = true;
     btn.innerHTML = "⌛ Preparing Backup...";
 
     try {
         for (const file of files) {
-            const res = await fetch(`${API_URL}?file=${file}`);
+            const res = await fetch(`${ADMIN_API_URL}?file=${file}`);
             if (res.ok) {
                 backupData[file] = await res.json();
             }
@@ -1105,7 +1125,7 @@ async function downloadFullBackup() {
         const a = document.createElement("a");
         const date = new Date().toISOString().split('T')[0];
         a.href = url;
-        a.download = `lightpos-backup-${date}.json`;
+        a.download = `lightpos-server-backup-${date}.json`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -1121,37 +1141,201 @@ async function downloadFullBackup() {
     }
 }
 
+async function downloadLocalBackup() {
+    const files = [
+        'sync_metadata', 'items', 'transactions', 'suppliers', 'customers',
+        'expenses', 'returns', 'shifts', 'stock_movements', 'stock_logs',
+        'adjustments', 'stockins', 'suspended_transactions', 'notifications'
+    ];
+    
+    const backupData = {};
+    const btn = document.getElementById("btn-download-backup-local");
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = "⌛ Exporting...";
+
+    try {
+        for (const collection of files) {
+            if (db[collection]) {
+                backupData[collection] = await db[collection].toArray();
+            }
+        }
+
+        const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        const date = new Date().toISOString().split('T')[0];
+        a.href = url;
+        a.download = `lightpos-local-backup-${date}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        alert("Local backup downloaded successfully.");
+    } catch (error) {
+        console.error("Local backup failed:", error);
+        alert("Failed to generate local backup.");
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+    }
+}
+
 async function handleRestoreBackup(e) {
     const file = e.target.files[0];
     if (!file) return;
 
-    if (!confirm("RESTORE WARNING: This will overwrite ALL current data on the server with the contents of the backup file. This cannot be undone. Proceed?")) {
+    const isDryRun = document.getElementById("restore-dry-run")?.checked;
+
+    let backupData;
+    try {
+        const text = await file.text();
+        backupData = JSON.parse(text);
+    } catch (error) {
+        alert("Failed to read backup file: " + error.message);
+        e.target.value = "";
+        return;
+    }
+
+    if (!backupData || typeof backupData !== 'object') {
+        alert("Invalid backup file format.");
+        e.target.value = "";
+        return;
+    }
+
+    // Intelligent detection of file structure
+    if (Array.isArray(backupData)) {
+        alert("This file contains a single list of items (Array), not a full system backup. Please upload a full backup file.");
+        e.target.value = "";
+        return;
+    }
+
+    if (backupData.serverData && typeof backupData.serverData === 'object' && !backupData.items) {
+        if (confirm("This file appears to be a Diagnostic Report. Do you want to extract and restore the Server Data from it?")) {
+            backupData = backupData.serverData;
+        }
+    } else if (backupData.deltas && typeof backupData.deltas === 'object' && !backupData.items) {
+        backupData = backupData.deltas;
+    } else if (backupData.settings && backupData.settings.deltas && typeof backupData.settings.deltas === 'object') {
+        backupData = backupData.settings.deltas;
+    }
+
+    const collections = Object.entries(backupData);
+    let totalCollections = 0;
+    let totalItems = 0;
+    let details = "";
+
+    for (const [name, data] of collections) {
+        if (Array.isArray(data)) {
+            totalCollections++;
+            totalItems += data.length;
+            details += `- ${name}: ${data.length}\n`;
+        }
+    }
+
+    if (totalCollections === 0) {
+        alert("No valid data collections found in this file. Please ensure it is a valid LightPOS backup file.\n\nFound keys: " + Object.keys(backupData).join(", "));
+        e.target.value = "";
+        return;
+    }
+
+    let summary = `Backup Analysis:\n\nCollections: ${totalCollections}\nTotal Items: ${totalItems}\n\nDetails:\n${details}`;
+    
+    if (isDryRun) {
+        summary += `\n[DRY RUN MODE]: No data will be written to the server. This is a simulation to check file integrity.\n\nProceed with simulation?`;
+    } else {
+        summary += `\nWARNING: This will overwrite ALL current data on the server. This cannot be undone.\n\nProceed with restore?`;
+    }
+
+    if (!confirm(summary)) {
         e.target.value = "";
         return;
     }
 
     const btn = document.getElementById("btn-trigger-restore");
+    const progressContainer = document.getElementById("restore-progress-container");
+    const progressBar = document.getElementById("restore-progress-bar");
+    const progressText = document.getElementById("restore-progress-text");
+
     const originalText = btn.innerHTML;
     btn.disabled = true;
-    btn.innerHTML = "⌛ Restoring...";
+    btn.innerHTML = isDryRun ? "⌛ Simulating..." : "⌛ Processing...";
+
+    if (progressContainer) {
+        progressContainer.classList.remove("hidden");
+        progressBar.style.width = "0%";
+        progressText.textContent = isDryRun ? "Reading backup file for simulation..." : "Reading backup file...";
+    }
 
     try {
-        const text = await file.text();
-        const backupData = JSON.parse(text);
+        const serverTime = Date.now();
+        
+        // Use calculated total from analysis step
+        const totalItemsToRestore = totalItems;
 
-        for (const [fileName, data] of Object.entries(backupData)) {
-            await fetch(`${API_URL}?file=${fileName}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
+        let itemsRestoredSoFar = 0;
+        const CHUNK_SIZE = 200; // Reduced chunk size to ensure reliability
+
+        // Upload collection by collection to avoid hitting server POST size limits (e.g. 76MB)
+        for (const [fileName, data] of collections) {
+            if (!Array.isArray(data)) continue;
+            
+            // Update timestamps to ensure the sync engine sees this as "new" data
+            data.forEach(item => {
+                if (item && typeof item === 'object') item._updatedAt = serverTime;
             });
+
+            const totalItems = data.length;
+            if (totalItems === 0) {
+                await fetch(`${ADMIN_API_URL}?file=${fileName}&mode=overwrite${isDryRun ? '&dry_run=true' : ''}`, { method: 'POST', body: JSON.stringify([]) });
+                continue;
+            }
+
+            for (let i = 0; i < totalItems; i += CHUNK_SIZE) {
+                const chunk = data.slice(i, i + CHUNK_SIZE);
+                const mode = (i === 0) ? 'overwrite' : 'append';
+                
+                const currentChunkSize = chunk.length;
+                itemsRestoredSoFar += currentChunkSize;
+                const percent = totalItemsToRestore > 0 ? Math.round((itemsRestoredSoFar / totalItemsToRestore) * 100) : 100;
+
+                if (progressBar) progressBar.style.width = `${percent}%`;
+                if (progressText) progressText.textContent = `${isDryRun ? 'Simulating' : 'Restoring'} ${fileName}... (${Math.round((i + currentChunkSize) / totalItems * 100)}%) - Total: ${percent}%`;
+                btn.innerHTML = `⌛ ${percent}%`;
+
+                const response = await fetch(`${ADMIN_API_URL}?file=${fileName}&mode=${mode}${isDryRun ? '&dry_run=true' : ''}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(chunk)
+                });
+
+                if (!response.ok) {
+                    const errText = await response.text();
+                    throw new Error(`Failed to restore ${fileName} (chunk ${i}): ${errText}`);
+                }
+            }
         }
 
-        alert("System restored successfully! The app will now reload.");
-        window.location.reload();
+        if (isDryRun) {
+            if (progressBar) progressBar.style.width = "100%";
+            if (progressText) progressText.textContent = "Simulation complete! No errors found.";
+            alert("Dry Run Successful!\n\nThe backup file is valid and can be safely restored.");
+        } else {
+            if (progressBar) progressBar.style.width = "100%";
+            if (progressText) progressText.textContent = "Restore complete! Reloading...";
+
+            // The server has been restored. Now prepare the client for a fresh sync
+            // by deleting the local database.
+            await db.delete();
+
+            alert("System restored successfully! The app will now reload and re-sync all data from the server.");
+            window.location.reload();
+        }
     } catch (error) {
         console.error("Restore failed:", error);
         alert("Failed to restore backup: " + error.message);
+        if (progressContainer) progressContainer.classList.add("hidden");
     } finally {
         btn.disabled = false;
         btn.innerHTML = originalText;
@@ -1184,8 +1368,8 @@ export async function runDiagnosticExport() {
 
     const entities = [
         'items', 'transactions', 'suppliers', 'customers', 
-        'expenses', 'returns', 'shifts', 'stock_movements', 
-        'adjustments', 'stock_in_history', 'suspended_transactions'
+        'expenses', 'returns', 'shifts', 'stock_movements', 'stock_logs',
+        'adjustments', 'stockins', 'suspended_transactions', 'notifications'
     ];
     
     try {
@@ -1209,7 +1393,7 @@ export async function runDiagnosticExport() {
         };
 
         // 1. Settings comparison
-        const sSetRes = await fetch(`${API_URL}?file=settings`);
+        const sSetRes = await fetch(`${ADMIN_API_URL}?file=sync_metadata`);
         let sSet = sSetRes.ok ? await sSetRes.json() : null;
         
         // Unwrap sync envelope if present
@@ -1217,7 +1401,12 @@ export async function runDiagnosticExport() {
             sSet = sSet.deltas.settings;
         }
 
-        // If the server returned a full record, extract just the settings value
+        // If using router.php (ADMIN_API_URL), sSet is an array of metadata. Find settings.
+        if (Array.isArray(sSet)) {
+            sSet = sSet.find(i => i.key === 'settings');
+        }
+
+        // Extract value
         const sSetVal = (sSet && sSet.value) ? sSet.value : sSet;
         const lSet = (await db.sync_metadata.get('settings'))?.value;
 
@@ -1233,7 +1422,7 @@ export async function runDiagnosticExport() {
         for (const entity of entities) {
             if (!db[entity]) continue;
 
-            const sRes = await fetch(`${API_URL}?file=${entity}`);
+            const sRes = await fetch(`${ADMIN_API_URL}?file=${entity}`);
             let sData = sRes.ok ? await sRes.json() : [];
             
             // Unwrap sync envelope if present
