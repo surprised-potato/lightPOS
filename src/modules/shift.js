@@ -185,6 +185,23 @@ export async function loadShiftsView() {
                 <h2 class="text-2xl font-bold text-gray-800">My Shifts</h2>
                 <div id="shift-actions-container"></div>
             </div>
+            
+            <div class="bg-white p-4 rounded-lg shadow-sm mb-4 flex flex-wrap gap-4 items-end border border-gray-200">
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Start Date</label>
+                    <input type="date" id="shift-history-start" class="border rounded p-2 text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">End Date</label>
+                    <input type="date" id="shift-history-end" class="border rounded p-2 text-sm">
+                </div>
+                <div class="w-24">
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Rows</label>
+                    <input type="number" id="shift-history-limit" value="20" min="5" class="border rounded p-2 text-sm w-full">
+                </div>
+                <button id="btn-filter-shifts" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-sm">Filter</button>
+            </div>
+
             <div class="bg-white shadow-md rounded overflow-hidden">
                 <table class="min-w-full table-auto">
                     <thead>
@@ -207,6 +224,15 @@ export async function loadShiftsView() {
             </div>
         </div>
     `;
+
+    // Set default dates
+    const today = new Date().toISOString().split('T')[0];
+    const lastMonth = new Date();
+    lastMonth.setDate(lastMonth.getDate() - 30);
+    document.getElementById('shift-history-start').value = lastMonth.toISOString().split('T')[0];
+    document.getElementById('shift-history-end').value = today;
+
+    document.getElementById('btn-filter-shifts').addEventListener('click', fetchShifts);
 
     await fetchShifts();
 }
@@ -233,11 +259,27 @@ async function fetchShifts() {
 
     try {
         const shifts = await Repository.getAll('shifts');
+        
+        const startStr = document.getElementById('shift-history-start').value;
+        const endStr = document.getElementById('shift-history-end').value;
+        const limit = parseInt(document.getElementById('shift-history-limit').value) || 20;
+
         // Filter by user and sort desc
-        const userShifts = shifts
+        let userShifts = shifts
             .filter(s => s.user_id === user.email)
-            .sort((a, b) => new Date(b.start_time) - new Date(a.start_time))
-            .slice(0, 20);
+            .sort((a, b) => new Date(b.start_time) - new Date(a.start_time));
+
+        if (startStr && endStr) {
+            const startDate = new Date(startStr);
+            const endDate = new Date(endStr);
+            endDate.setHours(23, 59, 59, 999);
+            userShifts = userShifts.filter(s => {
+                const d = new Date(s.start_time);
+                return d >= startDate && d <= endDate;
+            });
+        }
+
+        userShifts = userShifts.slice(0, limit);
 
         tbody.innerHTML = "";
 

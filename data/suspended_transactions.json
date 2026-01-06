@@ -143,12 +143,13 @@
             "id": "Guest",
             "name": "Guest"
         },
-        "user_email": "brad@lp.com",
-        "timestamp": "2026-01-05T22:34:12.908Z",
+        "user_email": "admin@lightpos.com",
+        "timestamp": "2026-01-06T09:13:22.872Z",
         "total": 656,
-        "_version": 4,
-        "_updatedAt": 1767676940134,
-        "_deleted": true
+        "_version": 8,
+        "_updatedAt": 1767690802873,
+        "_deleted": false,
+        "_hash": "5fcf553767147a59713e1835cdfa1922"
     },
     {
         "id": "170b363e-b528-44fc-aedf-f355e22adae1",
@@ -569,5 +570,91 @@
         "_version": 1,
         "_updatedAt": 1767676940134,
         "_deleted": false
+    },
+    {
+        "id": "5026d5c7-d7c2-405d-847f-2bf7b7366a25",
+        "items": [
+            {
+                "id": "001c8bed-b8f0-4f33-adda-e1581bbd9223",
+                "barcode": "4800016084065",
+                "name": "Wafrets Brix Chocolate - 24g x 10pc",
+                "category": "BISCUITS",
+                "cost_price": 54,
+                "selling_price": 63,
+                "min_stock": 2,
+                "stock_level": -5,
+                "base_unit": "Unit",
+                "supplier_id": "f315a97a-d8b7-4b46-9a75-ec4d050d3cf2",
+                "_version": 3,
+                "_updatedAt": 1767676940134,
+                "_deleted": false,
+                "_hash": "99861a80a6a5f0fcdc33642218203074",
+                "qty": 1
+            },
+            {
+                "id": "002aa91b-a9eb-4b01-b6e3-787dd68d6c33",
+                "barcode": "4800552888103",
+                "name": "Chips Delight Chocolate Striped Cookies 70g",
+                "category": "TBA",
+                "cost_price": 24.839999999999999857891452847979962825775146484375,
+                "selling_price": 28,
+                "min_stock": 2,
+                "stock_level": -2,
+                "base_unit": "Unit",
+                "supplier_id": "",
+                "_version": 3,
+                "_updatedAt": 1767676940134,
+                "_deleted": false,
+                "_hash": "8977d084dccb97c05aa176ea6fdc781e",
+                "qty": 1
+            },
+            {
+                "id": "003e1775-1bc7-411d-a480-9b2dc296ae88",
+                "barcode": "4800016084034",
+                "name": "Wafrets Cheese Brix - 24g",
+                "category": "BISCUITS",
+                "cost_price": 5.4000000000000003552713678800500929355621337890625,
+                "selling_price": 8,
+                "min_stock": 2,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "f315a97a-d8b7-4b46-9a75-ec4d050d3cf2",
+                "_version": 3,
+                "_updatedAt": 1767676940134,
+                "_deleted": false,
+                "_hash": "eded423c9f5418e3b5b461f62fee066b",
+                "qty": 1
+            },
+            {
+                "name": "Champion Powder Freesia 100g",
+                "barcode": "4806501705224",
+                "category": "DETERGENT",
+                "supplier_id": "",
+                "cost_price": 16,
+                "selling_price": 18,
+                "stock_level": -6,
+                "min_stock": 2,
+                "base_unit": "Unit",
+                "parent_id": null,
+                "conv_factor": 1,
+                "id": "005590b6-62e5-4cbb-8573-5dbcc9354cc1",
+                "_version": 4,
+                "_updatedAt": 1767676940134,
+                "_deleted": false,
+                "_hash": "66811e9ef9c59dbccd6883f42476a71e",
+                "qty": 1
+            }
+        ],
+        "customer": {
+            "id": "Guest",
+            "name": "Guest"
+        },
+        "user_email": "admin@lightpos.com",
+        "timestamp": "2026-01-06T09:13:00.827Z",
+        "total": 117,
+        "_version": 1,
+        "_updatedAt": 1767690780831,
+        "_deleted": false,
+        "_hash": "043e06ab66b8e97b5915b8dce69e4415"
     }
 ]

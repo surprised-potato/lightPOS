@@ -15,6 +15,14 @@ export async function loadStockInView() {
         return;
     }
     await render();
+
+    // Set default dates (Last 30 days)
+    const today = new Date().toISOString().split('T')[0];
+    const lastMonth = new Date();
+    lastMonth.setDate(lastMonth.getDate() - 30);
+    document.getElementById('history-start-date').value = lastMonth.toISOString().split('T')[0];
+    document.getElementById('history-end-date').value = today;
+
     await Promise.all([loadAllItems(), fetchSuppliers()]);
     attachEventListeners();
     populateSupplierDropdown();
@@ -101,6 +109,23 @@ function render() {
                 <div class="lg:col-span-2">
                     <div class="bg-white p-6 rounded-lg shadow-md">
                         <h3 class="text-lg font-semibold text-gray-700 mb-4">Recent Stock-In History</h3>
+                        
+                        <div class="flex flex-wrap gap-2 mb-4 items-end bg-gray-50 p-2 rounded border border-gray-200">
+                            <div class="flex-1 min-w-[100px]">
+                                <label class="block text-xs font-bold text-gray-600">Start</label>
+                                <input type="date" id="history-start-date" class="w-full border rounded p-1 text-xs">
+                            </div>
+                            <div class="flex-1 min-w-[100px]">
+                                <label class="block text-xs font-bold text-gray-600">End</label>
+                                <input type="date" id="history-end-date" class="w-full border rounded p-1 text-xs">
+                            </div>
+                            <div class="w-16">
+                                <label class="block text-xs font-bold text-gray-600">Rows</label>
+                                <input type="number" id="history-limit" value="20" min="5" class="w-full border rounded p-1 text-xs">
+                            </div>
+                            <button id="btn-refresh-history" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-bold h-[26px]">Go</button>
+                        </div>
+
                         <div id="stockin-history-container" class="max-h-[28rem] overflow-y-auto">
                             <p class="text-gray-500">Loading history...</p>
                         </div>
@@ -133,6 +158,7 @@ function attachEventListeners() {
     
     document.getElementById('save-stock-in-btn')?.addEventListener('click', saveStockIn);
     document.getElementById('clear-cart-btn')?.addEventListener('click', clearCart);
+    document.getElementById('btn-refresh-history')?.addEventListener('click', loadStockInHistory);
 
     cartContainer.addEventListener('change', (e) => {
         const index = parseInt(e.target.dataset.index);
@@ -467,10 +493,25 @@ async function loadStockInHistory() {
     try {
         const history = await Repository.getAll('stockins');
         historyCache = history;
+        
+        const startStr = document.getElementById('history-start-date').value;
+        const endStr = document.getElementById('history-end-date').value;
+        const limit = parseInt(document.getElementById('history-limit').value) || 20;
+
+        let filtered = history;
+        if (startStr && endStr) {
+            const startDate = new Date(startStr);
+            const endDate = new Date(endStr);
+            endDate.setHours(23, 59, 59, 999);
+            filtered = history.filter(h => {
+                const d = new Date(h.timestamp);
+                return d >= startDate && d <= endDate;
+            });
+        }
 
         // Sort by timestamp desc and limit
-        history.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-        const recentHistory = history.slice(0, 20);
+        filtered.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        const recentHistory = filtered.slice(0, limit);
 
         if (recentHistory.length === 0) {
             historyContainer.innerHTML = '<p class="text-gray-500">No recent stock-in history.</p>';

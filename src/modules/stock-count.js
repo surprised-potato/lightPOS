@@ -84,6 +84,23 @@ export async function loadStockCountView() {
             <!-- Right Side: Recent Adjustments History -->
             <div class="lg:col-span-1">
                 <h3 class="text-xl font-bold text-gray-800 mb-4">Recent Adjustments</h3>
+                
+                <div class="flex flex-wrap gap-2 mb-4 items-end bg-gray-50 p-2 rounded border border-gray-200">
+                    <div class="flex-1 min-w-[80px]">
+                        <label class="block text-[10px] font-bold text-gray-600">Start</label>
+                        <input type="date" id="audit-history-start" class="w-full border rounded p-1 text-xs">
+                    </div>
+                    <div class="flex-1 min-w-[80px]">
+                        <label class="block text-[10px] font-bold text-gray-600">End</label>
+                        <input type="date" id="audit-history-end" class="w-full border rounded p-1 text-xs">
+                    </div>
+                    <div class="w-14">
+                        <label class="block text-[10px] font-bold text-gray-600">Rows</label>
+                        <input type="number" id="audit-history-limit" value="15" min="5" class="w-full border rounded p-1 text-xs">
+                    </div>
+                    <button id="btn-refresh-logs" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs font-bold h-[26px]">Go</button>
+                </div>
+
                 <div class="bg-white shadow-md rounded overflow-hidden border border-gray-200">
                     <div class="overflow-x-auto">
                         <table class="min-w-full table-auto">
@@ -103,6 +120,13 @@ export async function loadStockCountView() {
             </div>
         </div>
     `;
+
+    // Set default dates
+    const today = new Date().toISOString().split('T')[0];
+    const lastMonth = new Date();
+    lastMonth.setDate(lastMonth.getDate() - 30);
+    document.getElementById('audit-history-start').value = lastMonth.toISOString().split('T')[0];
+    document.getElementById('audit-history-end').value = today;
 
     await Promise.all([fetchItems(), fetchAdjustmentLogs()]);
     setupEventListeners();
@@ -128,6 +152,7 @@ function setupEventListeners() {
     const actualInput = document.getElementById("audit-actual");
     const btnAdjust = document.getElementById("btn-adjust");
     const canWrite = checkPermission("stock-count", "write");
+    const btnRefreshLogs = document.getElementById("btn-refresh-logs");
 
     // Search & Sort Logic
     const performSearch = () => {
@@ -262,6 +287,8 @@ function setupEventListeners() {
 
         await processAdjustment(actual, reason);
     });
+
+    btnRefreshLogs?.addEventListener("click", fetchAdjustmentLogs);
 }
 
 function selectItem(item) {
@@ -351,9 +378,23 @@ async function fetchAdjustmentLogs() {
     try {
         let logs = await Repository.getAll('adjustments');
 
+        const startStr = document.getElementById('audit-history-start').value;
+        const endStr = document.getElementById('audit-history-end').value;
+        const limit = parseInt(document.getElementById('audit-history-limit').value) || 15;
+
+        if (startStr && endStr) {
+            const startDate = new Date(startStr);
+            const endDate = new Date(endStr);
+            endDate.setHours(23, 59, 59, 999);
+            logs = logs.filter(l => {
+                const d = new Date(l.timestamp);
+                return d >= startDate && d <= endDate;
+            });
+        }
+
         // Sort by timestamp descending and take top 15 for the sidebar
         logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-        logs = logs.slice(0, 15);
+        logs = logs.slice(0, limit);
         
         tbody.innerHTML = "";
         

@@ -8,6 +8,7 @@ import { SyncEngine } from "../services/SyncEngine.js";
 
 let activeCartIndex = null;
 let qtyBuffer = "";
+let currentSuspendedId = null;
 
 let audioCtx = null;
 function playBeep(freq, dur, type = 'sine') {
@@ -345,6 +346,7 @@ async function renderPosInterface(content) {
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-xl font-bold text-gray-800">Suspended Transactions</h3>
                     <div class="flex gap-2">
+                        <button id="btn-delete-all-suspended" class="text-red-600 hover:text-red-800 text-sm font-bold">Delete All</button>
                         <button id="btn-refresh-suspended" class="text-blue-600 hover:text-blue-800 text-sm font-bold">Refresh</button>
                         <button id="btn-close-suspended" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
                     </div>
@@ -562,6 +564,7 @@ async function renderPosInterface(content) {
     document.getElementById("btn-clear-cart").addEventListener("click", () => {
         if (cart.length > 0 && confirm("Are you sure you want to clear the current sale?")) {
             cart = [];
+            currentSuspendedId = null;
             renderCart();
         }
     });
@@ -1266,7 +1269,14 @@ function renderCart() {
         `;
         
         const qtyInput = row.querySelector(".cart-qty-input");
-        qtyInput.addEventListener("change", (e) => updateQty(index, parseInt(e.target.value)));
+        qtyInput.addEventListener("change", (e) => {
+            updateQty(index, parseInt(e.target.value));
+            const searchInput = document.getElementById("pos-search");
+            if (searchInput) {
+                searchInput.value = "";
+                searchInput.focus();
+            }
+        });
         
         // Select all text on focus for quick editing
         qtyInput.addEventListener("focus", e => e.target.select());
@@ -1453,6 +1463,7 @@ async function processTransaction() {
 
         lastTransactionData = transaction;
         cart = [];
+        currentSuspendedId = null;
         renderCart();
         closeCheckout();
         
@@ -1583,7 +1594,7 @@ async function suspendCurrentTransaction() {
 
     const user = JSON.parse(localStorage.getItem('pos_user'));
     const suspendedTx = {
-        id: generateUUID(),
+        id: currentSuspendedId || generateUUID(),
         items: JSON.parse(JSON.stringify(cart)),
         customer: selectedCustomer,
         user_email: user ? user.email : "Guest",
@@ -1596,6 +1607,7 @@ async function suspendCurrentTransaction() {
         await Repository.upsert('suspended_transactions', suspendedTx);
         
         cart = [];
+        currentSuspendedId = null;
         selectedCustomer = { id: "Guest", name: "Guest" };
         renderCart();
         selectCustomer(selectedCustomer);
@@ -1653,6 +1665,7 @@ async function openSuspendedModal() {
         container.querySelectorAll(".btn-delete-suspended").forEach(btn => {
             btn.addEventListener("click", () => deleteSuspendedTransaction(btn.dataset.id));
         });
+        document.getElementById("btn-delete-all-suspended").addEventListener("click", deleteAllSuspendedTransactions);
     } catch (error) {
         console.error("Error loading suspended transactions:", error);
         container.innerHTML = `<div class="text-center p-4 text-red-500">Error loading data.</div>`;
@@ -1674,6 +1687,7 @@ async function resumeTransaction(id) {
         if (tx) {
             cart = tx.items;
             selectedCustomer = tx.customer || { id: "Guest", name: "Guest" };
+            currentSuspendedId = id;
             await Repository.remove('suspended_transactions', id);
             
             renderCart();
@@ -1702,6 +1716,21 @@ async function deleteSuspendedTransaction(id) {
     } catch (error) {
         console.error("Error deleting suspended transaction:", error);
         showToast("Failed to delete transaction.", true);
+    }
+}
+
+async function deleteAllSuspendedTransactions() {
+    if (!confirm("Are you sure you want to delete ALL suspended transactions?")) return;
+
+    try {
+        const suspended = await Repository.getAll('suspended_transactions');
+        await Promise.all(suspended.map(tx => Repository.remove('suspended_transactions', tx.id)));
+        showToast("All suspended transactions deleted.");
+        openSuspendedModal();
+        updateSuspendedCount();
+    } catch (error) {
+        console.error("Error deleting all suspended transactions:", error);
+        showToast("Failed to delete transactions.", true);
     }
 }
 
