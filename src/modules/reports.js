@@ -18,7 +18,13 @@ export async function loadReportsView() {
     const content = document.getElementById("main-content");
     
     content.innerHTML = `
-        <div class="max-w-6xl mx-auto">
+        <div class="max-w-6xl mx-auto relative">
+            <!-- Loading Spinner -->
+            <div id="report-loading" class="hidden absolute inset-0 bg-white bg-opacity-90 z-50 flex flex-col items-center justify-center rounded-lg">
+                <div class="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mb-4"></div>
+                <p class="text-blue-600 font-bold text-lg animate-pulse">Generating Report...</p>
+            </div>
+
             <h2 class="text-2xl font-bold text-gray-800 mb-6">Advanced Reports</h2>
             
             <!-- Controls -->
@@ -1053,6 +1059,7 @@ export async function loadReportsView() {
 
 async function generateReport() {
     const usersBody = document.getElementById("report-users-body");
+    const loadingOverlay = document.getElementById("report-loading");
 
     if (typeof $ === 'undefined') return;
 
@@ -1061,6 +1068,8 @@ async function generateReport() {
         alert("Please select a date or range.");
         return;
     }
+
+    if (loadingOverlay) loadingOverlay.classList.remove("hidden");
 
     // Clone and set boundaries to ensure full day coverage
     const startDate = drp.startDate.clone().startOf('day').toDate();
@@ -1456,12 +1465,10 @@ async function generateReport() {
         reportData.valuationSnapshot = null;
         reportData.slowMoving = null;
 
-        // Initial Render - Use requestAnimationFrame to keep UI responsive
-        requestAnimationFrame(async () => {
-            const activeTabBtn = document.querySelector('.tab-btn.border-blue-500');
-            const activeTab = activeTabBtn ? activeTabBtn.dataset.tab : 'products';
-            await renderTab(activeTab);
-        });
+        // Initial Render
+        const activeTabBtn = document.querySelector('.tab-btn.border-blue-500');
+        const activeTab = activeTabBtn ? activeTabBtn.dataset.tab : 'products';
+        await renderTab(activeTab);
 
         // If no transactions were found, update the users table message
         if (transactions.length === 0) {
@@ -1473,6 +1480,8 @@ async function generateReport() {
     } catch (error) {
         console.error("Error generating report:", error);
         usersBody.innerHTML = `<tr><td colspan="3" class="py-3 px-6 text-center text-red-500">Error loading report data.</td></tr>`;
+    } finally {
+        if (loadingOverlay) loadingOverlay.classList.add("hidden");
     }
 }
 
