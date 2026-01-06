@@ -6,6 +6,8 @@ import { SyncEngine } from "../services/SyncEngine.js";
 import { getSystemSettings } from "./settings.js";
 
 let currentShift = null;
+let selectedShiftId = null;
+let shiftList = [];
 
 function getCurrentUser() {
     return JSON.parse(localStorage.getItem('pos_user'));
@@ -179,48 +181,57 @@ export async function loadShiftsView() {
         return;
     }
 
+    // Layout similar to suppliers.js: Left List, Right Details
     content.innerHTML = `
-        <div class="max-w-6xl mx-auto">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold text-gray-800">My Shifts</h2>
-                <div id="shift-actions-container"></div>
-            </div>
-            
-            <div class="bg-white p-4 rounded-lg shadow-sm mb-4 flex flex-wrap gap-4 items-end border border-gray-200">
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-1">Start Date</label>
-                    <input type="date" id="shift-history-start" class="border rounded p-2 text-sm">
-                </div>
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-1">End Date</label>
-                    <input type="date" id="shift-history-end" class="border rounded p-2 text-sm">
-                </div>
-                <div class="w-24">
-                    <label class="block text-sm font-bold text-gray-700 mb-1">Rows</label>
-                    <input type="number" id="shift-history-limit" value="20" min="5" class="border rounded p-2 text-sm w-full">
-                </div>
-                <button id="btn-filter-shifts" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-sm">Filter</button>
-            </div>
+        <div class="max-w-6xl mx-auto h-[calc(100vh-140px)] flex flex-col">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 flex-1 min-h-0">
+                <!-- Left Column: Shifts List -->
+                <div class="flex flex-col h-full min-h-[400px] lg:min-h-0">
+                    <div class="flex flex-col gap-2 mb-4 flex-shrink-0">
+                        <h2 class="text-2xl font-bold text-gray-800">My Shifts</h2>
+                        <div class="flex flex-wrap gap-2 items-end bg-white p-2 rounded border shadow-sm">
+                            <div class="flex-1">
+                                <label class="block text-xs font-bold text-gray-700 mb-1">Start</label>
+                                <input type="date" id="shift-history-start" class="border rounded p-1 text-xs w-full">
+                            </div>
+                            <div class="flex-1">
+                                <label class="block text-xs font-bold text-gray-700 mb-1">End</label>
+                                <input type="date" id="shift-history-end" class="border rounded p-1 text-xs w-full">
+                            </div>
+                            <div class="w-16">
+                                <label class="block text-xs font-bold text-gray-700 mb-1">Limit</label>
+                                <input type="number" id="shift-history-limit" value="20" min="5" class="border rounded p-1 text-xs w-full">
+                            </div>
+                            <button id="btn-filter-shifts" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded text-xs h-7">Filter</button>
+                        </div>
+                    </div>
 
-            <div class="bg-white shadow-md rounded overflow-hidden">
-                <table class="min-w-full table-auto">
-                    <thead>
-                        <tr class="bg-gray-100 text-gray-600 uppercase text-sm leading-normal">
-                            <th class="py-3 px-6 text-left">Start Time</th>
-                            <th class="py-3 px-6 text-left">End Time</th>
-                            <th class="py-3 px-6 text-right">Opening</th>
-                            <th class="py-3 px-6 text-right">Closing</th>
-                            <th class="py-3 px-6 text-right">Cashout</th>
-                            <th class="py-3 px-6 text-right">Expected</th>
-                            <th class="py-3 px-6 text-right">Diff</th>
-                            <th class="py-3 px-6 text-center">Status</th>
-                            <th class="py-3 px-6 text-center">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="shifts-table-body" class="text-gray-600 text-sm font-light">
-                        <tr><td colspan="9" class="py-3 px-6 text-center">Loading...</td></tr>
-                    </tbody>
-                </table>
+                    <div class="bg-white shadow-md rounded overflow-y-auto flex-1 border">
+                        <table class="min-w-full table-auto">
+                            <thead class="sticky top-0 z-10 bg-gray-100">
+                                <tr class="bg-gray-100 text-gray-600 uppercase text-xs leading-normal">
+                                    <th class="py-3 px-4 text-left">Start Time</th>
+                                    <th class="py-3 px-4 text-center">Status</th>
+                                    <th class="py-3 px-4 text-right">Variance</th>
+                                </tr>
+                            </thead>
+                            <tbody id="shifts-table-body" class="text-gray-600 text-sm font-light">
+                                <tr><td colspan="3" class="py-3 px-6 text-center">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Right Column: Shift Details -->
+                <div id="shift-details-panel" class="hidden flex flex-col h-full min-h-[400px] lg:min-h-0 bg-white shadow-md rounded border overflow-hidden">
+                    <div class="p-4 border-b bg-gray-50 flex justify-between items-center">
+                        <h3 class="text-lg font-bold text-gray-800">Shift Details</h3>
+                        <div id="shift-details-status"></div>
+                    </div>
+                    <div id="shift-details-content" class="p-6 overflow-y-auto flex-1">
+                        <!-- Details injected here -->
+                    </div>
+                </div>
             </div>
         </div>
     `;
@@ -233,6 +244,7 @@ export async function loadShiftsView() {
     document.getElementById('shift-history-end').value = today;
 
     document.getElementById('btn-filter-shifts').addEventListener('click', fetchShifts);
+    selectedShiftId = null;
 
     await fetchShifts();
 }
@@ -241,20 +253,8 @@ async function fetchShifts() {
     const tbody = document.getElementById("shifts-table-body");
     const user = getCurrentUser();
     if (!user) {
-         tbody.innerHTML = `<tr><td colspan="8" class="py-3 px-6 text-center">Please login to view shifts.</td></tr>`;
+         tbody.innerHTML = `<tr><td colspan="3" class="py-3 px-6 text-center">Please login to view shifts.</td></tr>`;
          return;
-    }
-
-    const actionsContainer = document.getElementById("shift-actions-container");
-    if (actionsContainer) {
-        actionsContainer.innerHTML = "";
-        if (currentShift) {
-            const xBtn = document.createElement("button");
-            xBtn.className = "bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-bold text-sm transition shadow-sm";
-            xBtn.textContent = "Generate X-Report";
-            xBtn.onclick = () => showXReport();
-            actionsContainer.appendChild(xBtn);
-        }
     }
 
     try {
@@ -264,8 +264,8 @@ async function fetchShifts() {
         const endStr = document.getElementById('shift-history-end').value;
         const limit = parseInt(document.getElementById('shift-history-limit').value) || 20;
 
-        // Filter by user and sort desc
-        let userShifts = shifts
+        // Filter by user and sort desc (newest first)
+        shiftList = shifts
             .filter(s => s.user_id === user.email)
             .sort((a, b) => new Date(b.start_time) - new Date(a.start_time));
 
@@ -273,26 +273,23 @@ async function fetchShifts() {
             const startDate = new Date(startStr);
             const endDate = new Date(endStr);
             endDate.setHours(23, 59, 59, 999);
-            userShifts = userShifts.filter(s => {
+            shiftList = shiftList.filter(s => {
                 const d = new Date(s.start_time);
                 return d >= startDate && d <= endDate;
             });
         }
 
-        userShifts = userShifts.slice(0, limit);
+        shiftList = shiftList.slice(0, limit);
 
         tbody.innerHTML = "";
 
-        if (userShifts.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="8" class="py-3 px-6 text-center">No shifts found.</td></tr>`;
+        if (shiftList.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="3" class="py-3 px-6 text-center">No shifts found.</td></tr>`;
             return;
         }
 
-        const canAdjust = checkPermission("shifts", "write");
-        
-        for (const data of userShifts) {
-            const start = data.start_time ? new Date(data.start_time).toLocaleString() : "-";
-            const end = data.end_time ? new Date(data.end_time).toLocaleString() : "-";
+        for (const data of shiftList) {
+            const start = data.start_time ? new Date(data.start_time).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : "-";
             
             const isClosed = data.status === 'closed';
             const expected = isClosed ? (data.expected_cash || 0) : await calculateExpectedCash(data);
@@ -305,45 +302,109 @@ async function fetchShifts() {
             const variance = isClosed ? turnover - expected : 0;
             const diffClass = isClosed ? (variance < 0 ? "text-red-600" : (variance > 0 ? "text-green-600" : "")) : "";
             
+            // Store calculated values for detail view
+            data._calculated = { expected, variance, turnover };
+
             const row = document.createElement("tr");
-            row.className = "border-b border-gray-200 hover:bg-gray-100";
+            row.className = `border-b border-gray-200 hover:bg-blue-50 cursor-pointer transition-colors ${selectedShiftId === data.id ? 'bg-blue-50' : ''}`;
             row.innerHTML = `
-                <td class="py-3 px-6 text-left whitespace-nowrap">${start}</td>
-                <td class="py-3 px-6 text-left whitespace-nowrap">${end}</td>
-                <td class="py-3 px-6 text-right">₱${(data.opening_cash || 0).toFixed(2)}</td>
-                <td class="py-3 px-6 text-right">₱${(data.closing_cash || 0).toFixed(2)}</td>
-                <td class="py-3 px-6 text-right">₱${cashout.toFixed(2)}</td>
-                <td class="py-3 px-6 text-right">₱${expected.toFixed(2)}</td>
-                <td class="py-3 px-6 text-right font-bold ${diffClass}">${isClosed ? `₱${variance.toFixed(2)}` : '-'}</td>
-                <td class="py-3 px-6 text-center">
+                <td class="py-3 px-4 text-left whitespace-nowrap font-medium">${start}</td>
+                <td class="py-3 px-4 text-center">
                     <span class="${data.status === 'open' ? 'bg-green-200 text-green-700' : 'bg-gray-200 text-gray-700'} py-1 px-3 rounded-full text-xs uppercase">${data.status}</span>
                 </td>
-                <td class="py-3 px-6 text-center flex justify-center gap-3">
-                    ${canAdjust ? `<button class="btn-adjust-shift text-blue-600 hover:text-blue-900 font-medium" title="Adjust Cash">Adjust</button>` : ''}
-                    <button class="btn-view-remittances text-purple-600 hover:text-purple-900 font-medium" title="View Remittances">Remit</button>
-                    <button class="btn-view-history text-gray-600 hover:text-gray-900 font-medium" title="View History">History</button>
-                </td>
+                <td class="py-3 px-4 text-right font-bold ${diffClass}">${isClosed ? `₱${variance.toFixed(2)}` : '-'}</td>
             `;
-            tbody.appendChild(row);
             
-            if (canAdjust) {
-                row.querySelector(".btn-adjust-shift").addEventListener("click", () => {
-                    showAdjustCashModal(data.id);
-                });
-            }
-
-            row.querySelector(".btn-view-remittances").addEventListener("click", () => {
-                showRemittanceHistoryModal(data.remittances || []);
-            });
-
-            row.querySelector(".btn-view-history").addEventListener("click", () => {
-                showShiftHistoryModal(data.adjustments || []);
-            });
+            row.addEventListener("click", () => selectShift(data));
+            tbody.appendChild(row);
         }
     } catch (error) {
         console.error("Error fetching shifts:", error);
-        tbody.innerHTML = `<tr><td colspan="7" class="py-3 px-6 text-center text-red-500">Error loading shifts.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="3" class="py-3 px-6 text-center text-red-500">Error loading shifts.</td></tr>`;
     }
+}
+
+async function selectShift(shift) {
+    selectedShiftId = shift.id;
+    
+    // Highlight row
+    document.querySelectorAll("#shifts-table-body tr").forEach(row => row.classList.remove("bg-blue-50"));
+    // Re-render list to apply highlight class (or just find the row, but re-rendering is safe if list is small)
+    // For simplicity, we'll just re-fetch or rely on the click handler adding the class if we didn't rebuild.
+    // Since we built the rows in the loop, let's just re-render the details.
+    
+    // Actually, let's just highlight the clicked row if we passed the event, but here we passed data.
+    // Let's just re-render the table to ensure consistency or find by index if we had it.
+    // A simple way is to re-run fetchShifts but that's expensive.
+    // Let's just render details.
+    
+    const panel = document.getElementById("shift-details-panel");
+    const content = document.getElementById("shift-details-content");
+    const statusHeader = document.getElementById("shift-details-status");
+    
+    panel.classList.remove("hidden");
+    
+    const isClosed = shift.status === 'closed';
+    const expected = shift._calculated ? shift._calculated.expected : (shift.expected_cash || 0);
+    const variance = shift._calculated ? shift._calculated.variance : 0;
+    const varianceClass = variance < 0 ? "text-red-600 bg-red-50" : (variance > 0 ? "text-green-600 bg-green-50" : "text-gray-600 bg-gray-50");
+    
+    statusHeader.innerHTML = `<span class="${shift.status === 'open' ? 'bg-green-200 text-green-800' : 'bg-gray-200 text-gray-800'} px-3 py-1 rounded-full text-xs uppercase font-bold tracking-wide">${shift.status}</span>`;
+
+    const canAdjust = checkPermission("shifts", "write");
+
+    content.innerHTML = `
+        <div class="mb-6">
+            <div class="text-sm text-gray-500">Start Time</div>
+            <div class="font-medium text-gray-800">${new Date(shift.start_time).toLocaleString()}</div>
+            <div class="text-sm text-gray-500 mt-2">End Time</div>
+            <div class="font-medium text-gray-800">${shift.end_time ? new Date(shift.end_time).toLocaleString() : 'Active'}</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 mb-6">
+            <div class="p-3 bg-gray-50 rounded border">
+                <div class="text-[10px] text-gray-500 uppercase font-bold">Opening Cash</div>
+                <div class="text-lg font-bold text-gray-800">₱${(shift.opening_cash || 0).toFixed(2)}</div>
+            </div>${shift.status === 'open' ? '' : `
+            <div class="p-3 bg-gray-50 rounded border">
+                <div class="text-[10px] text-gray-500 uppercase font-bold">Expected Cash</div>
+                <div class="text-lg font-bold text-blue-600">₱${expected.toFixed(2)}</div>
+            </div>`}
+            <div class="p-3 bg-gray-50 rounded border">
+                <div class="text-[10px] text-gray-500 uppercase font-bold">Cashout/Remit</div>
+                <div class="text-lg font-bold text-purple-600">₱${(shift.cashout || 0).toFixed(2)}</div>
+            </div>
+            <div class="p-3 bg-gray-50 rounded border">
+                <div class="text-[10px] text-gray-500 uppercase font-bold">Closing Cash</div>
+                <div class="text-lg font-bold text-gray-800">₱${(shift.closing_cash || 0).toFixed(2)}</div>
+            </div>
+        </div>
+
+        <div class="mb-6 p-4 ${varianceClass} rounded border border-opacity-20 flex justify-between items-center">
+            <span class="font-bold text-sm uppercase">Variance</span>
+            <span class="text-2xl font-bold">${isClosed ? `₱${variance.toFixed(2)}` : '-'}</span>
+        </div>
+
+        <div class="flex flex-col gap-3">
+            <h4 class="font-bold text-gray-700 border-b pb-2 mb-2">Actions</h4>
+            <div class="grid grid-cols-2 gap-3">
+                ${canAdjust ? `<button id="btn-detail-adjust" class="bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 py-2 rounded font-bold text-sm transition">Adjust Cash</button>` : ''}
+                <button id="btn-detail-remit" class="bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200 py-2 rounded font-bold text-sm transition">Remit Cash</button>
+                <button id="btn-detail-history" class="bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200 py-2 rounded font-bold text-sm transition">View History</button>
+                <button id="btn-detail-transactions" class="bg-teal-50 text-teal-700 hover:bg-teal-100 border border-teal-200 py-2 rounded font-bold text-sm transition">Transactions</button>
+                ${shift.status === 'open' ? `<button id="btn-detail-xreport" class="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 py-2 rounded font-bold text-sm transition">X-Report</button>` : ''}
+            </div>
+        </div>
+    `;
+
+    // Bind Actions
+    if (canAdjust) {
+        document.getElementById("btn-detail-adjust")?.addEventListener("click", () => showAdjustCashModal(shift.id, () => selectShift(shift)));
+    }
+    document.getElementById("btn-detail-remit")?.addEventListener("click", () => showRemittanceHistoryModal(shift));
+    document.getElementById("btn-detail-history")?.addEventListener("click", () => showShiftHistoryModal(shift.adjustments || []));
+    document.getElementById("btn-detail-transactions")?.addEventListener("click", () => showShiftTransactions(shift));
+    document.getElementById("btn-detail-xreport")?.addEventListener("click", () => showXReport());
 }
 
 function showOpenShiftModal(onSuccess) {
@@ -635,10 +696,11 @@ export function showShiftHistoryModal(adjustments) {
     document.getElementById("btn-close-history").addEventListener("click", closeModal);
 }
 
-export function showRemittanceHistoryModal(remittances) {
+export function showRemittanceHistoryModal(shift) {
     let modal = document.getElementById("modal-remittance-history");
     if (modal) modal.remove();
 
+    const remittances = shift.remittances || [];
     const div = document.createElement("div");
     div.id = "modal-remittance-history";
     div.className = "fixed inset-0 bg-gray-900 bg-opacity-90 flex items-center justify-center z-50";
@@ -658,6 +720,7 @@ export function showRemittanceHistoryModal(remittances) {
         <div class="bg-white rounded-lg shadow-2xl p-6 w-full max-w-2xl">
             <div class="flex justify-between items-center mb-6 border-b pb-4">
                 <h2 class="text-xl font-bold text-gray-800">Shift Remittance History</h2>
+                ${shift.status === 'open' ? `<button id="btn-add-remit-modal" class="bg-purple-600 text-white px-3 py-1 rounded text-sm font-bold hover:bg-purple-700">+ Add Remittance</button>` : ''}
                 <button id="close-remit-modal-x" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
             </div>
             <div class="overflow-x-auto max-h-[60vh] rounded-lg border border-gray-200">
@@ -684,6 +747,9 @@ export function showRemittanceHistoryModal(remittances) {
     const closeModal = () => div.remove();
     document.getElementById("close-remit-modal-x").addEventListener("click", closeModal);
     document.getElementById("btn-close-remit-history").addEventListener("click", closeModal);
+    if (shift.status === 'open') {
+        document.getElementById("btn-add-remit-modal").addEventListener("click", () => showAddRemittanceModal(closeModal));
+    }
 }
 
 export async function showXReport() {
@@ -723,4 +789,188 @@ export async function showXReport() {
     `;
     document.body.appendChild(div);
     document.getElementById("close-x-report").addEventListener("click", () => div.remove());
+}
+
+function showAddRemittanceModal(onSuccess) {
+    const div = document.createElement("div");
+    div.className = "fixed inset-0 bg-gray-900 bg-opacity-90 flex items-center justify-center z-[60]";
+    div.innerHTML = `
+        <div class="bg-white rounded-lg shadow-xl p-8 w-96">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">Add Remittance</h2>
+            <form id="form-add-remit">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Amount (PHP)</label>
+                    <input type="number" id="new-remit-amount" class="shadow appearance-none border rounded w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-purple-500 text-xl text-center" step="0.01" required min="0">
+                </div>
+                <div class="mb-6">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Reason / Reference</label>
+                    <input type="text" id="new-remit-reason" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-purple-500" required placeholder="e.g. Safe Drop">
+                </div>
+                <div class="flex gap-2">
+                    <button type="button" id="btn-cancel-new-remit" class="w-1/2 bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-4 rounded">Cancel</button>
+                    <button type="submit" class="w-1/2 bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded">Save</button>
+                </div>
+            </form>
+        </div>
+    `;
+    document.body.appendChild(div);
+
+    document.getElementById("btn-cancel-new-remit").addEventListener("click", () => div.remove());
+    document.getElementById("form-add-remit").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const amount = document.getElementById("new-remit-amount").value;
+        const reason = document.getElementById("new-remit-reason").value;
+        try {
+            await recordRemittance(amount, reason);
+            div.remove();
+            if (onSuccess) onSuccess();
+            // Refresh shift details
+            if (selectedShiftId) {
+                const updatedShift = await Repository.get('shifts', selectedShiftId);
+                selectShift(updatedShift);
+            }
+        } catch (error) {
+            console.error("Error adding remittance:", error);
+            alert("Failed to add remittance: " + error.message);
+        }
+    });
+}
+
+async function showShiftTransactions(shift) {
+    const div = document.createElement("div");
+    div.className = "fixed inset-0 bg-gray-900 bg-opacity-90 flex items-center justify-center z-50";
+    div.innerHTML = `
+        <div class="bg-white rounded-lg shadow-2xl p-6 w-full max-w-4xl h-[80vh] flex flex-col">
+            <div class="flex justify-between items-center mb-4 border-b pb-4 shrink-0">
+                <h2 class="text-xl font-bold text-gray-800">Transactions for Shift</h2>
+                <button id="close-tx-modal" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+            </div>
+            <div class="overflow-y-auto flex-1">
+                <table class="min-w-full table-auto">
+                    <thead class="bg-gray-50 sticky top-0">
+                        <tr class="text-xs uppercase text-gray-500 font-bold tracking-wider">
+                            <th class="py-3 px-4 text-left">Time</th>
+                            <th class="py-3 px-4 text-left">ID</th>
+                            <th class="py-3 px-4 text-left">Customer</th>
+                            <th class="py-3 px-4 text-right">Total</th>
+                            <th class="py-3 px-4 text-center">Status</th>
+                            <th class="py-3 px-4 text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="shift-tx-body" class="divide-y divide-gray-100">
+                        <tr><td colspan="6" class="text-center py-4">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(div);
+    document.getElementById("close-tx-modal").addEventListener("click", () => div.remove());
+
+    const tbody = document.getElementById("shift-tx-body");
+    
+    try {
+        const allTxs = await Repository.getAll('transactions');
+        const start = new Date(shift.start_time);
+        const end = shift.end_time ? new Date(shift.end_time) : new Date();
+        
+        const txs = allTxs.filter(t => {
+            const d = new Date(t.timestamp);
+            return d >= start && d <= end && t.user_email === shift.user_id;
+        }).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+        if (txs.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-gray-500 italic">No transactions found for this shift.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = txs.map(tx => `
+            <tr class="hover:bg-gray-50 transition ${tx.is_voided ? 'bg-red-50 opacity-75' : ''}">
+                <td class="py-2 px-4 text-xs text-gray-600">${new Date(tx.timestamp).toLocaleTimeString()}</td>
+                <td class="py-2 px-4 text-xs font-mono text-gray-500">${tx.id.slice(-8)}</td>
+                <td class="py-2 px-4 text-sm text-gray-800">${tx.customer_name || 'Guest'}</td>
+                <td class="py-2 px-4 text-right font-bold text-gray-800">₱${tx.total_amount.toFixed(2)}</td>
+                <td class="py-2 px-4 text-center text-xs font-bold uppercase ${tx.is_voided ? 'text-red-600' : 'text-green-600'}">${tx.is_voided ? 'Voided' : 'Valid'}</td>
+                <td class="py-2 px-4 text-center flex justify-center gap-2">
+                    <button class="bg-blue-100 text-blue-700 hover:bg-blue-200 px-2 py-1 rounded text-xs font-bold btn-print-tx" data-id="${tx.id}">Print</button>
+                    ${!tx.is_voided ? `<button class="bg-red-100 text-red-700 hover:bg-red-200 px-2 py-1 rounded text-xs font-bold btn-void-tx" data-id="${tx.id}">Void</button>` : ''}
+                </td>
+            </tr>
+        `).join('');
+
+        tbody.querySelectorAll(".btn-print-tx").forEach(btn => {
+            btn.addEventListener("click", async () => {
+                const tx = txs.find(t => t.id === btn.dataset.id);
+                if (tx) await printTransaction(tx, true);
+            });
+        });
+
+        tbody.querySelectorAll(".btn-void-tx").forEach(btn => {
+            btn.addEventListener("click", async () => {
+                await voidShiftTransaction(btn.dataset.id, shift.id);
+                div.remove(); // Close to refresh
+                const updatedShift = await Repository.get('shifts', shift.id);
+                showShiftTransactions(updatedShift); // Reopen
+            });
+        });
+
+    } catch (error) {
+        console.error("Error loading transactions:", error);
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-red-500">Error loading data.</td></tr>`;
+    }
+}
+
+async function voidShiftTransaction(txId, shiftId) {
+    if (!confirm("Are you sure you want to VOID this transaction?")) return;
+    if (!(await requestManagerApproval())) return;
+
+    const reason = prompt("Enter reason for voiding:");
+    if (reason === null) return;
+
+    try {
+        const tx = await Repository.get('transactions', txId);
+        if (!tx) return;
+        
+        const user = getCurrentUser();
+        
+        await Repository.upsert('transactions', {
+            ...tx,
+            is_voided: true,
+            voided_at: new Date().toISOString(),
+            voided_by: user ? user.email : "Manager",
+            void_reason: reason || "Voided from Shift View"
+        });
+
+        for (const item of tx.items) {
+            const current = await Repository.get('items', item.id);
+            if (current) {
+                await Repository.upsert('items', { ...current, stock_level: current.stock_level + item.qty });
+            }
+        }
+
+        await SyncEngine.sync();
+        alert("Transaction voided.");
+        
+        // Refresh shift details
+        const updatedShift = await Repository.get('shifts', shiftId);
+        selectShift(updatedShift);
+    } catch (e) {
+        console.error(e);
+        alert("Error voiding transaction.");
+    }
+}
+
+async function printTransaction(tx, isReprint = false) {
+    const settings = await getSystemSettings();
+    const store = settings.store || { name: "LightPOS", data: "" };
+    
+    // Simplified print logic for history
+    const printWindow = window.open('', '_blank', 'width=300,height=600');
+    const itemsHtml = tx.items.map(item => `<tr><td style="font-size:12px;">${item.name}</td></tr><tr><td style="font-size:12px;text-align:right;">${item.qty} x ${item.selling_price.toFixed(2)} = ${(item.qty * item.selling_price).toFixed(2)}</td></tr>`).join('');
+    
+    printWindow.document.write(`<html><body onload="window.print();window.close();" style="font-family:monospace;width:76mm;font-size:12px;">
+        <div style="text-align:center;font-weight:bold;">${store.name}</div><br>Tx: ${tx.id.slice(-6)}<br>${isReprint?'<br>*** REPRINT ***<br>':''}
+        <table>${itemsHtml}</table><br><div style="text-align:right;font-weight:bold;">Total: ${tx.total_amount.toFixed(2)}</div>
+    </body></html>`);
+    printWindow.document.close();
 }

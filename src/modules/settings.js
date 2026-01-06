@@ -405,6 +405,7 @@ export async function loadSettingsView() {
                         <div class="flex flex-wrap gap-4">
                             <button type="button" id="btn-wipe-server" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition shadow-sm">Wipe Server Data</button>
                             <button type="button" id="btn-wipe-local" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition shadow-sm">Wipe Local Data</button>
+                            <button type="button" id="btn-reset-app" class="bg-red-800 hover:bg-red-900 text-white font-bold py-2 px-4 rounded transition shadow-sm">Reset Application Data</button>
                         </div>
                     </div>
                 </div>` : ''}
@@ -503,11 +504,8 @@ async function loadSettings() {
     try {
         if (navigator.onLine) await SyncEngine.sync();
 
-        const localData = await Repository.get('sync_metadata', 'settings');
-        let settings = null;
-        if (localData) {
-            settings = localData.value;
-        }
+        const localData = await Repository.get('settings', 'global');
+        let settings = localData;
         
         if (settings) {
             if (settings.store) {
@@ -642,12 +640,12 @@ async function handleSave(e) {
 
     try {
         // Fetch existing to maintain versioning for the SyncEngine
-        const existing = await Repository.get('sync_metadata', 'settings');
+        const existing = await Repository.get('settings', 'global');
         
         // Save locally first
-        await Repository.upsert('sync_metadata', { 
-            key: 'settings', 
-            value: settings,
+        await Repository.upsert('settings', { 
+            id: 'global',
+            ...settings,
             _version: (existing?._version || 0) + 1,
             _updatedAt: Date.now()
         });
@@ -668,9 +666,9 @@ async function handleSave(e) {
  */
 export async function getSystemSettings() {
     try {
-        const localData = await Repository.get('sync_metadata', 'settings');
-        if (localData && localData.value) {
-            return localData.value;
+        const localData = await Repository.get('settings', 'global');
+        if (localData) {
+            return localData;
         }
         return {
             store: { name: "LightPOS", logo: "", data: "" },
@@ -951,6 +949,26 @@ function setupMigrationEventListeners() {
             await db.delete();
             alert("Local database wiped. The app will now reload.");
             window.location.reload();
+        }
+    });
+
+    document.getElementById("btn-reset-app")?.addEventListener("click", async () => {
+        if (!confirm("DANGER: This will wipe ALL DATA (Server & Local) and reset the application to its initial state.\n\nAre you sure?")) return;
+        
+        const confirmation = prompt("FINAL WARNING: This action is irreversible.\n\nType 'RESET' to confirm full system reset:");
+        if (confirmation === "RESET") {
+            try {
+                const res = await fetch(`${API_URL}?action=reset_all`, { method: 'POST' });
+                if (res.ok) {
+                    await db.delete();
+                    alert("Application reset successfully. Reloading...");
+                    window.location.reload();
+                } else {
+                    alert("Failed to wipe server data.");
+                }
+            } catch (e) {
+                alert("Error resetting application: " + e.message);
+            }
         }
     });
 }
@@ -1298,7 +1316,7 @@ async function downloadServerBackup() {
     const files = [
         'sync_metadata', 'items', 'transactions', 'suppliers', 'customers',
         'expenses', 'returns', 'shifts', 'stock_movements', 'stock_logs',
-        'adjustments', 'stockins', 'suspended_transactions', 'notifications'
+        'adjustments', 'stockins', 'suspended_transactions', 'notifications', 'users'
     ];
     
     const backupData = {};
@@ -1340,7 +1358,7 @@ async function downloadLocalBackup() {
     const files = [
         'sync_metadata', 'items', 'transactions', 'suppliers', 'customers',
         'expenses', 'returns', 'shifts', 'stock_movements', 'stock_logs',
-        'adjustments', 'stockins', 'suspended_transactions', 'notifications'
+        'adjustments', 'stockins', 'suspended_transactions', 'notifications', 'users'
     ];
     
     const backupData = {};
@@ -1564,7 +1582,7 @@ export async function runDiagnosticExport() {
     const entities = [
         'items', 'transactions', 'suppliers', 'customers', 
         'expenses', 'returns', 'shifts', 'stock_movements', 'stock_logs',
-        'adjustments', 'stockins', 'suspended_transactions', 'notifications'
+        'adjustments', 'stockins', 'suspended_transactions', 'notifications', 'users'
     ];
     
     try {
@@ -1631,15 +1649,16 @@ export async function runDiagnosticExport() {
             report.serverData[entity] = sData;
             report.localData[entity] = lData;
 
-            const sMap = new Map(sData.map(i => [i.id, i]));
-            const lMap = new Map(lData.map(i => [i.id, i]));
+            const idField = db[entity].schema.primKey.name;
+            const sMap = new Map(sData.map(i => [i[idField], i]));
+            const lMap = new Map(lData.map(i => [i[idField], i]));
             
-            const onlyInServer = sData.filter(i => !lMap.has(i.id)).map(i => i.id);
-            const onlyInLocal = lData.filter(i => !sMap.has(i.id)).map(i => i.id);
+            const onlyInServer = sData.filter(i => !lMap.has(i[idField])).map(i => i[idField]);
+            const onlyInLocal = lData.filter(i => !sMap.has(i[idField])).map(i => i[idField]);
             const contentMismatch = sData.filter(s => {
-                const l = lMap.get(s.id);
+                const l = lMap.get(s[idField]);
                 return l && JSON.stringify(s) !== JSON.stringify(l);
-            }).map(s => s.id);
+            }).map(s => s[idField]);
 
             if (onlyInServer.length > 0 || onlyInLocal.length > 0 || contentMismatch.length > 0) {
                 report.discrepancies[entity] = {

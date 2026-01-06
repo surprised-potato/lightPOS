@@ -2,9 +2,9 @@ import { checkPermission } from "../auth.js";
 import { Repository } from "../services/Repository.js";
 import { SyncEngine } from "../services/SyncEngine.js";
 
-const MODULES = ['pos', 'customers', 'shifts', 'items', 'suppliers', 'stockin', 'stock-count', 'expenses', 'reports', 'users', 'migrate', 'returns', 'settings'];
+export const MODULES = ['pos', 'customers', 'shifts', 'items', 'suppliers', 'stockin', 'stock-count', 'expenses', 'reports', 'users', 'migrate', 'returns', 'settings'];
 
-const ROLES = {
+export const ROLES = {
     admin: {
         label: 'Administrator',
         permissions: MODULES.reduce((acc, mod) => ({ ...acc, [mod]: { read: true, write: true } }), {})

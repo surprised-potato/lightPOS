@@ -1,13 +1,16 @@
 import { db } from "../db.js";
+import { Repository } from "./Repository.js";
 
 export async function addNotification(type, message) {
     const notification = {
+        id: crypto.randomUUID(),
         type,
         message,
         timestamp: new Date().toISOString(),
-        read: 0 // 0 for unread, 1 for read
+        read: 0, // 0 for unread, 1 for read
+        target: 'managers'
     };
-    await db.notifications.add(notification);
+    await Repository.upsert('notifications', notification);
     window.dispatchEvent(new CustomEvent('notification-updated'));
 }
 

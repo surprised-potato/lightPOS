@@ -235,10 +235,9 @@ async function renderPosInterface(content) {
                             <span class="text-[10px] uppercase font-bold opacity-75 leading-none">Total Amount</span>
                             <div id="cart-total" class="text-2xl font-black leading-tight">₱0.00</div>
                         </div>
-                        <div class="flex gap-1 shrink-0">
+                        <div class="flex gap-2 shrink-0">
                             <button id="btn-view-suspended" class="text-[9px] bg-yellow-600 hover:bg-yellow-700 px-1.5 py-1 rounded font-bold" title="Suspended Sales">SUSP</button>
                             <button id="btn-pos-history" class="text-[9px] bg-indigo-600 hover:bg-indigo-700 px-1.5 py-1 rounded font-bold" title="History">HIST</button>
-                            <button id="btn-remit-cash" class="text-[9px] bg-purple-600 hover:bg-purple-700 px-1.5 py-1 rounded font-bold" title="Remit Cash">REMIT</button>
                             <button id="btn-suspend-sale" class="text-[9px] bg-orange-500 hover:bg-orange-600 px-1.5 py-1 rounded font-bold" title="Hold">HOLD</button>
                             <button id="btn-pos-close-shift" class="text-[9px] bg-red-500 hover:bg-red-600 px-1.5 py-1 rounded font-bold" title="Close Shift">CLOSE</button>
                             <button id="btn-clear-cart" class="text-[9px] bg-blue-800 hover:bg-blue-900 px-1.5 py-1 rounded font-bold" title="Clear Cart">CLR</button>
@@ -683,7 +682,7 @@ async function renderPosInterface(content) {
         custResults.classList.add("hidden");
     });
 
-    const openCloseShiftModal = () => {
+    const openCloseShiftModal = async () => {
         const modal = document.getElementById("modal-close-shift");
         const grid = document.getElementById("cash-counter-grid");
         const receiptsList = document.getElementById("shift-receipts-list");
@@ -693,7 +692,24 @@ async function renderPosInterface(content) {
         receiptsList.innerHTML = ""; // Clear receipts
         document.getElementById("precounted-bills").value = "";
         document.getElementById("precounted-coins").value = "";
-        document.getElementById("shift-cashout").value = "";
+        
+        // Fetch active shift for remittance total
+        let totalRemittance = 0;
+        try {
+            const user = JSON.parse(localStorage.getItem('pos_user'));
+            if (user) {
+                const shifts = await Repository.getAll('shifts');
+                const activeShift = shifts.find(s => s.user_id === user.email && s.status === 'open');
+                if (activeShift && activeShift.remittances) {
+                    totalRemittance = activeShift.remittances.reduce((sum, r) => sum + (r.amount || 0), 0);
+                }
+            }
+        } catch (e) { console.error(e); }
+
+        const cashoutInput = document.getElementById("shift-cashout");
+        cashoutInput.value = totalRemittance.toFixed(2);
+        cashoutInput.readOnly = true;
+        cashoutInput.classList.add("bg-gray-100", "cursor-not-allowed");
         
         grid.innerHTML = denoms.map((d, i) => `
             <div class="flex items-center gap-2 py-1 border-b border-gray-50 last:border-0">
@@ -759,7 +775,6 @@ async function renderPosInterface(content) {
 
         document.getElementById("precounted-bills").addEventListener("input", updateTotals);
         document.getElementById("precounted-coins").addEventListener("input", updateTotals);
-        document.getElementById("shift-cashout").addEventListener("input", updateTotals);
 
         grid.querySelectorAll(".denom-input").forEach(input => {
             input.addEventListener("input", updateTotals);
@@ -775,6 +790,7 @@ async function renderPosInterface(content) {
 
         modal.classList.remove("hidden");
         setTimeout(() => document.getElementById("first-denom-input")?.focus(), 100);
+        updateTotals();
     };
 
     document.getElementById("btn-pos-close-shift").addEventListener("click", openCloseShiftModal);
