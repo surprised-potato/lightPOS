@@ -11,6 +11,44 @@ const API_URL = 'api/sync.php';
 // tasks like full backup and restore, which are not part of the delta sync flow.
 const ADMIN_API_URL = 'api/router.php';
 
+const DEFAULT_SETTINGS = {
+    store: { name: "LightPOS", logo: "", data: "" },
+    tax: { rate: 12 },
+    rewards: { ratio: 100 },
+    shift: { threshold: 0 },
+    pos: { auto_print: false },
+    print: { 
+        paper_width: 76, 
+        show_dividers: true,
+        header: { 
+            text: "", 
+            font_size: 14, 
+            font_family: "'Courier New', Courier, monospace", 
+            bold: true, 
+            italic: false 
+        },
+        body: { 
+            font_size: 12, 
+            font_family: "'Courier New', Courier, monospace", 
+            bold: false, 
+            italic: false 
+        },
+        items: { 
+            font_size: 12, 
+            font_family: "'Courier New', Courier, monospace", 
+            bold: false, 
+            italic: false 
+        },
+        footer: { 
+            text: "Thank you for shopping!", 
+            font_size: 10, 
+            font_family: "'Courier New', Courier, monospace", 
+            bold: false, 
+            italic: true 
+        }
+    }
+};
+
 export async function loadSettingsView() {
     const content = document.getElementById("main-content");
     const canWrite = checkPermission("settings", "write");
@@ -557,6 +595,7 @@ async function loadSettings() {
                 document.getElementById("set-print-footer-italic").checked = p.footer?.italic || false;
             }
             await renderSyncHistory();
+            renderHeader(); // Ensure branding in header matches loaded settings
         }
     } catch (error) {
         console.error("Error loading settings:", error);
@@ -671,81 +710,9 @@ export async function getSystemSettings() {
         if (localData) {
             return localData;
         }
-        return {
-            store: { name: "LightPOS", logo: "", data: "" },
-            tax: { rate: 12 },
-            rewards: { ratio: 100 },
-            shift: { threshold: 0 },
-            pos: { auto_print: false },
-            print: { 
-                paper_width: 76, 
-                show_dividers: true,
-                header: { 
-                    text: "", 
-                    font_size: 14, 
-                    font_family: "'Courier New', Courier, monospace", 
-                    bold: true, 
-                    italic: false 
-                },
-                body: { 
-                    font_size: 12, 
-                    font_family: "'Courier New', Courier, monospace", 
-                    bold: false, 
-                    italic: false 
-                },
-                items: { 
-                    font_size: 12, 
-                    font_family: "'Courier New', Courier, monospace", 
-                    bold: false, 
-                    italic: false 
-                },
-                footer: { 
-                    text: "Thank you for shopping!", 
-                    font_size: 10, 
-                    font_family: "'Courier New', Courier, monospace", 
-                    bold: false, 
-                    italic: true 
-                }
-            }
-        };
+        return DEFAULT_SETTINGS;
     } catch (e) {
-        return {
-            store: { name: "LightPOS", logo: "", data: "" },
-            tax: { rate: 12 },
-            rewards: { ratio: 100 },
-            shift: { threshold: 0 },
-            pos: { auto_print: false },
-            print: { 
-                paper_width: 76, 
-                show_dividers: true,
-                header: { 
-                    text: "", 
-                    font_size: 14, 
-                    font_family: "'Courier New', Courier, monospace", 
-                    bold: true, 
-                    italic: false 
-                },
-                body: { 
-                    font_size: 12, 
-                    font_family: "'Courier New', Courier, monospace", 
-                    bold: false, 
-                    italic: false 
-                },
-                items: { 
-                    font_size: 12, 
-                    font_family: "'Courier New', Courier, monospace", 
-                    bold: false, 
-                    italic: false 
-                },
-                footer: { 
-                    text: "Thank you for shopping!", 
-                    font_size: 10, 
-                    font_family: "'Courier New', Courier, monospace", 
-                    bold: false, 
-                    italic: true 
-                }
-            }
-        };
+        return DEFAULT_SETTINGS;
     }
 }
 

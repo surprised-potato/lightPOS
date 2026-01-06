@@ -159,17 +159,19 @@ export function renderSidebar() {
     }, 50);
 }
 
-async function getStoreSettings() {
+export async function getStoreSettings() {
     try {
         // Try local database first for offline-first support and immediate updates
-        const localData = await db.sync_metadata.get('settings');
-        if (localData && localData.value && localData.value.store) {
-            return localData.value.store;
+        const localData = await db.settings.get('global');
+        if (localData && localData.store) {
+            return localData.store;
         }
 
         const res = await fetch('api/router.php?file=settings');
         const settings = await res.json();
-        return settings?.store || { name: "LightPOS", logo: "" };
+        // Handle both single object and array response from server
+        const globalSettings = Array.isArray(settings) ? settings.find(s => s.id === 'global') : settings;
+        return globalSettings?.store || { name: "LightPOS", logo: "" };
     } catch (e) {
         return { name: "LightPOS", logo: "" };
     }
@@ -196,6 +198,7 @@ export async function renderHeader() {
 
     // Fetch Store Info
     const { name: storeName, logo: storeLogo } = await getStoreSettings();
+    console.log("Header Text:", storeName);
 
     const profile = getUserProfile();
     const initials = profile?.name ? profile.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : '??';
@@ -204,9 +207,10 @@ export async function renderHeader() {
 
     const branding = document.getElementById("header-store-branding");
     if (branding) {
+        branding.className = "flex items-center gap-2 ml-4 mr-auto";
         branding.innerHTML = `
             ${storeLogo ? `<img src="${storeLogo}" class="h-8 w-8 object-contain bg-white rounded-md p-0.5 shadow-sm">` : ''}
-            <span class="text-xl font-bold tracking-wide">${storeName}</span>
+            <span class="text-xl font-bold tracking-wide whitespace-nowrap">${storeName}</span>
         `;
     }
     document.title = `${storeName} - Point of Sale`;
