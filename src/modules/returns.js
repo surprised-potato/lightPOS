@@ -1,4 +1,4 @@
-import { checkPermission, requestManagerApproval } from "../auth.js";
+import { checkPermission } from "../auth.js";
 import { addNotification } from "../services/notification-service.js";
 import { generateUUID } from "../utils.js";
 import { checkActiveShift, requireShift } from "./shift.js";
@@ -83,9 +83,10 @@ function renderReturnsInterface(content) {
                 <div class="bg-white p-6 rounded-lg shadow-md border-t-4 border-green-500 flex flex-col">
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="font-bold text-lg text-gray-800">Exchange Cart</h3>
-                        <div class="relative">
-                            <input type="text" id="exchange-barcode-input" placeholder="Scan barcode for exchange..." 
-                                class="border rounded p-2 text-sm w-64 focus:ring-2 focus:ring-green-500 outline-none">
+                        <div class="relative w-64">
+                            <input type="text" id="exchange-search-input" placeholder="Search item to exchange..." 
+                                class="border rounded p-2 text-sm w-full focus:ring-2 focus:ring-green-500 outline-none" autocomplete="off">
+                            <div id="exchange-search-results" class="hidden absolute z-50 w-full bg-white shadow-lg border rounded-b-md max-h-48 overflow-y-auto mt-1"></div>
                         </div>
                     </div>
 
@@ -127,7 +128,18 @@ function renderReturnsInterface(content) {
     `;
 
     document.getElementById("btn-find-tx").addEventListener("click", findTransaction);
-    document.getElementById("exchange-barcode-input")?.addEventListener("keydown", handleExchangeScan);
+    
+    const searchInput = document.getElementById("exchange-search-input");
+    if (searchInput) {
+        searchInput.addEventListener("input", handleExchangeSearch);
+        document.addEventListener("click", (e) => {
+            const resultsDiv = document.getElementById("exchange-search-results");
+            if (resultsDiv && !searchInput.contains(e.target) && !resultsDiv.contains(e.target)) {
+                resultsDiv.classList.add("hidden");
+            }
+        });
+    }
+
     document.getElementById("btn-process-exchange")?.addEventListener("click", processExchange);
 
     document.getElementById("return-search-id").addEventListener("keydown", (e) => {
@@ -150,7 +162,7 @@ async function findTransaction() {
         // Search by ID or Customer Name using Repository
         const allTxs = await Repository.getAll('transactions');
         const txs = allTxs
-            .filter(t => t.id?.toString().includes(term) || t.customer_name?.toLowerCase().includes(term.toLowerCase()))
+            .filter(t => (t.id?.toString().includes(term) || t.customer_name?.toLowerCase().includes(term.toLowerCase())))
             .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
             .slice(0, 5);
 
@@ -160,12 +172,12 @@ async function findTransaction() {
         }
 
         resultsDiv.innerHTML = txs.map(t => `
-            <div class="p-3 border rounded hover:bg-blue-50 cursor-pointer transition flex justify-between items-center btn-select-tx" data-id="${t.id}">
-                <div>
-                    <div class="font-bold text-sm">#${t.id} - ${t.customer_name}</div>
+            <div class="p-3 border rounded hover:bg-blue-50 cursor-pointer transition flex justify-between items-center btn-select-tx ${t.is_voided ? 'opacity-60 bg-gray-50' : ''}" data-id="${t.id}">
+                <div class="${t.is_voided ? 'line-through text-gray-500' : ''}">
+                    <div class="font-bold text-sm">#${t.id} - ${t.customer_name} ${t.is_voided ? '(VOID)' : ''}</div>
                     <div class="text-xs text-gray-500">${new Date(t.timestamp).toLocaleString()}</div>
                 </div>
-                <div class="font-bold text-blue-600">₱${t.total_amount.toFixed(2)}</div>
+                <div class="font-bold ${t.is_voided ? 'text-gray-400 line-through' : 'text-blue-600'}">₱${t.total_amount.toFixed(2)}</div>
             </div>
         `).join('');
 
@@ -225,29 +237,58 @@ function renderOriginalItems() {
             const idx = parseInt(btn.dataset.index);
             const item = selectedTransaction.items[idx];
             playBeep(880, 0.1); // Good beep
-            returnedItems.push({ ...item, originalIndex: idx, qty: 1 });
+            returnedItems.push({ ...item, originalIndex: idx, qty: 1, disposition: 'Restock' });
             renderOriginalItems();
             updateExchangeUI();
         });
     });
 }
 
-async function handleExchangeScan(e) {
-    if (e.key !== "Enter") return;
-    const term = e.target.value.trim();
-    if (!term) return;
+async function handleExchangeSearch(e) {
+    const term = e.target.value.trim().toLowerCase();
+    const resultsDiv = document.getElementById("exchange-search-results");
+    
+    if (!term) {
+        resultsDiv.classList.add("hidden");
+        return;
+    }
 
     const items = await Repository.getAll('items');
-    const item = items.find(i => i.barcode === term || i.name.toLowerCase().includes(term.toLowerCase()));
+    const filtered = items.filter(i => 
+        (i.name || "").toLowerCase().includes(term) || 
+        (i.barcode || "").toLowerCase().includes(term)
+    ).slice(0, 5);
 
-    if (item) {
-        playBeep(880, 0.1); // Good beep
-        exchangeItems.push({ ...item, qty: 1 });
-        e.target.value = "";
-        updateExchangeUI();
+    resultsDiv.innerHTML = "";
+    if (filtered.length > 0) {
+        resultsDiv.classList.remove("hidden");
+        filtered.forEach(item => {
+            const div = document.createElement("div");
+            div.className = "p-2 hover:bg-green-50 cursor-pointer text-xs border-b last:border-0";
+            div.innerHTML = `
+                <div class="font-bold">${item.name}</div>
+                <div class="flex justify-between text-gray-500">
+                    <span>${item.barcode}</span>
+                    <span>₱${item.selling_price.toFixed(2)}</span>
+                </div>
+            `;
+            div.addEventListener("click", () => {
+                playBeep(880, 0.1);
+                const existing = exchangeItems.find(i => i.id === item.id);
+                if (existing) {
+                    existing.qty = (existing.qty || 0) + 1;
+                } else {
+                    exchangeItems.push({ ...item, qty: 1 });
+                }
+                document.getElementById("exchange-search-input").value = "";
+                resultsDiv.classList.add("hidden");
+                updateExchangeUI();
+            });
+            resultsDiv.appendChild(div);
+        });
     } else {
-        playBeep(220, 0.3, 'sawtooth'); // Bad beep
-        alert("Item not found.");
+        resultsDiv.innerHTML = `<div class="p-2 text-xs text-gray-500 text-center">No items found</div>`;
+        resultsDiv.classList.remove("hidden");
     }
 }
 
@@ -257,12 +298,20 @@ function updateExchangeUI() {
 
     // Render Returned Items
     returnList.innerHTML = returnedItems.map((item, idx) => `
-        <div class="flex justify-between items-center bg-red-50 p-2 rounded border border-red-100 text-xs">
-            <div class="flex-1">
-                <div class="font-bold">${item.name}</div>
-                <div class="text-gray-500">₱${item.selling_price.toFixed(2)}</div>
+        <div class="flex flex-col bg-red-50 p-2 rounded border border-red-100 text-xs gap-2">
+            <div class="flex justify-between items-center">
+                <div class="flex-1">
+                    <div class="font-bold">${item.name}</div>
+                    <div class="text-gray-500">₱${item.selling_price.toFixed(2)}</div>
+                </div>
+                <button class="text-red-500 font-bold px-2 btn-remove-return" data-index="${idx}">&times;</button>
             </div>
-            <button class="text-red-500 font-bold px-2 btn-remove-return" data-index="${idx}">&times;</button>
+            <select class="w-full border rounded p-1 text-[10px] disposition-select focus:ring-1 focus:ring-red-500 outline-none" data-index="${idx}">
+                <option value="Restock" ${item.disposition === 'Restock' ? 'selected' : ''}>Restock (Add to Inventory)</option>
+                <option value="Defective" ${item.disposition === 'Defective' ? 'selected' : ''}>Defective (Discard)</option>
+                <option value="Spoiled" ${item.disposition === 'Spoiled' ? 'selected' : ''}>Spoiled (Discard)</option>
+                <option value="Expired" ${item.disposition === 'Expired' ? 'selected' : ''}>Expired (Discard)</option>
+            </select>
         </div>
     `).join('');
 
@@ -273,13 +322,16 @@ function updateExchangeUI() {
                 <div class="font-bold">${item.name}</div>
                 <div class="text-gray-500">₱${item.selling_price.toFixed(2)}</div>
             </div>
-            <button class="text-green-600 font-bold px-2 btn-remove-exchange" data-index="${idx}">&times;</button>
+            <div class="flex items-center gap-2">
+                <input type="number" min="1" class="w-12 border rounded text-center p-1 exchange-qty-input" data-index="${idx}" value="${item.qty}">
+                <button class="text-green-600 font-bold px-2 btn-remove-exchange" data-index="${idx}">&times;</button>
+            </div>
         </div>
     `).join('');
 
     // Totals
-    const returnTotal = returnedItems.reduce((sum, i) => sum + i.selling_price, 0);
-    const exchangeTotal = exchangeItems.reduce((sum, i) => sum + i.selling_price, 0);
+    const returnTotal = returnedItems.reduce((sum, i) => sum + (i.selling_price * i.qty), 0);
+    const exchangeTotal = exchangeItems.reduce((sum, i) => sum + (i.selling_price * i.qty), 0);
     const netDue = exchangeTotal - returnTotal;
 
     document.getElementById("summary-return-total").textContent = `₱${returnTotal.toFixed(2)}`;
@@ -302,6 +354,20 @@ function updateExchangeUI() {
             updateExchangeUI();
         });
     });
+    returnList.querySelectorAll(".disposition-select").forEach(sel => {
+        sel.addEventListener("change", (e) => {
+            returnedItems[e.target.dataset.index].disposition = e.target.value;
+        });
+    });
+    exchangeList.querySelectorAll(".exchange-qty-input").forEach(input => {
+        input.addEventListener("change", (e) => {
+            const newQty = parseInt(e.target.value);
+            if (newQty > 0) {
+                exchangeItems[e.target.dataset.index].qty = newQty;
+                updateExchangeUI();
+            }
+        });
+    });
     exchangeList.querySelectorAll(".btn-remove-exchange").forEach(btn => {
         btn.addEventListener("click", () => {
             exchangeItems.splice(btn.dataset.index, 1);
@@ -312,10 +378,13 @@ function updateExchangeUI() {
 
 async function processExchange() {
     if (!checkPermission("returns", "write")) return;
-    if (!(await requestManagerApproval())) return;
 
     const user = JSON.parse(localStorage.getItem('pos_user'))?.email || 'unknown';
     const timestamp = new Date().toISOString();
+    
+    const returnTotal = returnedItems.reduce((sum, i) => sum + (i.selling_price * i.qty), 0);
+    const exchangeTotal = exchangeItems.reduce((sum, i) => sum + (i.selling_price * i.qty), 0);
+    const netDue = exchangeTotal - returnTotal;
 
     try {
         // 1. Update Original Transaction
@@ -338,11 +407,28 @@ async function processExchange() {
         for (const ri of returnedItems) {
             const master = await Repository.get('items', ri.id);
             if (master) {
-                master.stock_level += ri.qty;
-                await Repository.upsert('items', master);
-                await Repository.upsert('stock_movements', {
-                    id: generateUUID(), item_id: ri.id, item_name: ri.name, timestamp,
-                    type: 'Return', qty: ri.qty, user, transaction_id: selectedTransaction.id, reason: "Exchange Return"
+                // Only add back to stock if disposition is Restock
+                if (ri.disposition === 'Restock') {
+                    master.stock_level += ri.qty;
+                    await Repository.upsert('items', master);
+                    await Repository.upsert('stock_movements', {
+                        id: generateUUID(), item_id: ri.id, item_name: ri.name, timestamp,
+                        type: 'Return', qty: ri.qty, user, transaction_id: selectedTransaction.id, reason: `Exchange Return (${ri.disposition})`
+                    });
+                }
+
+                // Log to Returns table for reporting
+                await Repository.upsert('returns', {
+                    id: generateUUID(),
+                    transaction_id: selectedTransaction.id,
+                    item_id: ri.id,
+                    item_name: ri.name,
+                    qty: ri.qty,
+                    refund_amount: ri.selling_price * ri.qty,
+                    reason: "Exchange",
+                    condition: ri.disposition,
+                    processed_by: user,
+                    timestamp: timestamp
                 });
             }
         }
@@ -357,6 +443,16 @@ async function processExchange() {
                     id: generateUUID(), item_id: ei.id, item_name: ei.name, timestamp,
                     type: 'Exchange', qty: -ei.qty, user, transaction_id: selectedTransaction.id, reason: "Exchange Taken"
                 });
+            }
+        }
+
+        // 3. Update Shift Expected Cash
+        if (netDue !== 0) {
+            const shifts = await Repository.getAll('shifts');
+            const activeShift = shifts.find(s => s.user_id === user && s.status === 'open');
+            if (activeShift) {
+                activeShift.expected_cash = (activeShift.expected_cash || 0) + netDue;
+                await Repository.upsert('shifts', activeShift);
             }
         }
 

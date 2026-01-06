@@ -57,7 +57,6 @@ export async function loadReportsView() {
                     <button data-tab="inventory" class="tab-btn border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">Inventory</button>
                     <button data-tab="financials" class="tab-btn border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">Financials</button>
                     <button data-tab="insights" class="tab-btn border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">Insights</button>
-                    <button data-tab="returns" class="tab-btn border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">Returns</button>
                     <button data-tab="system" class="tab-btn border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">System</button>
                 </nav>
             </div>
@@ -213,6 +212,7 @@ export async function loadReportsView() {
                         <button data-subtab="inv-movement" class="subtab-btn border-transparent text-gray-500 hover:text-gray-700 py-2 px-4 border-b-2 text-xs font-bold transition-colors">Movement Log</button>
                         <button data-subtab="inv-shrinkage" class="subtab-btn border-transparent text-gray-500 hover:text-gray-700 py-2 px-4 border-b-2 text-xs font-bold transition-colors">Shrinkage</button>
                         <button data-subtab="inv-slow" class="subtab-btn border-transparent text-gray-500 hover:text-gray-700 py-2 px-4 border-b-2 text-xs font-bold transition-colors">Slow Moving</button>
+                        <button data-subtab="inv-returns" class="subtab-btn border-transparent text-gray-500 hover:text-gray-700 py-2 px-4 border-b-2 text-xs font-bold transition-colors">Returns</button>
                     </div>
 
                     <div id="subpanel-inv-val" class="sub-panel">
@@ -433,6 +433,58 @@ export async function loadReportsView() {
                                     </thead>
                                     <tbody id="report-slow-moving-body" class="text-gray-600 text-sm font-light">
                                         <tr><td colspan="5" class="py-3 px-6 text-center">Select dates and click Generate.</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="subpanel-inv-returns" class="sub-panel hidden">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                            <!-- Reason Code Breakdown -->
+                            <div class="bg-white shadow-md rounded p-6">
+                                <h3 class="font-bold text-gray-800 mb-4 border-b pb-2">Return Reasons</h3>
+                                <div id="report-return-reasons" class="space-y-2">
+                                    <div class="text-center text-gray-400 py-4">No data</div>
+                                </div>
+                            </div>
+                            <!-- Defective Items by Supplier -->
+                            <div class="bg-white shadow-md rounded p-6">
+                                <h3 class="font-bold text-gray-800 mb-4 border-b pb-2">Defective Items by Supplier</h3>
+                                <div class="overflow-x-auto">
+                                    <table class="min-w-full text-sm">
+                                        <thead>
+                                            <tr class="text-left text-gray-500 border-b">
+                                                <th class="pb-2">Supplier</th>
+                                                <th class="pb-2 text-right">Defective Count</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="report-defective-supplier-body">
+                                            <tr><td colspan="2" class="py-4 text-center text-gray-400">No data</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Detailed Returns Table -->
+                        <div class="bg-white shadow-md rounded overflow-hidden">
+                            <div class="px-6 py-4 border-b bg-gray-50 flex justify-between items-center">
+                                <h3 class="font-bold text-gray-800">Detailed Returns Log</h3>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full table-auto">
+                                    <thead>
+                                        <tr class="bg-gray-100 text-gray-600 uppercase text-xs leading-normal">
+                                            <th class="py-3 px-6 text-left">Date</th>
+                                            <th class="py-3 px-6 text-left">Item</th>
+                                            <th class="py-3 px-6 text-left">Reason</th>
+                                            <th class="py-3 px-6 text-left">Condition</th>
+                                            <th class="py-3 px-6 text-right">Qty</th>
+                                            <th class="py-3 px-6 text-right">Refund</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="report-returns-log-body" class="text-gray-600 text-sm font-light">
+                                        <tr><td colspan="6" class="py-3 px-6 text-center">No returns found.</td></tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -756,59 +808,6 @@ export async function loadReportsView() {
                     </div>
                 </div>
 
-                <!-- Returns Panel -->
-                <div id="tab-returns" class="tab-panel hidden">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                        <!-- Reason Code Breakdown -->
-                        <div class="bg-white shadow-md rounded p-6">
-                            <h3 class="font-bold text-gray-800 mb-4 border-b pb-2">Return Reasons</h3>
-                            <div id="report-return-reasons" class="space-y-2">
-                                <div class="text-center text-gray-400 py-4">No data</div>
-                            </div>
-                        </div>
-                        <!-- Defective Items by Supplier -->
-                        <div class="bg-white shadow-md rounded p-6">
-                            <h3 class="font-bold text-gray-800 mb-4 border-b pb-2">Defective Items by Supplier</h3>
-                            <div class="overflow-x-auto">
-                                <table class="min-w-full text-sm">
-                                    <thead>
-                                        <tr class="text-left text-gray-500 border-b">
-                                            <th class="pb-2">Supplier</th>
-                                            <th class="pb-2 text-right">Defective Count</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="report-defective-supplier-body">
-                                        <tr><td colspan="2" class="py-4 text-center text-gray-400">No data</td></tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Detailed Returns Table -->
-                    <div class="bg-white shadow-md rounded overflow-hidden">
-                        <div class="px-6 py-4 border-b bg-gray-50 flex justify-between items-center">
-                            <h3 class="font-bold text-gray-800">Detailed Returns Log</h3>
-                        </div>
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full table-auto">
-                                <thead>
-                                    <tr class="bg-gray-100 text-gray-600 uppercase text-xs leading-normal">
-                                        <th class="py-3 px-6 text-left">Date</th>
-                                        <th class="py-3 px-6 text-left">Item</th>
-                                        <th class="py-3 px-6 text-left">Reason</th>
-                                        <th class="py-3 px-6 text-left">Condition</th>
-                                        <th class="py-3 px-6 text-right">Qty</th>
-                                        <th class="py-3 px-6 text-right">Refund</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="report-returns-log-body" class="text-gray-600 text-sm font-light">
-                                    <tr><td colspan="6" class="py-3 px-6 text-center">No returns found.</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- System Panel -->
                 <div id="tab-system" class="tab-panel hidden">
                     <div class="flex gap-4 mb-6 border-b border-gray-100">
@@ -1098,6 +1097,10 @@ async function generateReport() {
             .filter(t => !t._deleted && t.is_voided && t.voided_at && t.voided_at >= startStr && t.voided_at <= endStr)
             .toArray();
 
+        // Fetch ALL transactions with exchanges to ensure we catch exchanges happening in this period
+        // even if the original transaction was from a long time ago.
+        const allTxsWithExchanges = await db.transactions.filter(t => t.exchanges && t.exchanges.length > 0).toArray();
+
         const txMap = new Map();
         [...rawTransactions, ...historicalVoids].forEach(t => {
             txMap.set(t.id, t);
@@ -1171,7 +1174,7 @@ async function generateReport() {
         );
 
         // Synthesize movements from returns
-        const returnMovements = returns.filter(r => r.condition === 'restockable').flatMap(r => {
+        const returnMovements = returns.filter(r => r.condition === 'Restock').flatMap(r => {
             const moves = [{
                 id: `return-${r.id}`,
                 item_id: r.item_id,
@@ -1377,17 +1380,44 @@ async function generateReport() {
             const shiftTxs = transactions.filter(t => t.user_email === s.user_id && new Date(t.timestamp) >= new Date(s.start_time) && (s.end_time ? new Date(t.timestamp) <= new Date(s.end_time) : true));
             
             let totalSales = 0;
+            let cashSales = 0;
             let totalCogs = 0;
+
+            // Calculate Exchange Cash Flow for this shift
+            let exchangeCash = 0;
+            allTxsWithExchanges.forEach(tx => {
+                if (tx.exchanges && Array.isArray(tx.exchanges)) {
+                    tx.exchanges.forEach(ex => {
+                        // Check if exchange was processed by this user during this shift
+                        if (ex.processed_by === s.user_id && new Date(ex.timestamp) >= new Date(s.start_time) && (s.end_time ? new Date(ex.timestamp) <= new Date(s.end_time) : true)) {
+                            const returnedTotal = ex.returned.reduce((sum, i) => sum + (i.selling_price * i.qty), 0);
+                            const takenTotal = ex.taken.reduce((sum, i) => sum + (i.selling_price * i.qty), 0);
+                            exchangeCash += (takenTotal - returnedTotal);
+                        }
+                    });
+                }
+            });
+
+            const shiftReturns = returns.filter(r => r.processed_by === s.user_id && new Date(r.timestamp) >= new Date(s.start_time) && (s.end_time ? new Date(r.timestamp) <= new Date(s.end_time) : true));
+            const totalReturns = shiftReturns.reduce((sum, r) => sum + (r.refund_amount || 0), 0);
+
             shiftTxs.forEach(tx => {
                 if (!tx.is_voided) {
                     totalSales += tx.total_amount;
+                    if (tx.payment_method === 'Cash') {
+                        cashSales += tx.total_amount;
+                    }
                     tx.items.forEach(item => {
                         totalCogs += (item.cost_price || 0) * (item.qty - (item.returned_qty || 0));
                     });
                 }
             });
 
-            const expected = (s.opening_cash || 0) + totalSales;
+            // Recalculate Expected Cash retroactively to fix old records
+            // Formula: Opening + Adjustments + Cash Sales + Net Exchange Cash
+            const totalAdjustments = (s.adjustments || []).reduce((sum, adj) => sum + (parseFloat(adj.amount) || 0), 0);
+            const expected = (s.opening_cash || 0) + totalAdjustments + cashSales + exchangeCash;
+
             const cashout = s.cashout || 0;
             const receipts = s.closing_receipts || [];
             const totalExpenses = receipts.reduce((sum, r) => sum + (r.amount || 0), 0);
@@ -1401,7 +1431,9 @@ async function generateReport() {
                 variance: isClosed ? turnover - expected : null,
                 totalSales,
                 totalCogs,
-                grossProfit: totalSales - totalCogs
+                grossProfit: totalSales - totalCogs,
+                totalReturns,
+                exchangeCash
             };
         });
         
@@ -1524,6 +1556,7 @@ async function renderTab(tabName) {
             renderInventoryHistory(reportData.stockIn, reportData.adjustments);
             renderStockMovement(reportData.movements);
             renderShrinkageAnalysis(reportData.shrinkage, reportData.products);
+            renderReturnsReport(reportData.returnReasons, reportData.defectiveSuppliers, reportData.returns);
             break;
         case 'products':
             renderProductStats(reportData.products);
@@ -1536,9 +1569,6 @@ async function renderTab(tabName) {
             renderCustomerInsights(reportData.vip, reportData.ledger);
             renderSupplierInsights(reportData.vendorPerf, reportData.purchaseHistory, reportData.landedCost);
             renderVelocityTrendChart(reportData.hourlyTrend);
-            break;
-        case 'returns':
-            renderReturnsReport(reportData.returnReasons, reportData.defectiveSuppliers, reportData.returns);
             break;
         case 'system':
             renderAuditLog(reportData.audit);
@@ -2234,6 +2264,7 @@ async function showShiftReportDetails(shiftId) {
                     <table class="w-full text-sm">
                         <tr class="bg-gray-50 border-b"><td class="p-2">Opening Cash</td><td class="p-2 text-right">₱${(shift.opening_cash || 0).toFixed(2)}</td></tr>
                         <tr class="border-b"><td class="p-2">Total Sales</td><td class="p-2 text-right">₱${(shift.totalSales || 0).toFixed(2)}</td></tr>
+                        <tr class="border-b"><td class="p-2">Net Returns</td><td class="p-2 text-right ${(shift.exchangeCash || 0) < 0 ? 'text-red-600' : 'text-gray-800'}">₱${(shift.exchangeCash || 0).toFixed(2)}</td></tr>
                         <tr class="bg-blue-50 border-b font-bold"><td class="p-2">Expected Amount</td><td class="p-2 text-right">₱${(shift.expected_cash || 0).toFixed(2)}</td></tr>
                         <tr class="border-b"><td class="p-2">Physical Cash Count</td><td class="p-2 text-right">₱${(shift.closing_cash || 0).toFixed(2)}</td></tr>
                         ${shift.precounted_bills ? `
@@ -2322,13 +2353,12 @@ async function showShiftTransactions(shiftId) {
                             <th class="text-left p-2">Items</th>
                             <th class="text-left p-2">Void Reason</th>
                             <th class="text-right p-2">Gross</th>
-                            <th class="text-right p-2">Returns</th>
                             <th class="text-right p-2">Net Total</th>
                             <th class="text-center p-2">Status</th>
                         </tr>
                     </thead>
                     <tbody id="shift-tx-body">
-                        <tr><td colspan="8" class="p-4 text-center">Loading transactions...</td></tr>
+                        <tr><td colspan="7" class="p-4 text-center">Loading transactions...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -2347,15 +2377,32 @@ async function showShiftTransactions(shiftId) {
         const startTime = shift.start_time instanceof Date ? shift.start_time.toISOString() : shift.start_time;
         const endTime = (shift.end_time instanceof Date ? shift.end_time.toISOString() : shift.end_time) || new Date().toISOString();
         
-        const txs = await db.transactions
+        const allTxs = await db.transactions
             .where('timestamp')
             .between(startTime, endTime, true, true)
             .and(t => !t._deleted)
-            .filter(t => t.user_email === shift.user_id)
             .toArray();
 
+        const entries = [];
+        allTxs.forEach(tx => {
+            // Original Sale
+            if (tx.user_email === shift.user_id) {
+                entries.push({ type: 'Sale', data: tx, timestamp: new Date(tx.timestamp), id: tx.id });
+            }
+            // Exchanges
+            if (tx.exchanges && Array.isArray(tx.exchanges)) {
+                tx.exchanges.forEach((ex, idx) => {
+                    if (ex.processed_by === shift.user_id && new Date(ex.timestamp) >= new Date(startTime) && new Date(ex.timestamp) <= new Date(endTime)) {
+                        entries.push({ type: 'Exchange', data: tx, timestamp: new Date(ex.timestamp), id: tx.id, exchangeIdx: idx });
+                    }
+                });
+            }
+        });
+
+        entries.sort((a, b) => b.timestamp - a.timestamp);
+
         const tbody = document.getElementById('shift-tx-body');
-        if (txs.length === 0) {
+        if (entries.length === 0) {
             tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-gray-500">No transactions found for this shift.</td></tr>`;
             return;
         }
@@ -2364,29 +2411,44 @@ async function showShiftTransactions(shiftId) {
         let grandReturns = 0;
         let grandNet = 0;
 
-        tbody.innerHTML = txs.map(t => {
+        tbody.innerHTML = entries.map(entry => {
+            const t = entry.data;
+            const isExchange = entry.type === 'Exchange';
+            let exchangeNet = 0;
+
             const returnsTotal = t.items.reduce((sum, item) => sum + ((item.returned_qty || 0) * item.selling_price), 0);
-            const netTotal = t.is_voided ? 0 : (t.total_amount - returnsTotal);
+            // Returns are now separate rows, so Net for the sale row is the full amount to avoid double deduction
+            const netTotal = t.is_voided ? 0 : t.total_amount;
             
-            if (!t.is_voided) {
+            if (isExchange) {
+                const ex = t.exchanges[entry.exchangeIdx];
+                const rTotal = ex.returned.reduce((sum, i) => sum + (i.selling_price * i.qty), 0);
+                const tTotal = ex.taken.reduce((sum, i) => sum + (i.selling_price * i.qty), 0);
+                exchangeNet = tTotal - rTotal;
+                grandNet += exchangeNet;
+            } else if (!t.is_voided) {
                 grandGross += t.total_amount;
                 grandReturns += returnsTotal;
                 grandNet += netTotal;
             }
 
+            const displayTotal = isExchange ? exchangeNet : t.total_amount;
+            const displayNet = isExchange ? exchangeNet : netTotal;
+            const statusLabel = t.is_voided ? 'Voided' : (isExchange ? 'Exchange' : 'Success');
+            const statusColor = t.is_voided ? 'text-red-600' : (isExchange ? 'text-blue-600' : 'text-green-600');
+
             return `
                 <tr class="border-b hover:bg-gray-50 cursor-pointer btn-view-tx-detail ${t.is_voided ? 'bg-red-50 opacity-60' : ''}" data-id="${t.id}">
-                    <td class="p-2 text-xs">${new Date(t.timestamp).toLocaleTimeString()}</td>
+                    <td class="p-2 text-xs">${entry.timestamp.toLocaleTimeString()}</td>
                     <td class="p-2">${t.customer_name || 'Guest'}</td>
                     <td class="p-2 text-xs max-w-xs truncate" title="${t.items.map(i => i.name).join(', ')}">
-                        ${t.items.length} items: ${t.items.map(i => i.name).join(', ')}
+                        ${isExchange ? 'Exchange Items' : `${t.items.length} items: ${t.items.map(i => i.name).join(', ')}`}
                     </td>
                     <td class="p-2 text-xs italic text-red-500">${t.void_reason || '-'}</td>
-                    <td class="p-2 text-right">₱${t.total_amount.toFixed(2)}</td>
-                    <td class="p-2 text-right text-red-600">₱${returnsTotal.toFixed(2)}</td>
-                    <td class="p-2 text-right font-bold">₱${netTotal.toFixed(2)}</td>
+                    <td class="p-2 text-right">₱${displayTotal.toFixed(2)}</td>
+                    <td class="p-2 text-right font-bold">₱${displayNet.toFixed(2)}</td>
                     <td class="p-2 text-center">
-                        ${t.is_voided ? '<span class="text-red-600 font-bold text-[10px] uppercase">Voided</span>' : '<span class="text-green-600 font-bold text-[10px] uppercase">Success</span>'}
+                        <span class="${statusColor} font-bold text-[10px] uppercase">${statusLabel}</span>
                     </td>
                 </tr>
             `;
@@ -2396,7 +2458,6 @@ async function showShiftTransactions(shiftId) {
             <tr class="bg-gray-50 font-bold border-t-2 border-gray-200">
                 <td colspan="4" class="p-2 text-right uppercase text-xs">Grand Totals:</td>
                 <td class="p-2 text-right">₱${grandGross.toFixed(2)}</td>
-                <td class="p-2 text-right text-red-600">₱${grandReturns.toFixed(2)}</td>
                 <td class="p-2 text-right text-blue-700">₱${grandNet.toFixed(2)}</td>
                 <td></td>
             </tr>
@@ -2407,7 +2468,7 @@ async function showShiftTransactions(shiftId) {
         });
     } catch (err) {
         console.error(err);
-        document.getElementById('shift-tx-body').innerHTML = `<tr><td colspan="8" class="p-4 text-center text-red-500">Error loading data.</td></tr>`;
+        document.getElementById('shift-tx-body').innerHTML = `<tr><td colspan="7" class="p-4 text-center text-red-500">Error loading data.</td></tr>`;
     }
 }
 
@@ -2435,6 +2496,23 @@ async function showTransactionDetail(id) {
             <td class="p-2 text-right">₱${(item.qty * item.selling_price).toFixed(2)}</td>
         </tr>
     `).join('');
+
+    const exchangeHtml = (tx.exchanges || []).map((ex, idx) => {
+        const returnedTotal = ex.returned.reduce((sum, i) => sum + (i.selling_price * i.qty), 0);
+        const takenTotal = ex.taken.reduce((sum, i) => sum + (i.selling_price * i.qty), 0);
+        const net = takenTotal - returnedTotal;
+        
+        return `
+            <div class="mt-4 border-t pt-2 bg-gray-50 p-2 rounded">
+                <h4 class="font-bold text-xs text-gray-700 mb-2">Exchange #${idx + 1} - ${new Date(ex.timestamp).toLocaleString()}</h4>
+                <div class="grid grid-cols-2 gap-4 text-xs">
+                    <div><span class="font-bold text-red-600">Returned:</span> ${ex.returned.map(i => `${i.qty}x ${i.name}`).join(', ')} (-₱${returnedTotal.toFixed(2)})</div>
+                    <div><span class="font-bold text-green-600">Taken:</span> ${ex.taken.map(i => `${i.qty}x ${i.name}`).join(', ')} (₱${takenTotal.toFixed(2)})</div>
+                </div>
+                <div class="text-right font-bold mt-1 text-blue-600">Net: ₱${net.toFixed(2)}</div>
+            </div>
+        `;
+    }).join('');
 
     modal.innerHTML = `
         <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-2xl mx-4 flex flex-col max-h-[90vh]">
@@ -2465,6 +2543,8 @@ async function showTransactionDetail(id) {
                     <tbody>${itemRows}</tbody>
                 </table>
             </div>
+
+            ${exchangeHtml}
 
             <div class="flex justify-between items-end">
                 <div class="text-sm">

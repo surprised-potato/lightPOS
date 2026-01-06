@@ -3,7 +3,7 @@ import { addNotification } from "../services/notification-service.js";
 import { generateUUID } from "../utils.js";
 import { Repository } from "../services/Repository.js";
 import { SyncEngine } from "../services/SyncEngine.js";
-import { getSystemSettings } from "./settings.js";
+import { getSystemSettings, checkShiftDiscrepancy } from "./settings.js";
 
 let currentShift = null;
 let selectedShiftId = null;
@@ -81,7 +81,7 @@ export function requireShift(callback) {
     }
 }
 
-export async function calculateExpectedCash(shift = currentShift) {
+export async function calculateExpectedCash(shift = currentShift, txList = null) {
     if (!shift) return 0;
     
     // Query local Dexie transactions for this user since shift start
@@ -89,11 +89,12 @@ export async function calculateExpectedCash(shift = currentShift) {
     const endTime = shift.end_time ? new Date(shift.end_time) : new Date();
     const userEmail = shift.user_id;
 
-    const allTransactions = await Repository.getAll('transactions');
+    const allTransactions = txList || await Repository.getAll('transactions');
     const transactions = allTransactions.filter(tx => {
         const txTime = new Date(tx.timestamp);
         return txTime >= startTime && txTime <= endTime && 
-               tx.user_email === userEmail && !tx.is_voided;
+               tx.user_email === userEmail && !tx.is_voided &&
+               tx.payment_method === 'Cash';
     });
 
     let totalSales = 0;
@@ -101,7 +102,28 @@ export async function calculateExpectedCash(shift = currentShift) {
         totalSales += tx.total_amount || 0;
     });
 
-    return (shift.opening_cash || 0) + totalSales;
+    // Add adjustments
+    const adjustments = shift.adjustments || [];
+    const totalAdjustments = adjustments.reduce((sum, adj) => sum + (parseFloat(adj.amount) || 0), 0);
+
+    // Calculate returns/exchanges impact
+    let totalExchangeCash = 0;
+    allTransactions.forEach(tx => {
+        if (tx.exchanges && Array.isArray(tx.exchanges)) {
+            tx.exchanges.forEach(exch => {
+                const exchTime = new Date(exch.timestamp);
+                // Check if exchange happened during this shift by this user
+                if (exchTime >= startTime && exchTime <= endTime && exch.processed_by === userEmail) {
+                    const returnedTotal = (exch.returned || []).reduce((sum, item) => sum + (item.selling_price * (item.qty || 1)), 0);
+                    const takenTotal = (exch.taken || []).reduce((sum, item) => sum + (item.selling_price * (item.qty || 1)), 0);
+                    const net = takenTotal - returnedTotal;
+                    totalExchangeCash += net;
+                }
+            });
+        }
+    });
+
+    return (shift.opening_cash || 0) + totalSales + totalAdjustments + totalExchangeCash;
 }
 
 export async function recordRemittance(amount, reason) {
@@ -153,16 +175,7 @@ export async function closeShift(closingCash) {
     window.dispatchEvent(new CustomEvent('shift-updated'));
 
     // Check for discrepancy notification threshold
-    try {
-        const settings = await getSystemSettings();
-        const threshold = parseFloat(settings?.shift?.threshold) || 0;
-        
-        if (Math.abs(closing - expected) > threshold) {
-            await addNotification('Discrepancy', `Shift closed with a discrepancy of ₱${(closing - expected).toFixed(2)} (Threshold: ₱${threshold.toFixed(2)})`);
-        }
-    } catch (e) {
-        console.error("Error checking discrepancy threshold:", e);
-    }
+    await checkShiftDiscrepancy(expected, closing);
     
     const summary = {
         expected: expected,
@@ -259,6 +272,7 @@ async function fetchShifts() {
 
     try {
         const shifts = await Repository.getAll('shifts');
+        const allTransactions = await Repository.getAll('transactions');
         
         const startStr = document.getElementById('shift-history-start').value;
         const endStr = document.getElementById('shift-history-end').value;
@@ -292,7 +306,7 @@ async function fetchShifts() {
             const start = data.start_time ? new Date(data.start_time).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : "-";
             
             const isClosed = data.status === 'closed';
-            const expected = isClosed ? (data.expected_cash || 0) : await calculateExpectedCash(data);
+            const expected = await calculateExpectedCash(data, allTransactions);
             
             const cashout = data.cashout || 0;
             const receipts = data.closing_receipts || [];
@@ -345,8 +359,18 @@ async function selectShift(shift) {
     panel.classList.remove("hidden");
     
     const isClosed = shift.status === 'closed';
-    const expected = shift._calculated ? shift._calculated.expected : (shift.expected_cash || 0);
-    const variance = shift._calculated ? shift._calculated.variance : 0;
+    // Always recalculate to ensure accuracy against transactions
+    const expected = await calculateExpectedCash(shift);
+    
+    let variance = 0;
+    if (isClosed) {
+        const cashout = shift.cashout || 0;
+        const receipts = shift.closing_receipts || [];
+        const totalExpenses = receipts.reduce((sum, r) => sum + (r.amount || 0), 0);
+        const turnover = (shift.closing_cash || 0) + totalExpenses + cashout;
+        variance = turnover - expected;
+    }
+    
     const varianceClass = variance < 0 ? "text-red-600 bg-red-50" : (variance > 0 ? "text-green-600 bg-green-50" : "text-gray-600 bg-gray-50");
     
     statusHeader.innerHTML = `<span class="${shift.status === 'open' ? 'bg-green-200 text-green-800' : 'bg-gray-200 text-gray-800'} px-3 py-1 rounded-full text-xs uppercase font-bold tracking-wide">${shift.status}</span>`;
@@ -399,7 +423,10 @@ async function selectShift(shift) {
 
     // Bind Actions
     if (canAdjust) {
-        document.getElementById("btn-detail-adjust")?.addEventListener("click", () => showAdjustCashModal(shift.id, () => selectShift(shift)));
+        document.getElementById("btn-detail-adjust")?.addEventListener("click", () => showAdjustCashModal(shift.id, async () => {
+            const updated = await Repository.get('shifts', shift.id);
+            selectShift(updated);
+        }));
     }
     document.getElementById("btn-detail-remit")?.addEventListener("click", () => showRemittanceHistoryModal(shift));
     document.getElementById("btn-detail-history")?.addEventListener("click", () => showShiftHistoryModal(shift.adjustments || []));
@@ -525,7 +552,7 @@ export function showCloseShiftModal(onSuccess) {
                 document.getElementById("summary-actual").textContent = `₱${summary.actual.toFixed(2)}`;
                 const diffEl = document.getElementById("summary-diff");
                 diffEl.textContent = `₱${summary.difference.toFixed(2)}`;
-                diffEl.className = `text-2xl font-bold ${summary.difference < 0 ? 'text-red-600' : (summary.difference > 0 ? 'text-green-600' : 'text-gray-800')}`;
+                diffEl.className = `text-3xl font-bold ${summary.difference < 0 ? 'text-red-600' : (summary.difference > 0 ? 'text-green-600' : 'text-gray-800')}`;
             } catch (error) {
                 console.error("Error closing shift:", error);
                 alert("Failed to close shift. Please try again.");
@@ -874,33 +901,66 @@ async function showShiftTransactions(shift) {
         const start = new Date(shift.start_time);
         const end = shift.end_time ? new Date(shift.end_time) : new Date();
         
-        const txs = allTxs.filter(t => {
-            const d = new Date(t.timestamp);
-            return d >= start && d <= end && t.user_email === shift.user_id;
-        }).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        const entries = [];
 
-        if (txs.length === 0) {
+        allTxs.forEach(tx => {
+            const txDate = new Date(tx.timestamp);
+            // 1. Original Sale
+            if (txDate >= start && txDate <= end && tx.user_email === shift.user_id) {
+                entries.push({ type: 'Sale', data: tx, timestamp: txDate, id: tx.id, total: tx.total_amount, is_voided: tx.is_voided });
+            }
+            // 2. Exchanges
+            if (tx.exchanges && Array.isArray(tx.exchanges)) {
+                tx.exchanges.forEach((ex, idx) => {
+                    const exDate = new Date(ex.timestamp);
+                    if (exDate >= start && exDate <= end && ex.processed_by === shift.user_id) {
+                        const returnedTotal = ex.returned.reduce((sum, i) => sum + (i.selling_price * i.qty), 0);
+                        const takenTotal = ex.taken.reduce((sum, i) => sum + (i.selling_price * i.qty), 0);
+                        entries.push({
+                            type: 'Exchange',
+                            data: tx,
+                            timestamp: exDate,
+                            id: `${tx.id}-EX${idx + 1}`,
+                            total: takenTotal - returnedTotal,
+                            is_voided: false,
+                            is_exchange: true
+                        });
+                    }
+                });
+            }
+        });
+
+        const sortedEntries = entries.sort((a, b) => b.timestamp - a.timestamp);
+
+        if (sortedEntries.length === 0) {
             tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-gray-500 italic">No transactions found for this shift.</td></tr>`;
             return;
         }
 
-        tbody.innerHTML = txs.map(tx => `
-            <tr class="hover:bg-gray-50 transition ${tx.is_voided ? 'bg-red-50 opacity-75' : ''}">
-                <td class="py-2 px-4 text-xs text-gray-600">${new Date(tx.timestamp).toLocaleTimeString()}</td>
-                <td class="py-2 px-4 text-xs font-mono text-gray-500">${tx.id.slice(-8)}</td>
+        tbody.innerHTML = sortedEntries.map(entry => {
+            const tx = entry.data;
+            const isExchange = entry.is_exchange;
+            const statusColor = entry.is_voided ? 'text-red-600' : (isExchange ? 'text-blue-600' : 'text-green-600');
+            const statusText = entry.is_voided ? 'Voided' : (isExchange ? 'Exchange' : 'Valid');
+            
+            return `
+            <tr class="hover:bg-gray-50 transition ${entry.is_voided ? 'bg-red-50 opacity-75' : ''}">
+                <td class="py-2 px-4 text-xs text-gray-600">${entry.timestamp.toLocaleTimeString()}</td>
+                <td class="py-2 px-4 text-xs font-mono text-gray-500">${entry.id.slice(-12)}</td>
                 <td class="py-2 px-4 text-sm text-gray-800">${tx.customer_name || 'Guest'}</td>
-                <td class="py-2 px-4 text-right font-bold text-gray-800">₱${tx.total_amount.toFixed(2)}</td>
-                <td class="py-2 px-4 text-center text-xs font-bold uppercase ${tx.is_voided ? 'text-red-600' : 'text-green-600'}">${tx.is_voided ? 'Voided' : 'Valid'}</td>
+                <td class="py-2 px-4 text-right font-bold text-gray-800">₱${entry.total.toFixed(2)}</td>
+                <td class="py-2 px-4 text-center text-xs font-bold uppercase ${statusColor}">${statusText}</td>
                 <td class="py-2 px-4 text-center flex justify-center gap-2">
-                    <button class="bg-blue-100 text-blue-700 hover:bg-blue-200 px-2 py-1 rounded text-xs font-bold btn-print-tx" data-id="${tx.id}">Print</button>
-                    ${!tx.is_voided ? `<button class="bg-red-100 text-red-700 hover:bg-red-200 px-2 py-1 rounded text-xs font-bold btn-void-tx" data-id="${tx.id}">Void</button>` : ''}
+                    ${!isExchange ? `<button class="bg-blue-100 text-blue-700 hover:bg-blue-200 px-2 py-1 rounded text-xs font-bold btn-print-tx" data-id="${tx.id}">Print</button>` : ''}
+                    ${!entry.is_voided && !isExchange ? `<button class="bg-red-100 text-red-700 hover:bg-red-200 px-2 py-1 rounded text-xs font-bold btn-void-tx" data-id="${tx.id}">Void</button>` : ''}
                 </td>
             </tr>
-        `).join('');
+            `;
+        }).join('');
 
         tbody.querySelectorAll(".btn-print-tx").forEach(btn => {
             btn.addEventListener("click", async () => {
-                const tx = txs.find(t => t.id === btn.dataset.id);
+                const tx = allTxs.find(t => t.id === btn.dataset.id);
                 if (tx) await printTransaction(tx, true);
             });
         });
@@ -949,6 +1009,7 @@ async function voidShiftTransaction(txId, shiftId) {
         }
 
         await SyncEngine.sync();
+        await addNotification('Void', `Transaction ${txId} was voided by ${user ? user.email : "Manager"}`);
         alert("Transaction voided.");
         
         // Refresh shift details

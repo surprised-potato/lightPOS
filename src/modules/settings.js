@@ -4,6 +4,7 @@ import { db } from "../db.js";
 import { generateUUID } from "../utils.js";
 import { Repository } from "../services/Repository.js";
 import { SyncEngine } from "../services/SyncEngine.js";
+import { addNotification } from "../services/notification-service.js";
 
 const API_URL = 'api/sync.php';
 // The router.php endpoint is a simple file-based store used for administrative
@@ -745,6 +746,20 @@ export async function getSystemSettings() {
                 }
             }
         };
+    }
+}
+
+export async function checkShiftDiscrepancy(expected, actual) {
+    try {
+        const settings = await getSystemSettings();
+        const threshold = parseFloat(settings?.shift?.threshold) || 0;
+        const diff = actual - expected;
+        
+        if (Math.abs(diff) > threshold) {
+            await addNotification('Discrepancy', `Shift closed with a discrepancy of ₱${diff.toFixed(2)} (Threshold: ₱${threshold.toFixed(2)})`);
+        }
+    } catch (e) {
+        console.error("Error checking discrepancy:", e);
     }
 }
 

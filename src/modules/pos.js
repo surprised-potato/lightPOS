@@ -430,54 +430,93 @@ async function renderPosInterface(content) {
 
         <!-- Close Shift Modal -->
         <div id="modal-close-shift" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center z-50">
-            <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
-                <h3 class="text-xl font-bold mb-4 text-gray-800">Close Shift - Cash Count</h3>
-                <div class="max-h-[70vh] overflow-y-auto pr-2">
-                    <div class="grid grid-cols-3 gap-2 mb-2 font-bold text-[10px] text-gray-400 uppercase border-b pb-1">
-                        <div>Denomination</div>
-                        <div class="text-center">Count</div>
-                        <div class="text-right">Subtotal</div>
+            <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-5xl h-[85vh] flex flex-col">
+                <div class="flex justify-between items-center mb-6 border-b pb-4">
+                    <div>
+                        <h3 class="text-2xl font-bold text-gray-800">End Shift</h3>
+                        <p class="text-sm text-gray-500">Perform cash count and verify turnover.</p>
                     </div>
-                    <div class="space-y-1 mb-4" id="cash-counter-grid">
-                        <!-- Denominations injected here -->
-                    </div>
-                    <div class="space-y-1 mb-4 border-t pt-2">
-                        <div class="flex items-center gap-2 py-1">
-                            <label class="w-32 text-xs font-bold text-gray-500">Precounted Bills</label>
-                            <input type="number" id="precounted-bills" min="0" step="0.01" class="flex-1 border rounded p-1 text-sm text-right focus:ring-2 focus:ring-blue-500 outline-none" placeholder="0.00">
-                        </div>
-                        <div class="flex items-center gap-2 py-1">
-                            <label class="w-32 text-xs font-bold text-gray-500">Precounted Coins</label>
-                            <input type="number" id="precounted-coins" min="0" step="0.01" class="flex-1 border rounded p-1 text-sm text-right focus:ring-2 focus:ring-blue-500 outline-none" placeholder="0.00">
-                        </div>
-                        <div class="flex items-center gap-2 py-1">
-                            <label class="w-32 text-xs font-bold text-gray-500">Cashout (Remittance)</label>
-                            <input type="number" id="shift-cashout" min="0" step="0.01" class="flex-1 border rounded p-1 text-sm text-right focus:ring-2 focus:ring-blue-500 outline-none" placeholder="0.00">
-                        </div>
-                    </div>
-                    <div class="pt-2 border-t flex justify-between items-center mb-6">
-                        <span class="font-bold text-gray-600 text-sm">Physical Cash:</span>
-                        <span id="cash-counter-total" class="text-lg font-bold text-gray-800">₱0.00</span>
-                    </div>
+                    <button id="btn-cancel-close-shift-x" class="text-gray-400 hover:text-gray-600 text-3xl">&times;</button>
+                </div>
 
-                    <div class="mb-4">
+                <div class="flex-1 overflow-hidden grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    <!-- Left Column: Cash Counter (7 cols) -->
+                    <div class="lg:col-span-7 flex flex-col h-full overflow-hidden border-r pr-6">
                         <div class="flex justify-between items-center mb-2">
-                            <h4 class="text-sm font-bold text-gray-700 uppercase">Expense Receipts</h4>
-                            <button id="btn-add-shift-receipt" class="text-[10px] bg-blue-100 text-blue-600 px-2 py-1 rounded font-bold hover:bg-blue-200">+ Add Receipt</button>
+                            <h4 class="font-bold text-gray-700 uppercase text-xs tracking-wider">Cash Denominations</h4>
+                            <span class="text-xs text-gray-400">Enter count for each</span>
                         </div>
-                        <div id="shift-receipts-list" class="space-y-2">
-                            <!-- Receipts injected here -->
+                        
+                        <div class="flex-1 overflow-y-auto bg-gray-50 rounded-lg border p-4">
+                            <div class="grid grid-cols-3 gap-4 mb-3 font-bold text-xs text-gray-500 uppercase border-b pb-2">
+                                <div>Denomination</div>
+                                <div class="text-center">Count</div>
+                                <div class="text-right">Subtotal</div>
+                            </div>
+                            <div class="space-y-2" id="cash-counter-grid">
+                                <!-- Denominations injected here -->
+                            </div>
+                        </div>
+
+                        <div class="mt-4 bg-blue-50 p-4 rounded-lg border border-blue-100 flex justify-between items-center shadow-sm">
+                            <span class="font-bold text-blue-800 text-lg">Total Physical Cash</span>
+                            <span id="cash-counter-total" class="text-3xl font-bold text-blue-700">₱0.00</span>
                         </div>
                     </div>
-                </div>
 
-                <div class="pt-3 border-t flex justify-between items-center mt-4">
-                    <span class="font-bold text-gray-800">Total Turnover:</span>
-                    <span id="shift-total-turnover" class="text-2xl font-bold text-blue-600">₱0.00</span>
-                </div>
-                <div class="mt-6 flex gap-2">
-                    <button id="btn-cancel-close-shift" class="w-1/2 bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 rounded shadow transition">Cancel</button>
-                    <button id="btn-confirm-close-shift" class="w-1/2 bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded shadow transition">Confirm Close</button>
+                    <!-- Right Column: Summary (5 cols) -->
+                    <div class="lg:col-span-5 flex flex-col h-full overflow-y-auto">
+                        <div class="space-y-6">
+                            <!-- Other Cash -->
+                            <div class="bg-gray-50 p-4 rounded-lg border">
+                                <h4 class="font-bold text-gray-700 mb-3 uppercase text-xs tracking-wider border-b pb-1">Other Cash</h4>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-500 mb-1">Precounted Bills</label>
+                                        <input type="number" id="precounted-bills" min="0" step="0.01" class="w-full border rounded p-2 text-right focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm" placeholder="0.00">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-500 mb-1">Precounted Coins</label>
+                                        <input type="number" id="precounted-coins" min="0" step="0.01" class="w-full border rounded p-2 text-right focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm" placeholder="0.00">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Cashout -->
+                            <div class="bg-gray-50 p-4 rounded-lg border">
+                                <h4 class="font-bold text-gray-700 mb-3 uppercase text-xs tracking-wider border-b pb-1">Remittance (Cashout)</h4>
+                                <div class="flex items-center gap-2">
+                                    <label class="text-sm text-gray-600 flex-1">Total Remitted:</label>
+                                    <input type="number" id="shift-cashout" min="0" step="0.01" class="w-32 border rounded p-2 text-right bg-gray-100 font-bold text-gray-700 cursor-not-allowed text-sm" readonly placeholder="0.00">
+                                </div>
+                            </div>
+
+                            <!-- Expenses -->
+                            <div class="flex-1 flex flex-col bg-gray-50 p-4 rounded-lg border min-h-[150px]">
+                                <div class="flex justify-between items-center mb-2 border-b pb-1">
+                                    <h4 class="font-bold text-gray-700 uppercase text-xs tracking-wider">Expense Receipts</h4>
+                                    <button id="btn-add-shift-receipt" class="text-[10px] bg-blue-100 text-blue-600 px-2 py-1 rounded font-bold hover:bg-blue-200 transition uppercase tracking-wide">+ Add Receipt</button>
+                                </div>
+                                <div class="flex-1 overflow-y-auto max-h-40 space-y-2" id="shift-receipts-list">
+                                    <!-- Receipts injected here -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Final Summary -->
+                        <div class="mt-auto pt-6">
+                            <div class="flex justify-between items-end mb-1">
+                                <span class="text-gray-600 font-medium">Total Turnover</span>
+                                <span id="shift-total-turnover" class="text-4xl font-bold text-gray-800 leading-none">₱0.00</span>
+                            </div>
+                            <p class="text-xs text-gray-400 text-right mb-6">Physical Cash + Receipts + Remittances</p>
+                            
+                            <div class="grid grid-cols-2 gap-4">
+                                <button id="btn-cancel-close-shift" class="w-full bg-white border border-gray-300 text-gray-700 font-bold py-3 rounded-lg hover:bg-gray-50 transition">Cancel</button>
+                                <button id="btn-confirm-close-shift" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg shadow-lg transition transform hover:scale-105">Confirm Close</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -712,15 +751,15 @@ async function renderPosInterface(content) {
         cashoutInput.classList.add("bg-gray-100", "cursor-not-allowed");
         
         grid.innerHTML = denoms.map((d, i) => `
-            <div class="flex items-center gap-2 py-1 border-b border-gray-50 last:border-0">
-                <label class="w-16 text-xs font-bold text-gray-500">${labels[i]}</label>
+            <div class="grid grid-cols-3 gap-4 items-center py-2 border-b border-gray-200 last:border-0 hover:bg-white transition px-2 rounded">
+                <label class="text-sm font-bold text-gray-600">${labels[i]}</label>
                 <input type="number" min="0" step="1" 
-                    class="flex-1 border rounded p-1 text-sm text-center denom-input focus:ring-2 focus:ring-blue-500 outline-none" 
+                    class="w-full border rounded p-2 text-sm text-center denom-input focus:ring-2 focus:ring-blue-500 outline-none font-mono" 
                     data-denom="${d}" 
                     value=""
                     placeholder="0"
                     ${i === 0 ? 'id="first-denom-input"' : ''}>
-                <div class="w-24 text-right text-xs font-mono text-gray-600 denom-subtotal">₱0.00</div>
+                <div class="text-right text-sm font-mono text-gray-800 font-bold denom-subtotal">₱0.00</div>
             </div>
         `).join('');
 
@@ -795,6 +834,9 @@ async function renderPosInterface(content) {
 
     document.getElementById("btn-pos-close-shift").addEventListener("click", openCloseShiftModal);
     document.getElementById("btn-cancel-close-shift").addEventListener("click", () => {
+        document.getElementById("modal-close-shift").classList.add("hidden");
+    });
+    document.getElementById("btn-cancel-close-shift-x")?.addEventListener("click", () => {
         document.getElementById("modal-close-shift").classList.add("hidden");
     });
 

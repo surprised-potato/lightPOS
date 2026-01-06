@@ -235,10 +235,6 @@ export async function renderHeader() {
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7m-6 0l4 4L19 7"></path></svg>
                         </button>
                     </div>
-                    <div class="flex border-b border-gray-100 bg-gray-50">
-                        <button id="tab-notif-all" class="flex-1 py-2 text-[10px] font-bold uppercase tracking-tight transition-colors border-b-2 ${localStorage.getItem('notification_filter_unread') !== 'true' ? 'border-blue-600 text-blue-600 bg-white' : 'border-transparent text-gray-500 hover:bg-gray-100'}">All</button>
-                        <button id="tab-notif-unread" class="flex-1 py-2 text-[10px] font-bold uppercase tracking-tight transition-colors border-b-2 ${localStorage.getItem('notification_filter_unread') === 'true' ? 'border-blue-600 text-blue-600 bg-white' : 'border-transparent text-gray-500 hover:bg-gray-100'}">Unread</button>
-                    </div>
                     <div id="notification-list" class="max-h-80 overflow-y-auto">
                         <div class="p-4 text-center text-gray-400 text-xs">No notifications</div>
                     </div>
@@ -273,32 +269,6 @@ export async function renderHeader() {
                 dropdownNotif.classList.toggle("hidden");
             });
         }
-
-        const setFilter = (unreadOnly) => {
-            localStorage.setItem('notification_filter_unread', unreadOnly.toString());
-            const tabAll = document.getElementById("tab-notif-all");
-            const tabUnread = document.getElementById("tab-notif-unread");
-            if (tabAll && tabUnread) {
-                if (unreadOnly) {
-                    tabUnread.className = "flex-1 py-2 text-[10px] font-bold uppercase tracking-tight transition-colors border-b-2 border-blue-600 text-blue-600 bg-white";
-                    tabAll.className = "flex-1 py-2 text-[10px] font-bold uppercase tracking-tight transition-colors border-b-2 border-transparent text-gray-500 hover:bg-gray-100";
-                } else {
-                    tabAll.className = "flex-1 py-2 text-[10px] font-bold uppercase tracking-tight transition-colors border-b-2 border-blue-600 text-blue-600 bg-white";
-                    tabUnread.className = "flex-1 py-2 text-[10px] font-bold uppercase tracking-tight transition-colors border-b-2 border-transparent text-gray-500 hover:bg-gray-100";
-                }
-            }
-            updateNotificationUI();
-        };
-
-        document.getElementById("tab-notif-all")?.addEventListener("click", (e) => {
-            e.stopPropagation();
-            setFilter(false);
-        });
-
-        document.getElementById("tab-notif-unread")?.addEventListener("click", (e) => {
-            e.stopPropagation();
-            setFilter(true);
-        });
 
         document.getElementById("btn-mark-all-read")?.addEventListener("click", async (e) => {
             e.stopPropagation();
@@ -400,7 +370,6 @@ async function updateNotificationUI() {
     const list = document.getElementById('notification-list');
     if (!badge || !list) return;
 
-    const filterUnread = localStorage.getItem('notification_filter_unread') === 'true';
     const unreadCount = await getUnreadCount();
     let notifications = await getRecentNotifications(20);
 
@@ -410,24 +379,15 @@ async function updateNotificationUI() {
         badge.classList.add('hidden');
     }
 
-    if (filterUnread) {
-        notifications = notifications.filter(n => n.read === 0);
-    }
-
     if (notifications.length === 0) {
-        list.innerHTML = `<div class="p-4 text-center text-gray-400 text-xs">${filterUnread ? 'No unread notifications' : 'No notifications'}</div>`;
+        list.innerHTML = `<div class="p-4 text-center text-gray-400 text-xs">No notifications</div>`;
     } else {
         list.innerHTML = notifications.map(n => `
-            <div class="notification-item px-4 py-3 border-b last:border-0 hover:bg-gray-50 transition-colors group relative cursor-pointer" data-id="${n.id}" data-read="${n.read}">
+            <div class="notification-item px-4 py-3 border-b last:border-0 hover:bg-gray-50 transition-colors group relative cursor-pointer ${n.read ? 'opacity-60 bg-gray-50' : 'bg-white'}" data-id="${n.id}" data-read="${n.read}">
                 <div class="flex justify-between items-start mb-1">
                     <span class="text-[10px] font-bold uppercase ${n.type === 'Void' ? 'text-red-500' : n.type === 'Adjustment' ? 'text-yellow-600' : 'text-blue-600'}">${n.type}</span>
                     <div class="flex items-center gap-2">
                         <span class="text-[9px] text-gray-400">${new Date(n.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                        <button class="btn-toggle-read p-1 rounded-md hover:bg-gray-200 transition-colors" data-id="${n.id}" data-read="${n.read}" title="${n.read ? 'Mark as unread' : 'Mark as read'}">
-                            <div class="w-4 h-4 flex items-center justify-center rounded border ${n.read ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-gray-300 text-blue-200'} ${!n.read ? 'animate-breathe-blue' : ''}">
-                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
-                            </div>
-                        </button>
                     </div>
                 </div>
                 <p class="text-xs ${n.read ? 'text-gray-500' : 'text-gray-700 font-medium'} leading-tight">${n.message}</p>
@@ -436,16 +396,10 @@ async function updateNotificationUI() {
 
         list.querySelectorAll('.notification-item').forEach(item => {
             item.addEventListener('click', async (e) => {
-                const toggleBtn = e.target.closest('.btn-toggle-read');
-                const id = parseInt(item.dataset.id);
+                e.stopPropagation();
+                const id = item.dataset.id;
                 const isRead = parseInt(item.dataset.read) === 1;
-
-                if (toggleBtn) {
-                    e.stopPropagation();
-                    await toggleNotificationRead(id, !isRead);
-                } else if (!isRead) {
-                    await toggleNotificationRead(id, true);
-                }
+                await toggleNotificationRead(id, !isRead);
             });
         });
     }

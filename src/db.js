@@ -10,7 +10,7 @@ export const db = new Dexie(dbName);
 // Define schema: 
 // ++id is auto-incrementing if needed, 
 // but usually, you'll use the 'id' from your cloud DB.
-db.version(32).stores({
+db.version(34).stores({
     items: '++id, name, barcode, category, updatedAt, sync_status, _version, _updatedAt, _deleted',
     transactions: '++id, timestamp, customer_id, *item_ids, sync_status, _version, _updatedAt, _deleted',
     stock_movements: '++id, item_id, timestamp, sync_status, _version, _updatedAt, _deleted',
@@ -20,12 +20,13 @@ db.version(32).stores({
     customers: '++id, name, phone, account_number, sync_status, _version, _updatedAt, _deleted',
     stockins: '++id, timestamp, sync_status, _version, _updatedAt, _deleted',
     suspended_transactions: '++id, timestamp, user_email, sync_status, _version, _updatedAt, _deleted',
-    notifications: '++id, timestamp, read',
+    notifications: 'id, timestamp, read, target, sync_status, _version, _updatedAt, _deleted',
     returns: '++id, transaction_id, timestamp, sync_status, _version, _updatedAt, _deleted',
     shifts: '++id, user_id, status, sync_status, _version, _updatedAt, _deleted',
     expenses: '++id, date, category, sync_status, _version, _updatedAt, _deleted',
     suppliers: '++id, name, sync_status, _version, _updatedAt, _deleted',
     users: 'email, name, is_active, sync_status, _version, _updatedAt, _deleted',
+    settings: 'id, sync_status, _version, _updatedAt, _deleted',
     outbox: '++id, collection, docId, type, [collection+docId]'
 }).upgrade(tx => {
     // Migration: Populate item_ids array from the items objects for existing data

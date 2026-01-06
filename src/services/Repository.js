@@ -8,6 +8,9 @@ export const Repository = {
      */
     async upsert(collection, data) {
         try {
+            if (!db[collection]) {
+                throw new Error(`Repository Error: Collection '${collection}' does not exist in the local database.`);
+            }
             const idField = db[collection].schema.primKey.name;
             const id = data[idField];
 
@@ -43,14 +46,17 @@ export const Repository = {
     },
 
     async get(collection, id) {
+        if (!db[collection]) throw new Error(`Repository Error: Collection '${collection}' does not exist.`);
         return await db[collection].get(id);
     },
 
     async getAll(collection) {
+        if (!db[collection]) throw new Error(`Repository Error: Collection '${collection}' does not exist.`);
         return await db[collection].toArray();
     },
 
     async remove(collection, id) {
+        if (!db[collection]) throw new Error(`Repository Error: Collection '${collection}' does not exist.`);
         const existing = await db[collection].get(id);
         if (!existing) return;
 
