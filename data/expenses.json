@@ -10,7 +10,7 @@
         "user_id": "brad@lp.com",
         "created_at": "2026-01-06T02:18:27.050Z",
         "_version": 1,
-        "_updatedAt": 1767675020750,
+        "_updatedAt": 1767675325377,
         "_deleted": false
     },
     {
@@ -24,7 +24,7 @@
         "user_id": "brad@lp.com",
         "created_at": "2026-01-06T03:22:43.617Z",
         "_version": 4,
-        "_updatedAt": 1767675020750,
+        "_updatedAt": 1767675325377,
         "_deleted": true
     },
     {
@@ -38,7 +38,7 @@
         "user_id": "brad@lp.com",
         "created_at": "2026-01-06T01:43:35.152Z",
         "_version": 1,
-        "_updatedAt": 1767675020750,
+        "_updatedAt": 1767675325377,
         "_deleted": false
     }
 ]

@@ -1274,7 +1274,8 @@ async function syncAllDiffs() {
                 const outboxEntries = toUpload.map(item => ({
                     collection: collection,
                     docId: item[idField],
-                    type: 'update'
+                    type: 'upsert',
+                    payload: item
                 }));
                 await db.outbox.bulkPut(outboxEntries);
             }

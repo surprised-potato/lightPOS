@@ -10,7 +10,7 @@
         "status": "closed",
         "adjustments": [],
         "_version": 1,
-        "_updatedAt": 1767675020750,
+        "_updatedAt": 1767675325377,
         "_deleted": false,
         "_hash": "d8f2f395db1b7750db5a9f8a71b268f4"
     },
@@ -25,7 +25,7 @@
         "status": "closed",
         "adjustments": [],
         "_version": 2,
-        "_updatedAt": 1767675020750,
+        "_updatedAt": 1767675325377,
         "_deleted": false,
         "_hash": "1b531769474903f80b8ab8529086a243",
         "cashout": 0,
@@ -45,7 +45,7 @@
         "status": "closed",
         "adjustments": [],
         "_version": 2,
-        "_updatedAt": 1767675020750,
+        "_updatedAt": 1767675325377,
         "_deleted": false,
         "_hash": "9877ebfc9fab6fec5f32540473fadd6a",
         "closing_receipts": [
@@ -69,7 +69,7 @@
         "adjustments": [],
         "remittances": [],
         "_version": 1,
-        "_updatedAt": 1767675020750,
+        "_updatedAt": 1767675325377,
         "_deleted": false,
         "_hash": "74e75440c563ed54fc785c1aa487f1cc"
     },
@@ -87,7 +87,7 @@
         "closing_receipts": [],
         "total_closing_amount": 0,
         "_version": 1,
-        "_updatedAt": 1767675020750,
+        "_updatedAt": 1767675325377,
         "_deleted": false,
         "_hash": "2a21e3c919e72afabcc39a3aa6bebad6"
     },
@@ -102,7 +102,7 @@
         "status": "open",
         "adjustments": [],
         "_version": 1,
-        "_updatedAt": 1767675020750,
+        "_updatedAt": 1767675325377,
         "_deleted": false,
         "_hash": "a25cdb53c24b8a5cf0fc50a575d6ae9f"
     },
@@ -117,7 +117,7 @@
         "status": "closed",
         "adjustments": [],
         "_version": 2,
-        "_updatedAt": 1767675020750,
+        "_updatedAt": 1767675325377,
         "_deleted": false,
         "_hash": "25ff4467363c6e79fd8216a3301e37fd",
         "closing_receipts": [],
@@ -137,7 +137,7 @@
         "closing_receipts": [],
         "total_closing_amount": 0,
         "_version": 1,
-        "_updatedAt": 1767675020750,
+        "_updatedAt": 1767675325377,
         "_deleted": false,
         "_hash": "31cbccbb2a348b8c3c3763e6962decea"
     },
@@ -152,7 +152,7 @@
         "status": "closed",
         "adjustments": [],
         "_version": 2,
-        "_updatedAt": 1767675020750,
+        "_updatedAt": 1767675325377,
         "_deleted": false,
         "_hash": "94525dbb0ad5d6deb1c5dfb516c04a02"
     },
@@ -167,7 +167,7 @@
         "status": "closed",
         "adjustments": [],
         "_version": 1,
-        "_updatedAt": 1767675020750,
+        "_updatedAt": 1767675325377,
         "_deleted": false,
         "_hash": "263a658ce865a3d3dc2bf40038f5ce58"
     },
@@ -184,7 +184,7 @@
         "adjustments": [],
         "remittances": [],
         "_version": 1,
-        "_updatedAt": 1767675020750,
+        "_updatedAt": 1767675325377,
         "_deleted": false
     },
     {
@@ -198,7 +198,7 @@
         "status": "closed",
         "adjustments": [],
         "_version": 1,
-        "_updatedAt": 1767675020750,
+        "_updatedAt": 1767675325377,
         "_deleted": false,
         "_hash": "a2ce9c984813f5ef0c6fe6a7128bd2a8"
     },
@@ -213,7 +213,7 @@
         "status": "closed",
         "adjustments": [],
         "_version": 2,
-        "_updatedAt": 1767675020750,
+        "_updatedAt": 1767675325377,
         "_deleted": false,
         "cashout": 500,
         "closing_receipts": [],
