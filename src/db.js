@@ -1,12 +1,16 @@
 import Dexie from './libs/dexie.mjs';
 import { handleError } from './utils.js';
 
-export const db = new Dexie('lightPOS_DB');
+// Dynamically set database name based on the URL directory (e.g., /lightPOS/ -> lightPOS_DB)
+// This ensures that copies of the app in different folders use separate local databases.
+const pathSegments = window.location.pathname.split('/').filter(Boolean);
+const dbName = (pathSegments[0] || 'lightPOS') + '_DB';
+export const db = new Dexie(dbName);
 
 // Define schema: 
 // ++id is auto-incrementing if needed, 
 // but usually, you'll use the 'id' from your cloud DB.
-db.version(31).stores({
+db.version(32).stores({
     items: '++id, name, barcode, category, updatedAt, sync_status, _version, _updatedAt, _deleted',
     transactions: '++id, timestamp, customer_id, *item_ids, sync_status, _version, _updatedAt, _deleted',
     stock_movements: '++id, item_id, timestamp, sync_status, _version, _updatedAt, _deleted',
@@ -22,7 +26,7 @@ db.version(31).stores({
     expenses: '++id, date, category, sync_status, _version, _updatedAt, _deleted',
     suppliers: '++id, name, sync_status, _version, _updatedAt, _deleted',
     users: 'email, name, is_active, sync_status, _version, _updatedAt, _deleted',
-    outbox: '++id, collection, docId, type'
+    outbox: '++id, collection, docId, type, [collection+docId]'
 }).upgrade(tx => {
     // Migration: Populate item_ids array from the items objects for existing data
     return tx.transactions.toCollection().modify(transaction => {

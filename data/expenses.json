@@ -1,1 +1,44 @@
-[]
+[
+    {
+        "id": "401f456e-2c4d-4e3d-bc84-8ff481e2d5ae",
+        "description": "PAID BY BRADBOY",
+        "amount": 1234,
+        "category": "Procurement",
+        "supplier_id": "4eb03e38-c6bf-4c54-9a63-ad602a58b5ad",
+        "supplier_name": "SYL Hermano's Trade Center Inc.",
+        "date": "2026-01-06",
+        "user_id": "brad@lp.com",
+        "created_at": "2026-01-06T02:18:27.050Z",
+        "_version": 1,
+        "_updatedAt": 1767675020750,
+        "_deleted": false
+    },
+    {
+        "id": "7f4ed31d-acab-4a39-93bb-869e3d83b149",
+        "description": "PAID BY BRADBOY",
+        "amount": 4408,
+        "category": "Other",
+        "supplier_id": "38f918d6-a624-4a13-a8b8-6a6a3e0e2285",
+        "supplier_name": "PD888 Distributors",
+        "date": "2026-01-06",
+        "user_id": "brad@lp.com",
+        "created_at": "2026-01-06T03:22:43.617Z",
+        "_version": 4,
+        "_updatedAt": 1767675020750,
+        "_deleted": true
+    },
+    {
+        "id": "8792345c-1cc7-4153-8e6b-a6cc97f7dcb1",
+        "description": "PAID BY BRADBOY",
+        "amount": 3390,
+        "category": "Procurement",
+        "supplier_id": "09c613b9-4cb4-4c39-abe4-bca5d0fc11a6",
+        "supplier_name": "Pryce Gases",
+        "date": "2026-01-06",
+        "user_id": "brad@lp.com",
+        "created_at": "2026-01-06T01:43:35.152Z",
+        "_version": 1,
+        "_updatedAt": 1767675020750,
+        "_deleted": false
+    }
+]

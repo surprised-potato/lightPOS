@@ -13,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 $dataDir = __DIR__ . '/../data/';
 $store = new JsonStore($dataDir);
-$allowedFiles = ['items', 'users', 'suppliers', 'customers', 'transactions', 'shifts', 'expenses', 'stock_in_history', 'stockins', 'adjustments', 'suspended_transactions', 'returns', 'sync_metadata', 'last_sync', 'stock_movements', 'valuation_history', 'stock_logs', 'notifications'];
+$allowedFiles = ['items', 'users', 'suppliers', 'customers', 'transactions', 'shifts', 'expenses', 'stock_in_history', 'stockins', 'adjustments', 'suspended_transactions', 'returns', 'sync_metadata', 'last_sync', 'stock_movements', 'valuation_history', 'stock_logs', 'notifications', 'settings'];
 
 $action = $_GET['action'] ?? null;
 $file = $_GET['file'] ?? null;
@@ -29,6 +29,13 @@ if ($file && !in_array($file, $allowedFiles)) {
 // Ensure data directory exists
 if (!is_dir($dataDir)) {
     mkdir($dataDir, 0777, true);
+}
+
+// Ensure data directory is writable by the server
+if (!is_writable($dataDir)) {
+    http_response_code(500);
+    echo json_encode(["error" => "Server Data Directory is not writable. Please check permissions."]);
+    exit;
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
@@ -51,6 +58,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($file) {
         if (!$dryRun) {
+            // Check if specific file is writable (if it exists)
+            $targetPath = $dataDir . $file . '.json';
+            if (file_exists($targetPath) && !is_writable($targetPath)) {
+                http_response_code(500);
+                echo json_encode(["error" => "File $file.json is not writable."]);
+                exit;
+            }
+
             if ($mode === 'append') {
                 $currentData = $store->read($file);
                 if (!is_array($currentData)) $currentData = [];

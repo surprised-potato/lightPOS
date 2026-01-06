@@ -237,17 +237,11 @@ export async function loadSettingsView() {
                             <button type="button" id="btn-run-tests" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded transition text-sm shadow-sm">Run Sync Architecture Tests</button>
                             <button type="button" id="btn-diagnostic-export" class="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition text-sm shadow-sm">Export Diagnostic Report</button>
                             <p class="text-[10px] text-gray-400 mt-1">Verifies Outbox, LWW Conflict Resolution, and Web Locks.</p>
-                                </div>
-                            </div>
-
-                            <div class="bg-white p-6 rounded-lg shadow-sm border border-red-100">
-                                <h3 class="text-lg font-bold mb-4 text-red-600">Danger Zone</h3>
-                                <p class="text-sm text-gray-600 mb-4">This will permanently delete all transactions, items, and history from the server and local database. Users will be preserved.</p>
-                                <button type="button" id="btn-nuclear-reset" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition">Wipe All Data</button>
-                            </div>
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
 
                 <!-- Migration Tab -->
                 ${canMigrate ? `
@@ -371,6 +365,9 @@ export async function loadSettingsView() {
                             <button type="button" id="btn-analyze-sync" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded focus:outline-none shadow">
                                 Analyze Differences
                             </button>
+                            <button type="button" id="btn-sync-all-diffs" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-6 rounded focus:outline-none shadow hidden">
+                                Resolve All Issues
+                            </button>
                         </div>
 
                         <div id="sync-results" class="hidden">
@@ -399,6 +396,15 @@ export async function loadSettingsView() {
                                 </thead>
                                 <tbody id="sync-diff-body" class="bg-white divide-y divide-gray-200"></tbody>
                             </table>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-lg shadow-sm border border-red-100 mt-6">
+                        <h3 class="text-lg font-bold mb-4 text-red-600">Danger Zone</h3>
+                        <p class="text-sm text-gray-600 mb-4">Permanently delete data. This action cannot be undone.</p>
+                        <div class="flex flex-wrap gap-4">
+                            <button type="button" id="btn-wipe-server" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition shadow-sm">Wipe Server Data</button>
+                            <button type="button" id="btn-wipe-local" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition shadow-sm">Wipe Local Data</button>
                         </div>
                     </div>
                 </div>` : ''}
@@ -487,24 +493,6 @@ function setupEventListeners() {
     });
 
     document.getElementById("btn-diagnostic-export")?.addEventListener("click", runDiagnosticExport);
-
-    document.getElementById("btn-nuclear-reset")?.addEventListener("click", async () => {
-        if (confirm("ARE YOU ABSOLUTELY SURE? This cannot be undone. All sales and inventory data will be lost.")) {
-            if (confirm("Final confirmation: Delete everything?")) {
-                try {
-                    const res = await fetch(`${API_URL}?action=reset_all`, { method: 'POST' });
-                    if (res.ok) {
-                        const { db } = await import("../db.js");
-                        await db.delete();
-                        alert("System reset complete. The app will now reload.");
-                        window.location.reload();
-                    }
-                } catch (e) {
-                    alert("Reset failed: " + e.message);
-                }
-            }
-        }
-    });
 
     if (checkPermission("migrate", "write")) {
         setupMigrationEventListeners();
@@ -788,6 +776,7 @@ function setupMigrationEventListeners() {
     btnSampleCsv.addEventListener("click", () => downloadSample("csv"));
 
     document.getElementById("btn-analyze-sync").addEventListener("click", analyzeSync);
+    document.getElementById("btn-sync-all-diffs")?.addEventListener("click", syncAllDiffs);
 
     document.getElementById("btn-download-backup-server").addEventListener("click", downloadServerBackup);
     document.getElementById("btn-download-backup-local").addEventListener("click", downloadLocalBackup);
@@ -939,6 +928,31 @@ function setupMigrationEventListeners() {
             btnImport.disabled = false;
         }
     });
+
+    document.getElementById("btn-wipe-server")?.addEventListener("click", async () => {
+        const confirmation = prompt("DANGER: You are about to wipe ALL SERVER DATA.\nThis cannot be undone.\n\nType 'DELETE' to confirm:");
+        if (confirmation === "DELETE") {
+            try {
+                const res = await fetch(`${API_URL}?action=reset_all`, { method: 'POST' });
+                if (res.ok) {
+                    alert("Server data wiped successfully.");
+                } else {
+                    alert("Failed to wipe server data.");
+                }
+            } catch (e) {
+                alert("Error wiping server: " + e.message);
+            }
+        }
+    });
+
+    document.getElementById("btn-wipe-local")?.addEventListener("click", async () => {
+        const confirmation = prompt("DANGER: You are about to wipe ALL LOCAL DATA.\nThis cannot be undone.\n\nType 'DELETE' to confirm:");
+        if (confirmation === "DELETE") {
+            await db.delete();
+            alert("Local database wiped. The app will now reload.");
+            window.location.reload();
+        }
+    });
 }
 
 function parseGenericCSV(text) {
@@ -1021,81 +1035,261 @@ async function analyzeSync() {
     const resultsDiv = document.getElementById("sync-results");
     const tbody = document.getElementById("sync-diff-body");
     const btnAnalyze = document.getElementById("btn-analyze-sync");
+    const btnSyncAll = document.getElementById("btn-sync-all-diffs");
+    
+    // UI Elements for counts
+    const countServerEl = document.getElementById("count-server");
+    const countLocalEl = document.getElementById("count-local");
+    const statusEl = document.getElementById("sync-status-text");
+
     resultsDiv.classList.remove("hidden");
     tbody.innerHTML = `<tr><td colspan="3" class="p-4 text-center text-gray-500">Analyzing databases...</td></tr>`;
     btnAnalyze.disabled = true;
     btnAnalyze.classList.add("opacity-50");
-    try {
-        const [serverRes, localData] = await Promise.all([
-            fetch(`${API_URL}?since=0`), 
-            Repository.getAll('items')
-        ]);
-        const response = await serverRes.json();
-        const serverData = response.deltas?.items || [];
+    if (btnSyncAll) btnSyncAll.classList.add("hidden");
 
-        document.getElementById("count-server").textContent = serverData.length;
-        document.getElementById("count-local").textContent = localData.length;
-        const serverMap = new Map(serverData.map(i => [i.id, i]));
-        const localMap = new Map(localData.map(i => [i.id, i]));
-        const onlyInServer = serverData.filter(i => !localMap.has(i.id));
-        const onlyInLocal = localData.filter(i => !serverMap.has(i.id));
-        const conflicts = serverData.filter(s => {
-            const l = localMap.get(s.id);
-            if (!l) return false;
-            const sVer = s._version || 0;
-            const lVer = l._version || 0;
-            const sUpd = s._updatedAt || 0;
-            const lUpd = l._updatedAt || 0;
-            return sVer !== lVer || sUpd !== lUpd;
-        });
-        const statusEl = document.getElementById("sync-status-text");
-        if (onlyInServer.length === 0 && onlyInLocal.length === 0 && conflicts.length === 0) {
+    const collections = [
+        'items', 'transactions', 'customers', 'suppliers', 'expenses', 
+        'shifts', 'returns', 'stock_movements', 'stock_logs', 
+        'adjustments', 'stockins', 'suspended_transactions', 'users'
+    ];
+
+    try {
+        const serverRes = await fetch(`${API_URL}?since=0&_t=${Date.now()}`, { headers: { 'Cache-Control': 'no-cache' } });
+        const response = await serverRes.json();
+        const serverDeltas = response.deltas || {};
+
+        let totalServer = 0;
+        let totalLocal = 0;
+        let hasDiff = false;
+        
+        tbody.innerHTML = "";
+
+        const renderRow = (label, items, btnText, btnClass, actionFn) => {
+            const count = items.length;
+            const tr = document.createElement("tr");
+            const detailsId = `details-${Math.random().toString(36).substr(2, 9)}`;
+            
+            tr.innerHTML = `
+                <td class="p-3 text-sm font-medium text-gray-900">
+                    <div class="flex flex-col">
+                        <span>${label}</span>
+                        <button type="button" class="text-[10px] text-blue-600 text-left hover:underline focus:outline-none mt-1" onclick="document.getElementById('${detailsId}').classList.toggle('hidden')">
+                            Show Details (${count})
+                        </button>
+                    </div>
+                </td>
+                <td class="p-3 text-center text-sm text-gray-500 align-top pt-4">${count}</td>
+                <td class="p-3 text-right align-top pt-3">
+                    <button type="button" class="text-xs px-3 py-1 rounded text-white font-bold ${btnClass} hover:opacity-90 transition">${btnText}</button>
+                </td>
+            `;
+            
+            tr.querySelector("button.text-white").addEventListener("click", async (e) => {
+                e.target.disabled = true; e.target.textContent = "Processing...";
+                await actionFn(); analyzeSync();
+            });
+            tbody.appendChild(tr);
+
+            const trDetails = document.createElement("tr");
+            trDetails.id = detailsId;
+            trDetails.className = "hidden bg-gray-50";
+            
+            const preview = items.slice(0, 100).map(i => {
+                const name = i.name || i.description || i.title || (i.timestamp ? new Date(i.timestamp).toLocaleString() : null) || i.id;
+                return `<div class="text-xs text-gray-600 font-mono border-b border-gray-200 py-1 flex justify-between">
+                    <span class="truncate max-w-[300px]">${name}</span>
+                    <span class="text-gray-400 text-[10px]">${i.id}</span>
+                </div>`;
+            }).join('');
+            
+            const moreCount = items.length - 100;
+            const moreText = moreCount > 0 ? `<div class="text-xs text-gray-500 italic py-1 text-center">...and ${moreCount} more</div>` : '';
+
+            trDetails.innerHTML = `
+                <td colspan="3" class="p-3">
+                    <div class="max-h-60 overflow-y-auto border rounded bg-white p-2 shadow-inner">
+                        ${preview}
+                        ${moreText}
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(trDetails);
+        };
+
+        for (const collection of collections) {
+            if (!db[collection]) continue;
+
+            const sData = serverDeltas[collection] || [];
+            const lData = await db[collection].toArray();
+
+            totalServer += sData.length;
+            totalLocal += lData.length;
+
+            const idField = db[collection].schema.primKey.name;
+            const sMap = new Map(sData.map(i => [i[idField], i]));
+            const lMap = new Map(lData.map(i => [i[idField], i]));
+
+            const onlyInServer = sData.filter(i => !lMap.has(i[idField]));
+            const onlyInLocal = lData.filter(i => !sMap.has(i[idField]));
+            
+            const conflicts = sData.filter(s => {
+                const l = lMap.get(s[idField]);
+                if (!l) return false;
+                const sVer = s._version || 0;
+                const lVer = l._version || 0;
+                const sUpd = s._updatedAt || 0;
+                const lUpd = l._updatedAt || 0;
+                return sVer !== lVer || sUpd !== lUpd;
+            });
+
+            if (onlyInServer.length > 0 || onlyInLocal.length > 0 || conflicts.length > 0) {
+                hasDiff = true;
+                const labelName = collection.charAt(0).toUpperCase() + collection.slice(1).replace(/_/g, ' ');
+
+                if (onlyInServer.length > 0) {
+                    renderRow(`${labelName}: Missing in Local`, onlyInServer, "Download", "bg-blue-500", async () => {
+                        await db.transaction('rw', [db[collection], db.outbox], async () => {
+                            for (const item of onlyInServer) {
+                                await db[collection].put(item);
+                                await db.outbox.where({ collection: collection, docId: item[idField] }).delete();
+                            }
+                        });
+                    });
+                }
+
+                if (onlyInLocal.length > 0) {
+                    renderRow(`${labelName}: Missing in Server`, onlyInLocal, "Upload", "bg-green-500", async () => {
+                        for (const item of onlyInLocal) {
+                            const toUpload = { ...item, _updatedAt: Date.now(), _version: (item._version || 0) + 1 };
+                            await Repository.upsert(collection, toUpload);
+                        }
+                        await SyncEngine.sync();
+                    });
+                }
+
+                if (conflicts.length > 0) {
+                    renderRow(`${labelName}: Conflicts`, conflicts, "Trust Server", "bg-orange-500", async () => {
+                        await db.transaction('rw', [db[collection], db.outbox], async () => {
+                            for (const item of conflicts) {
+                                await db[collection].put(item);
+                                await db.outbox.where({ collection: collection, docId: item[idField] }).delete();
+                            }
+                        });
+                    });
+                }
+            }
+        }
+
+        countServerEl.textContent = totalServer;
+        countLocalEl.textContent = totalLocal;
+        
+        // Update labels to reflect aggregate
+        if (countServerEl.previousElementSibling) countServerEl.previousElementSibling.textContent = "TOTAL SERVER RECORDS";
+        if (countLocalEl.previousElementSibling) countLocalEl.previousElementSibling.textContent = "TOTAL LOCAL RECORDS";
+
+        if (!hasDiff) {
             tbody.innerHTML = `<tr><td colspan="3" class="p-4 text-center text-green-600 font-bold bg-green-50">All databases are in sync!</td></tr>`;
             statusEl.textContent = "Synced";
             statusEl.className = "text-lg font-bold text-green-600";
+            if (btnSyncAll) btnSyncAll.classList.add("hidden");
         } else {
             statusEl.textContent = "Not Synced";
             statusEl.className = "text-lg font-bold text-red-600";
-            tbody.innerHTML = "";
-            const renderRow = (label, count, btnText, btnClass, actionFn) => {
-                const tr = document.createElement("tr");
-                tr.innerHTML = `<td class="p-3 text-sm font-medium text-gray-900">${label}</td><td class="p-3 text-center text-sm text-gray-500">${count}</td><td class="p-3 text-right"><button type="button" class="text-xs px-3 py-1 rounded text-white font-bold ${btnClass} hover:opacity-90 transition">${btnText}</button></td>`;
-                tr.querySelector("button").addEventListener("click", async (e) => {
-                    e.target.disabled = true; e.target.textContent = "Processing...";
-                    await actionFn(); analyzeSync();
-                });
-                tbody.appendChild(tr);
-            };
-            if (onlyInServer.length > 0) renderRow("Missing in Local DB", onlyInServer.length, "Download to Local", "bg-blue-500", async () => {
-                for (const item of onlyInServer) {
-                    // Directly apply server state and clear outbox to prevent push-back loops
-                    await db.transaction('rw', [db.items, db.outbox], async () => {
-                        await db.items.put(item);
-                        await db.outbox.where({ collection: 'items', docId: item.id }).delete();
-                    });
-                }
-            });
-            if (onlyInLocal.length > 0) renderRow("Missing in Server DB", onlyInLocal.length, "Upload to Server", "bg-green-500", async () => {
-                for (const item of onlyInLocal) {
-                    await Repository.upsert('items', item);
-                }
-                await SyncEngine.sync();
-            });
-            if (conflicts.length > 0) renderRow("Data Mismatch / Conflicts", conflicts.length, "Overwrite Local (Trust Server)", "bg-orange-500", async () => {
-                for (const item of conflicts) {
-                    // Force local to match server version and timestamp
-                    await db.transaction('rw', [db.items, db.outbox], async () => {
-                        await db.items.put(item);
-                        await db.outbox.where({ collection: 'items', docId: item.id }).delete();
-                    });
-                }
-            });
+            if (btnSyncAll) btnSyncAll.classList.remove("hidden");
         }
     } catch (e) {
         console.error(e);
         tbody.innerHTML = `<tr><td colspan="3" class="p-4 text-center text-red-600">Error analyzing data. Check console.</td></tr>`;
     } finally {
         btnAnalyze.disabled = false; btnAnalyze.classList.remove("opacity-50");
+    }
+}
+
+async function syncAllDiffs() {
+    const btn = document.getElementById("btn-sync-all-diffs");
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = "Resolving...";
+
+    try {
+        const serverRes = await fetch(`${API_URL}?since=0&_t=${Date.now()}`, { headers: { 'Cache-Control': 'no-cache' } });
+        const response = await serverRes.json();
+        const serverDeltas = response.deltas || {};
+        
+        const collections = [
+            'items', 'transactions', 'customers', 'suppliers', 'expenses', 
+            'shifts', 'returns', 'stock_movements', 'stock_logs', 
+            'adjustments', 'stockins', 'suspended_transactions', 'users'
+        ];
+
+        for (const collection of collections) {
+            if (!db[collection]) continue;
+            const sData = serverDeltas[collection] || [];
+            const lData = await db[collection].toArray();
+            const idField = db[collection].schema.primKey.name;
+            
+            const sMap = new Map(sData.map(i => [i[idField], i]));
+            const lMap = new Map(lData.map(i => [i[idField], i]));
+
+            const onlyInServer = sData.filter(i => !lMap.has(i[idField]));
+            const onlyInLocal = lData.filter(i => !sMap.has(i[idField]));
+            const conflicts = sData.filter(s => {
+                const l = lMap.get(s[idField]);
+                if (!l) return false;
+                const sVer = s._version || 0;
+                const lVer = l._version || 0;
+                const sUpd = s._updatedAt || 0;
+                const lUpd = l._updatedAt || 0;
+                return sVer !== lVer || sUpd !== lUpd;
+            });
+
+            // 1. Missing in Local -> Download
+            if (onlyInServer.length > 0) {
+                await db.transaction('rw', [db[collection], db.outbox], async () => {
+                    await db[collection].bulkPut(onlyInServer);
+                    const ids = onlyInServer.map(i => i[idField]);
+                    await db.outbox.where('collection').equals(collection).filter(o => ids.includes(o.docId)).delete();
+                });
+            }
+
+            // 2. Conflicts -> Trust Server (Overwrite Local)
+            if (conflicts.length > 0) {
+                await db.transaction('rw', [db[collection], db.outbox], async () => {
+                    await db[collection].bulkPut(conflicts);
+                    const ids = conflicts.map(i => i[idField]);
+                    await db.outbox.where('collection').equals(collection).filter(o => ids.includes(o.docId)).delete();
+                });
+            }
+
+            // 3. Missing in Server -> Upload (Touch & Sync)
+            if (onlyInLocal.length > 0) {
+                const toUpload = onlyInLocal.map(item => ({
+                    ...item,
+                    _updatedAt: Date.now(),
+                    _version: (item._version || 0) + 1
+                }));
+                await db[collection].bulkPut(toUpload);
+                
+                const outboxEntries = toUpload.map(item => ({
+                    collection: collection,
+                    docId: item[idField],
+                    type: 'update'
+                }));
+                await db.outbox.bulkPut(outboxEntries);
+            }
+        }
+
+        await SyncEngine.sync();
+        alert("All issues resolved!");
+        analyzeSync();
+
+    } catch (e) {
+        console.error(e);
+        alert("Error resolving differences: " + e.message);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
     }
 }
 
