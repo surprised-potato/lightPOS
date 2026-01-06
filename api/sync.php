@@ -26,7 +26,7 @@ if ($method === 'POST') {
         $toWipe = [
             'items', 'transactions', 'shifts', 'expenses', 'stock_movements', 
             'adjustments', 'customers', 'suppliers', 'stockins', 
-            'suspended_transactions', 'returns', 'notifications', 'stock_logs'
+            'suspended_transactions', 'returns', 'notifications', 'stock_logs', 'settings'
         ];
         foreach ($toWipe as $col) {
             $store->write($col, []);
@@ -97,7 +97,7 @@ if ($method === 'GET') {
     $collections = [
         'items', 'transactions', 'shifts', 'expenses', 'users', 'stock_movements', 
         'adjustments', 'customers', 'suppliers', 'stockins', 'suspended_transactions', 
-        'returns', 'notifications', 'stock_logs', 'sync_metadata'
+        'returns', 'notifications', 'stock_logs', 'settings'
     ];
     $response = [];
 
