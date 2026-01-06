@@ -12,6 +12,7 @@ let velocityTrendChartInstance = null;
 let cashflowChartInstance = null;
 let sortState = {}; // { tableId: { key, dir } }
 let filterState = {}; // { tableId: term }
+let renderedTabs = new Set();
 
 export async function loadReportsView() {
     const content = document.getElementById("main-content");
@@ -46,9 +47,9 @@ export async function loadReportsView() {
             <!-- Tab Navigation -->
             <div class="border-b border-gray-200 mb-6">
                 <nav class="flex -mb-px space-x-8" aria-label="Tabs">
-                    <button data-tab="financials" class="tab-btn border-blue-500 text-blue-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">Financials</button>
+                    <button data-tab="products" class="tab-btn border-blue-500 text-blue-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">Products</button>
                     <button data-tab="inventory" class="tab-btn border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">Inventory</button>
-                    <button data-tab="products" class="tab-btn border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">Products</button>
+                    <button data-tab="financials" class="tab-btn border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">Financials</button>
                     <button data-tab="insights" class="tab-btn border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">Insights</button>
                     <button data-tab="returns" class="tab-btn border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">Returns</button>
                     <button data-tab="system" class="tab-btn border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">System</button>
@@ -58,7 +59,7 @@ export async function loadReportsView() {
             <!-- Tab Panels -->
             <div id="report-panels">
                 <!-- Financials Panel -->
-                <div id="tab-financials" class="tab-panel">
+                <div id="tab-financials" class="tab-panel hidden">
                     <div class="flex gap-4 mb-6 border-b border-gray-100">
                         <button data-subtab="fin-summary" class="subtab-btn border-blue-500 text-blue-600 py-2 px-4 border-b-2 text-xs font-bold transition-colors">Summary & Payments</button>
                         <button data-subtab="fin-variance" class="subtab-btn border-transparent text-gray-500 hover:text-gray-700 py-2 px-4 border-b-2 text-xs font-bold transition-colors">Shifts</button>
@@ -569,7 +570,7 @@ export async function loadReportsView() {
                 </div>
 
                 <!-- Products Panel -->
-                <div id="tab-products" class="tab-panel hidden">
+                <div id="tab-products" class="tab-panel">
                     <div class="flex gap-4 mb-6 border-b border-gray-100">
                         <button data-subtab="prod-perf" class="subtab-btn border-blue-500 text-blue-600 py-2 px-4 border-b-2 text-xs font-bold transition-colors">Performance</button>
                         <button data-subtab="prod-risk" class="subtab-btn border-transparent text-gray-500 hover:text-gray-700 py-2 px-4 border-b-2 text-xs font-bold transition-colors">Risk Metrics</button>
@@ -927,7 +928,9 @@ export async function loadReportsView() {
         initialButton.classList.add("bg-blue-100", "text-blue-700");
     }
     // Trigger the report generation
-    generateReport();
+    setTimeout(() => {
+        generateReport();
+    }, 100);
     // --- End of auto-generation logic ---
 
     document.getElementById("btn-generate-ledger")?.addEventListener("click", generateInventoryLedger);
@@ -960,6 +963,9 @@ export async function loadReportsView() {
                 if (p.id === `tab-${target}`) p.classList.remove("hidden");
                 else p.classList.add("hidden");
             });
+
+            // Lazy Load
+            renderTab(target);
         });
     });
 
@@ -1095,14 +1101,14 @@ async function generateReport() {
             .and(r => !r._deleted)
             .toArray();
         
-        const localStockIn = await Repository.getAll('stockins');
-        const allItems = await Repository.getAll('items');
+        const localStockIn = await db.table('stockins').filter(i => !i._deleted).toArray();
+        const allItems = await db.table('items').filter(i => !i._deleted).toArray();
 
         // Fetch supporting data from local Dexie - Optimized with date filtering
         const [shifts, customers, suppliers, adjustments, stockMovements, expenses] = await Promise.all([
-            Repository.getAll('shifts'),
-            Repository.getAll('customers'),
-            Repository.getAll('suppliers'),
+            db.table('shifts').filter(s => !s._deleted).toArray(),
+            db.table('customers').filter(c => !c._deleted).toArray(),
+            db.table('suppliers').filter(s => !s._deleted).toArray(),
             db.adjustments.where('timestamp').between(startStr, endStr, true, true).toArray(),
             // For valuation history, we need movements from startDate to now to reverse current stock
             db.stock_movements.where('timestamp').aboveOrEqual(startStr).toArray(),
@@ -1439,34 +1445,22 @@ async function generateReport() {
         reportData.grossSales = grossSales;
         reportData.totalExpenses = totalExpenses;
         reportData.expenses = filteredExpenses;
+        reportData.totalOutputTax = totalOutputTax;
+        reportData.totalInputTax = totalInputTax;
+        reportData.cogs = cogs;
+        reportData.valuationContext = { startDate, endDate, allItems, stockMovements };
+        
+        // Reset lazy load state
+        renderedTabs.clear();
+        reportData.valuationHistory = null;
+        reportData.valuationSnapshot = null;
+        reportData.slowMoving = null;
 
         // Initial Render - Use requestAnimationFrame to keep UI responsive
         requestAnimationFrame(async () => {
-            updateFinancials(grossSales, totalOutputTax, totalInputTax, cogs);
-            renderCashflowReport(grossSales, totalExpenses, filteredExpenses, reportData.dailyCashflow);
-            
-            // Heavy calculations/rendering in chunks
-            await generateValuationHistory(startDate, endDate, allItems, stockMovements);
-            
-            setTimeout(() => {
-                renderInventoryHistory(filteredStockIn, filteredAdjustments);
-                renderUserStats(reportData.users);
-                renderPaymentStats(reportData.payments);
-                renderProductStats(reportData.products);
-                renderProductAffinity(reportData.affinity);
-                renderAuditLog(reportData.audit);
-                renderCashVariance(reportData.variance);
-                renderShiftReports(reportData.variance.filter(s => s.status === 'closed'));
-                renderCustomerInsights(reportData.vip, reportData.ledger);
-                renderSupplierInsights(reportData.vendorPerf, reportData.purchaseHistory, reportData.landedCost);
-                renderReturnsReport(reportData.returnReasons, reportData.defectiveSuppliers, reportData.returns);
-                renderStockMovement(reportData.movements);
-                renderShrinkageAnalysis(reportData.shrinkage, reportData.products);
-                renderRiskMetrics(reportData.products);
-                renderLowStockReport(reportData.lowStock);
-                renderSalesVelocity(reportData.velocity);
-                renderVelocityTrendChart(reportData.hourlyTrend);
-            }, 0);
+            const activeTabBtn = document.querySelector('.tab-btn.border-blue-500');
+            const activeTab = activeTabBtn ? activeTabBtn.dataset.tab : 'products';
+            await renderTab(activeTab);
         });
 
         // If no transactions were found, update the users table message
@@ -1480,6 +1474,69 @@ async function generateReport() {
         console.error("Error generating report:", error);
         usersBody.innerHTML = `<tr><td colspan="3" class="py-3 px-6 text-center text-red-500">Error loading report data.</td></tr>`;
     }
+}
+
+async function renderTab(tabName) {
+    if (renderedTabs.has(tabName)) return;
+    if (!reportData || Object.keys(reportData).length === 0) return;
+
+    switch (tabName) {
+        case 'financials':
+            updateFinancials(reportData.grossSales, reportData.totalOutputTax, reportData.totalInputTax, reportData.cogs);
+            renderCashflowReport(reportData.grossSales, reportData.totalExpenses, reportData.expenses, reportData.dailyCashflow);
+            renderPaymentStats(reportData.payments);
+            renderCashVariance(reportData.variance);
+            renderShiftReports(reportData.variance.filter(s => s.status === 'closed'));
+            break;
+        case 'inventory':
+            if (!reportData.valuationHistory && reportData.valuationContext) {
+                const { startDate, endDate, allItems, stockMovements } = reportData.valuationContext;
+                document.getElementById("valuation-history-body").innerHTML = `<tr><td colspan="4" class="py-3 px-6 text-center">Calculating valuation...</td></tr>`;
+                await new Promise(r => requestAnimationFrame(r)); // Allow UI update
+                await generateValuationHistory(startDate, endDate, allItems, stockMovements);
+            } else if (reportData.valuationHistory) {
+                renderValuationHistoryTable(reportData.valuationHistory);
+                renderValuationCandleChart(reportData.valuationHistory);
+                if (reportData.valuationSnapshot) {
+                    const s = reportData.valuationSnapshot;
+                    document.getElementById("val-cost").textContent = `₱${s.c.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                    document.getElementById("val-retail").textContent = `₱${s.retail.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                    document.getElementById("val-profit").textContent = `₱${(s.retail - s.c).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                }
+            }
+
+            if (!reportData.slowMoving && reportData.valuationContext) {
+                const days = parseInt(document.getElementById("slow-moving-threshold").value) || 30;
+                await calculateSlowMoving(days, reportData.valuationContext.allItems);
+            } else {
+                renderSlowMovingItems(reportData.slowMoving);
+            }
+
+            renderInventoryHistory(reportData.stockIn, reportData.adjustments);
+            renderStockMovement(reportData.movements);
+            renderShrinkageAnalysis(reportData.shrinkage, reportData.products);
+            break;
+        case 'products':
+            renderProductStats(reportData.products);
+            renderRiskMetrics(reportData.products);
+            renderProductAffinity(reportData.affinity);
+            renderLowStockReport(reportData.lowStock);
+            renderSalesVelocity(reportData.velocity);
+            break;
+        case 'insights':
+            renderCustomerInsights(reportData.vip, reportData.ledger);
+            renderSupplierInsights(reportData.vendorPerf, reportData.purchaseHistory, reportData.landedCost);
+            renderVelocityTrendChart(reportData.hourlyTrend);
+            break;
+        case 'returns':
+            renderReturnsReport(reportData.returnReasons, reportData.defectiveSuppliers, reportData.returns);
+            break;
+        case 'system':
+            renderAuditLog(reportData.audit);
+            renderUserStats(reportData.users);
+            break;
+    }
+    renderedTabs.add(tabName);
 }
 
 async function calculateSlowMoving(days, itemsCache = null) {
@@ -1633,6 +1690,10 @@ async function generateValuationHistory(startDate, endDate, allItems, allMovemen
     } catch (error) {
         console.error("Failed to save valuation history to server:", error);
     }
+
+    // Store in reportData for lazy re-rendering
+    reportData.valuationHistory = ohlcData;
+    reportData.valuationSnapshot = lastSnapshot;
 
     renderValuationHistoryTable(ohlcData);
     renderValuationCandleChart(ohlcData);

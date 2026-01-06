@@ -33,7 +33,14 @@ async function handleRoute() {
         }
     }
 
-    const content = document.getElementById("main-content");
+    let content = document.getElementById("main-content");
+
+    // Reset main-content to clear event listeners from previous views
+    if (content) {
+        const newContent = content.cloneNode(false);
+        content.parentNode.replaceChild(newContent, content);
+        content = newContent;
+    }
     
     // Permission Guard: Prevent unauthorized access via manual URL entry
     const routeGuards = {

@@ -33,7 +33,7 @@
         "timestamp": "2026-01-05T10:28:18.013Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "f0408ede18b04e94c755cc4a9a898b3c",
         "item_ids": [
@@ -108,7 +108,7 @@
         "timestamp": "2026-01-05T08:22:45.309Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "3f5ff824648e496d98e2e3f1b1d8740b",
         "item_ids": [
@@ -116,6 +116,60 @@
             "ce7bddf2-33b7-44ff-a552-a4642ba37c84",
             "4a4fc3ad-b556-4cda-bf7d-b389c89c81bf"
         ]
+    },
+    {
+        "id": "048ef38e-79fc-4868-9c2a-03b9823e369d",
+        "items": [
+            {
+                "id": "1ff2ad42-ac2c-49a3-bfa4-5b3cbbb16f37",
+                "barcode": "10230000000",
+                "name": "sting red",
+                "category": "TBA",
+                "cost_price": 16.699999999999999289457264239899814128875732421875,
+                "selling_price": 19,
+                "min_stock": 2,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "",
+                "_version": 2,
+                "_updatedAt": 1767618763494,
+                "_deleted": false,
+                "_hash": "c860af3141c882d4076b4cc84b166882",
+                "qty": 1
+            },
+            {
+                "id": "90891612-93b3-4258-949e-5d9c5a7d7bfa",
+                "barcode": "4800177075209",
+                "name": "Camel red stick",
+                "category": "CIGARETTES",
+                "cost_price": 8.449999999999999289457264239899814128875732421875,
+                "selling_price": 10,
+                "min_stock": 2,
+                "stock_level": -44,
+                "base_unit": "Unit",
+                "supplier_id": "a671b42e-d361-4e04-81ca-6df3dafe0b2d",
+                "_version": 28,
+                "_updatedAt": 1767669564957,
+                "_deleted": false,
+                "_hash": "6341a2d5e00e0cb3aeca98591dac45f9",
+                "qty": 1
+            }
+        ],
+        "total_amount": 29,
+        "amount_tendered": 29,
+        "change": 0,
+        "tax_amount": 3.107142857142861203101347200572490692138671875,
+        "payment_method": "Cash",
+        "user_email": "brad@lp.com",
+        "user_name": "Brad",
+        "customer_id": "Guest",
+        "customer_name": "Guest",
+        "points_earned": 0,
+        "timestamp": "2026-01-06T03:59:56.724Z",
+        "is_voided": false,
+        "_version": 1,
+        "_updatedAt": 1767676940134,
+        "_deleted": false
     },
     {
         "id": "066ea925-7cf6-4a58-a328-215a7dfefbb4",
@@ -152,7 +206,7 @@
         "timestamp": "2026-01-05T09:06:15.372Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "53c11c5c44711e0692c42c76fc96d6b2",
         "item_ids": [
@@ -193,7 +247,7 @@
         "timestamp": "2026-01-05T23:52:54.715Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "892ae825-e204-4aeb-baea-471b658f4cd2"
@@ -233,7 +287,7 @@
         "timestamp": "2026-01-05T06:22:44.289Z",
         "is_voided": false,
         "_version": 2,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "ff97e841d76b1662cf2123bb2fe842e5",
         "item_ids": [
@@ -274,7 +328,7 @@
         "timestamp": "2026-01-05T09:34:37.562Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "75c7e3e4a48173355ee16f31d6f5cdac",
         "item_ids": [
@@ -315,7 +369,7 @@
         "timestamp": "2026-01-05T22:24:41.136Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "3e136d11-10b9-42dc-a542-86b22a78d89b"
@@ -356,7 +410,7 @@
         "timestamp": "2026-01-05T09:42:04.497Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "14cb8895d8a5965e1c21fb3f6d7ac8ae",
         "item_ids": [
@@ -397,7 +451,7 @@
         "timestamp": "2026-01-05T22:57:13.189Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "a3569cff-ba18-403a-bb8b-874d4aaf0622"
@@ -473,7 +527,7 @@
         "timestamp": "2026-01-05T10:16:03.471Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "abdb4fa5ddd5fac00d8014b6e010ad37",
         "item_ids": [
@@ -534,7 +588,7 @@
         "timestamp": "2026-01-05T10:45:54.055Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "3a87b37b4525fb13cfc0fe9ddf7f7e13",
         "item_ids": [
@@ -577,7 +631,7 @@
         "timestamp": "2026-01-05T10:11:12.202Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "0f5e49284bfe50c9a71493f50d72fd20",
         "item_ids": [
@@ -637,7 +691,7 @@
         "timestamp": "2026-01-05T09:18:54.462Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "7c09dcb02ede7464eb8fdd02257557d5",
         "item_ids": [
@@ -679,7 +733,7 @@
         "timestamp": "2026-01-06T00:33:41.888Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "34f89de7-d3a6-46c6-985d-fff823e96a88"
@@ -736,7 +790,7 @@
         "timestamp": "2026-01-05T06:27:56.232Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "c881846fc824b50cf79c3034a03eb9ab",
         "item_ids": [
@@ -779,7 +833,7 @@
         "timestamp": "2026-01-05T10:26:04.245Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "b8c467997c712eaa5a09fa12a105b451",
         "item_ids": [
@@ -821,7 +875,7 @@
         "timestamp": "2026-01-05T10:58:08.880Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "ca7682f154daa4fb5e85a118348d5bb0",
         "item_ids": [
@@ -862,7 +916,7 @@
         "timestamp": "2026-01-05T23:48:48.324Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "90891612-93b3-4258-949e-5d9c5a7d7bfa"
@@ -902,7 +956,7 @@
         "timestamp": "2026-01-05T08:10:13.549Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "8647be5dbb204f6423a283ecf43fd16a",
         "item_ids": [
@@ -943,7 +997,7 @@
         "timestamp": "2026-01-06T00:58:14.106Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "90891612-93b3-4258-949e-5d9c5a7d7bfa"
@@ -983,7 +1037,7 @@
         "timestamp": "2026-01-06T00:49:16.643Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "dd78bb90-5ddf-4129-8201-8a0e1e1d1525"
@@ -1024,7 +1078,7 @@
         "timestamp": "2026-01-05T10:46:21.705Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "3e6dd6ba52c9f59fbfeb49d6d7305fc6",
         "item_ids": [
@@ -1065,7 +1119,7 @@
         "timestamp": "2026-01-05T09:09:46.218Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "b96a9949942d1a8efee570944a620cf7",
         "item_ids": [
@@ -1145,7 +1199,7 @@
         "sync_status": 1,
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "e510edc9316165dc497af5698fac0c42",
         "item_ids": [
@@ -1240,7 +1294,7 @@
         "timestamp": "2026-01-05T09:09:25.627Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "11a8a58a6292dc7477c509beaac2877e",
         "item_ids": [
@@ -1249,6 +1303,44 @@
             "f182aa59-005b-405d-84bc-6a802896f08f",
             "4a4fc3ad-b556-4cda-bf7d-b389c89c81bf"
         ]
+    },
+    {
+        "id": "15471c99-a023-4f04-9799-7374229e09ed",
+        "items": [
+            {
+                "id": "258d0239-beef-45b3-aec0-cd72cfd03858",
+                "barcode": "7616400001573",
+                "name": "Marlboro red stick",
+                "category": "CIGARETTES",
+                "cost_price": 7.8499999999999996447286321199499070644378662109375,
+                "selling_price": 9,
+                "min_stock": 2,
+                "stock_level": -2,
+                "base_unit": "Unit",
+                "supplier_id": "c68b5b60-64b1-4378-a852-2ec538d96bde",
+                "_version": 4,
+                "_updatedAt": 1767618751765,
+                "_deleted": false,
+                "_hash": "406bc84f636be19392a163ae1a405047",
+                "updatedAt": "2026-01-05T02:58:20.341Z",
+                "qty": 5
+            }
+        ],
+        "total_amount": 45,
+        "amount_tendered": 50,
+        "change": 5,
+        "tax_amount": 4.82142857142857650387668400071561336517333984375,
+        "payment_method": "Cash",
+        "user_email": "brad@lp.com",
+        "user_name": "Brad",
+        "customer_id": "Guest",
+        "customer_name": "Guest",
+        "points_earned": 0,
+        "timestamp": "2026-01-06T04:15:56.744Z",
+        "is_voided": false,
+        "_version": 1,
+        "_updatedAt": 1767676940134,
+        "_deleted": false
     },
     {
         "id": "1589be43-b4ea-4af8-9571-07b08bcb539b",
@@ -1320,7 +1412,7 @@
         "timestamp": "2026-01-05T10:29:03.412Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "8413b227452eb3c03c77ff88d48370e1",
         "item_ids": [
@@ -1363,12 +1455,49 @@
         "timestamp": "2026-01-05T13:47:17.001Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "7ea7f067e9ee7ba9e5fb79bd3aeae563",
         "item_ids": [
             "00158d13-cb3a-4d22-b221-7e7e9a58a396"
         ]
+    },
+    {
+        "id": "16839322-abd2-4c31-9f70-1d6b444445db",
+        "items": [
+            {
+                "id": "e8bf4c3a-630b-4a77-b654-330680be6682",
+                "barcode": "4806512230357",
+                "name": "Pancake Plus 200g",
+                "category": "TBA",
+                "cost_price": 37.25,
+                "selling_price": 43,
+                "min_stock": 2,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "",
+                "_version": 2,
+                "_updatedAt": 1767618760166,
+                "_deleted": false,
+                "_hash": "535590326e04990a3524412b3f73e8d4",
+                "qty": 1
+            }
+        ],
+        "total_amount": 43,
+        "amount_tendered": 50,
+        "change": 7,
+        "tax_amount": 4.607142857142861203101347200572490692138671875,
+        "payment_method": "Cash",
+        "user_email": "brad@lp.com",
+        "user_name": "Brad",
+        "customer_id": "Guest",
+        "customer_name": "Guest",
+        "points_earned": 0,
+        "timestamp": "2026-01-06T04:36:27.364Z",
+        "is_voided": false,
+        "_version": 1,
+        "_updatedAt": 1767676940134,
+        "_deleted": false
     },
     {
         "id": "169ff5fb-938d-4ccf-94fa-c7a25548dd0d",
@@ -1423,7 +1552,7 @@
         "timestamp": "2026-01-05T09:44:02.332Z",
         "is_voided": false,
         "_version": 2,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "3c76a543efb2fb7560de9749c43725ed",
         "item_ids": [
@@ -1465,7 +1594,7 @@
         "timestamp": "2026-01-05T06:29:32.499Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "f0e03d0782cb39d71e8984778c56ba45",
         "item_ids": [
@@ -1506,7 +1635,7 @@
         "timestamp": "2026-01-06T03:19:24.952Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false
     },
     {
@@ -1544,7 +1673,7 @@
         "timestamp": "2026-01-05T08:28:10.145Z",
         "is_voided": false,
         "_version": 3,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "214f01088a7dc5eb7060e9418e6d0309",
         "item_ids": [
@@ -1585,7 +1714,7 @@
         "timestamp": "2026-01-06T00:53:57.258Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "5db959fe-2ab8-4d12-b5b1-f759e606f5c4"
@@ -1642,7 +1771,7 @@
         "timestamp": "2026-01-05T06:49:28.743Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "541281018560b26ca5db8c1c86195911",
         "item_ids": [
@@ -1685,7 +1814,7 @@
         "timestamp": "2026-01-05T23:56:21.144Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "b2d035e0-6bb9-4572-bb7a-c6971010fa03"
@@ -1760,7 +1889,7 @@
         "timestamp": "2026-01-05T22:54:00.365Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "eff775c8-1336-4828-b7ed-1b05646ff45e",
@@ -1802,7 +1931,7 @@
         "timestamp": "2026-01-06T03:27:14.403Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false
     },
     {
@@ -1894,7 +2023,7 @@
         "timestamp": "2026-01-05T10:05:34.064Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "cbc2be1d8fea2161307e33f2fd428aca",
         "item_ids": [
@@ -1938,7 +2067,7 @@
         "timestamp": "2026-01-05T07:09:24.138Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "633292d16e60d5ab2f08cfcfb09502fa",
         "item_ids": [
@@ -1979,7 +2108,7 @@
         "timestamp": "2026-01-05T23:06:10.065Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "9d7af66b-109b-4e76-bcf9-c1a19037b580"
@@ -2019,11 +2148,48 @@
         "timestamp": "2026-01-06T01:13:44.667Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "be9eedea-2453-4f0a-abbc-bb15572fd87f"
         ]
+    },
+    {
+        "id": "1cdd53a2-da8c-4a7e-b062-68cfa42937e0",
+        "items": [
+            {
+                "id": "c4c49b0b-9856-4294-81ee-de87340ca607",
+                "barcode": "4800086035967",
+                "name": "SELECTA IH SUP DOUBLE DUTCH 1.3L",
+                "category": "ICE CREAM",
+                "cost_price": 250,
+                "selling_price": 285,
+                "min_stock": 2,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "9fac64e4-26de-4d28-9c89-0751de12a582",
+                "_version": 3,
+                "_updatedAt": 1767618757842,
+                "_deleted": false,
+                "_hash": "1f81fcd589fefecfb423550a3794d54e",
+                "qty": 1
+            }
+        ],
+        "total_amount": 285,
+        "amount_tendered": 1000,
+        "change": 715,
+        "tax_amount": 30.535714285714306015506736002862453460693359375,
+        "payment_method": "Cash",
+        "user_email": "brad@lp.com",
+        "user_name": "Brad",
+        "customer_id": "Guest",
+        "customer_name": "Guest",
+        "points_earned": 1,
+        "timestamp": "2026-01-06T04:51:42.720Z",
+        "is_voided": false,
+        "_version": 1,
+        "_updatedAt": 1767676940134,
+        "_deleted": false
     },
     {
         "id": "1cfbb30e-6d2f-4812-abd1-056ba8bc912a",
@@ -2059,7 +2225,7 @@
         "timestamp": "2026-01-06T02:12:53.411Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "4a4fc3ad-b556-4cda-bf7d-b389c89c81bf"
@@ -2099,7 +2265,7 @@
         "timestamp": "2026-01-06T00:00:12.398Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "1beb6c57-184e-46c1-9d22-7395c424a1d7"
@@ -2179,7 +2345,7 @@
         "sync_status": 1,
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "836d373361f1d654fdb699da8b5c98a9",
         "item_ids": [
@@ -2224,7 +2390,7 @@
         "timestamp": "2026-01-05T10:55:31.914Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "ab82bcc94a38112ba3f9e1630ef68bb3",
         "item_ids": [
@@ -2265,7 +2431,7 @@
         "timestamp": "2026-01-05T22:27:18.732Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "dd78bb90-5ddf-4129-8201-8a0e1e1d1525"
@@ -2305,12 +2471,66 @@
         "timestamp": "2026-01-05T08:48:07.544Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "65ad83a01940525a3c04fb800248461b",
         "item_ids": [
             "dd78bb90-5ddf-4129-8201-8a0e1e1d1525"
         ]
+    },
+    {
+        "id": "2214c8d2-b01d-477a-bb9e-1f23488dc5f5",
+        "items": [
+            {
+                "id": "f60b8060-9997-4aba-9fb7-531cc0bb866f",
+                "barcode": "4801234014414",
+                "name": "Kiwi Shoe Cream Black",
+                "category": "TBA",
+                "cost_price": 7.79999999999999982236431605997495353221893310546875,
+                "selling_price": 10,
+                "min_stock": 2,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "",
+                "_version": 2,
+                "_updatedAt": 1767618759146,
+                "_deleted": false,
+                "_hash": "452516d8c1e92ccc13a10207071cc242",
+                "qty": 1
+            },
+            {
+                "id": "4a4fc3ad-b556-4cda-bf7d-b389c89c81bf",
+                "barcode": "3118917538",
+                "name": "BENTA | Toys and Candy",
+                "category": "misc",
+                "cost_price": 0.65000000000000002220446049250313080847263336181640625,
+                "selling_price": 1,
+                "min_stock": 2,
+                "stock_level": -738,
+                "base_unit": "Unit",
+                "supplier_id": "",
+                "_version": 32,
+                "_updatedAt": 1767669902991,
+                "_deleted": false,
+                "_hash": "a13672b861017fbbe8d1ed0c664da3be",
+                "qty": 1
+            }
+        ],
+        "total_amount": 11,
+        "amount_tendered": 11,
+        "change": 0,
+        "tax_amount": 1.1785714285714288251938342000357806682586669921875,
+        "payment_method": "Cash",
+        "user_email": "brad@lp.com",
+        "user_name": "Brad",
+        "customer_id": "Guest",
+        "customer_name": "Guest",
+        "points_earned": 0,
+        "timestamp": "2026-01-06T03:55:35.943Z",
+        "is_voided": false,
+        "_version": 1,
+        "_updatedAt": 1767676940134,
+        "_deleted": false
     },
     {
         "id": "223ab5bb-cc70-4d32-b861-3a83d590adc8",
@@ -2346,11 +2566,48 @@
         "timestamp": "2026-01-06T01:58:18.360Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "247d2022-7d65-4005-8af1-f158ecbfe891"
         ]
+    },
+    {
+        "id": "22df377e-3337-4634-978e-8ac3c726b1e9",
+        "items": [
+            {
+                "id": "8ea779c9-d917-41b4-a213-a66a27290cb9",
+                "barcode": "4801981116072",
+                "name": "Coke 1.5L",
+                "category": "DRINK",
+                "cost_price": 64,
+                "selling_price": 68,
+                "min_stock": 2,
+                "stock_level": -4,
+                "base_unit": "Unit",
+                "supplier_id": "b520e7c9-da6c-47b2-ab77-694e7f76e6cc",
+                "_version": 7,
+                "_updatedAt": 1767618754260,
+                "_deleted": false,
+                "_hash": "ae60e81813ec5355d9079569451380cf",
+                "qty": 1
+            }
+        ],
+        "total_amount": 68,
+        "amount_tendered": 68,
+        "change": 0,
+        "tax_amount": 7.2857142857142918046520208008587360382080078125,
+        "payment_method": "Cash",
+        "user_email": "brad@lp.com",
+        "user_name": "Brad",
+        "customer_id": "Guest",
+        "customer_name": "Guest",
+        "points_earned": 0,
+        "timestamp": "2026-01-06T04:56:23.168Z",
+        "is_voided": false,
+        "_version": 1,
+        "_updatedAt": 1767676940134,
+        "_deleted": false
     },
     {
         "id": "23bc368a-3be8-4eb2-8b18-09ec7a092c3d",
@@ -2404,7 +2661,7 @@
         "timestamp": "2026-01-06T00:24:08.548Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "90891612-93b3-4258-949e-5d9c5a7d7bfa",
@@ -2445,7 +2702,7 @@
         "timestamp": "2026-01-05T23:48:06.809Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "ba440e46-11e2-4fbe-845d-8bf8846feabe"
@@ -2520,7 +2777,7 @@
         "timestamp": "2026-01-05T23:04:48.365Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "49438744-1cc9-47bd-9d82-4075253dab11",
@@ -2650,7 +2907,7 @@
         "timestamp": "2026-01-05T11:04:40.812Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "4b57e90e4587cbc22dad5cbfee638f39",
         "item_ids": [
@@ -2661,6 +2918,43 @@
             "d84e1eb5-fc84-49c5-825c-4197f6bd5acd",
             "4a4fc3ad-b556-4cda-bf7d-b389c89c81bf"
         ]
+    },
+    {
+        "id": "28310531-5e37-4d55-8161-ff8401b32e84",
+        "items": [
+            {
+                "id": "4a4fc3ad-b556-4cda-bf7d-b389c89c81bf",
+                "barcode": "3118917538",
+                "name": "BENTA | Toys and Candy",
+                "category": "misc",
+                "cost_price": 0.65000000000000002220446049250313080847263336181640625,
+                "selling_price": 1,
+                "min_stock": 2,
+                "stock_level": -837,
+                "base_unit": "Unit",
+                "supplier_id": "",
+                "_version": 36,
+                "_updatedAt": 1767673445478,
+                "_deleted": false,
+                "_hash": "a13672b861017fbbe8d1ed0c664da3be",
+                "qty": 25
+            }
+        ],
+        "total_amount": 25,
+        "amount_tendered": 25,
+        "change": 0,
+        "tax_amount": 2.6785714285714306015506736002862453460693359375,
+        "payment_method": "Cash",
+        "user_email": "brad@lp.com",
+        "user_name": "Brad",
+        "customer_id": "Guest",
+        "customer_name": "Guest",
+        "points_earned": 0,
+        "timestamp": "2026-01-06T05:00:57.152Z",
+        "is_voided": false,
+        "_version": 1,
+        "_updatedAt": 1767676940134,
+        "_deleted": false
     },
     {
         "id": "2876c9be-7f71-47a9-98f9-271383670256",
@@ -2696,7 +2990,7 @@
         "timestamp": "2026-01-05T09:26:10.106Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "57d79d0d940a69d35368760af215a6d8",
         "item_ids": [
@@ -2773,7 +3067,7 @@
         "timestamp": "2026-01-05T08:54:48.596Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "89519d6ae7db85bfdac92f61768e8c82",
         "item_ids": [
@@ -2842,7 +3136,7 @@
         "sync_status": 1,
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "ad96cc25ddc554e64489009e1a746c93",
         "item_ids": [
@@ -2885,7 +3179,7 @@
         "timestamp": "2026-01-05T09:49:41.967Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "b7f594d89f4c91fbfef5c2763796c8d9",
         "item_ids": [
@@ -2943,7 +3237,7 @@
         "timestamp": "2026-01-05T10:08:51.865Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "56c05eb38badbdc011fe8d0c6fcca4cc",
         "item_ids": [
@@ -3025,7 +3319,7 @@
         "sync_status": 1,
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "e7f24f9d1f84a335567a3571ec543010",
         "item_ids": [
@@ -3086,12 +3380,49 @@
         "timestamp": "2026-01-05T22:35:30.657Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "416f98d6-72e3-4449-9444-3deb7ccfabf0",
             "c384a28a-39ff-4718-a8f8-a73c8390ae9c"
         ]
+    },
+    {
+        "id": "2f4023dc-8f06-4e1b-9255-205325ce206c",
+        "items": [
+            {
+                "id": "4a4fc3ad-b556-4cda-bf7d-b389c89c81bf",
+                "barcode": "3118917538",
+                "name": "BENTA | Toys and Candy",
+                "category": "misc",
+                "cost_price": 0.65000000000000002220446049250313080847263336181640625,
+                "selling_price": 1,
+                "min_stock": 2,
+                "stock_level": -738,
+                "base_unit": "Unit",
+                "supplier_id": "",
+                "_version": 32,
+                "_updatedAt": 1767669902991,
+                "_deleted": false,
+                "_hash": "a13672b861017fbbe8d1ed0c664da3be",
+                "qty": 48
+            }
+        ],
+        "total_amount": 48,
+        "amount_tendered": 48,
+        "change": 0,
+        "tax_amount": 5.14285714285714590232601040042936801910400390625,
+        "payment_method": "Cash",
+        "user_email": "brad@lp.com",
+        "user_name": "Brad",
+        "customer_id": "Guest",
+        "customer_name": "Guest",
+        "points_earned": 0,
+        "timestamp": "2026-01-06T03:37:22.087Z",
+        "is_voided": false,
+        "_version": 1,
+        "_updatedAt": 1767676940134,
+        "_deleted": false
     },
     {
         "id": "2f7a678b-439e-4d17-afa4-22faeeabb23a",
@@ -3127,7 +3458,7 @@
         "timestamp": "2026-01-05T22:42:09.128Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "dd78bb90-5ddf-4129-8201-8a0e1e1d1525"
@@ -3185,7 +3516,7 @@
         "timestamp": "2026-01-06T03:03:34.866Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false
     },
     {
@@ -3223,7 +3554,7 @@
         "timestamp": "2026-01-05T10:25:41.878Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "aad12998d9e2927e179a89269edcde80",
         "item_ids": [
@@ -3264,7 +3595,7 @@
         "timestamp": "2026-01-05T10:36:51.451Z",
         "is_voided": false,
         "_version": 2,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "bf1c9227113ae19787c1d35c22d9a76c",
         "item_ids": [
@@ -3305,7 +3636,7 @@
         "timestamp": "2026-01-05T22:56:54.029Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "4a4fc3ad-b556-4cda-bf7d-b389c89c81bf"
@@ -3364,7 +3695,7 @@
         "timestamp": "2026-01-05T10:38:17.168Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "5ad6151e45e2c47ed8eadde79e8a98f6",
         "item_ids": [
@@ -3424,7 +3755,7 @@
         "timestamp": "2026-01-05T10:23:34.343Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "f46139584840593b8cbcef9a03c6f97a",
         "item_ids": [
@@ -3466,7 +3797,7 @@
         "timestamp": "2026-01-05T23:20:53.148Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "9858a1b7-34c9-49a7-9704-67d42dd739bf"
@@ -3506,7 +3837,7 @@
         "timestamp": "2026-01-05T23:06:45.615Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "b373a7eb-bff1-4fe2-bb95-ec21fe0f008b"
@@ -3565,7 +3896,7 @@
         "timestamp": "2026-01-05T09:58:51.693Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "a8c786c53fcffb1e8a94c47b12fa5b2c",
         "item_ids": [
@@ -3675,7 +4006,7 @@
         "timestamp": "2026-01-06T00:11:49.862Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "dd78bb90-5ddf-4129-8201-8a0e1e1d1525",
@@ -3738,7 +4069,7 @@
         "timestamp": "2026-01-05T10:16:34.555Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "7490d3d1a93cb73cad2450817d9da130",
         "item_ids": [
@@ -3780,7 +4111,7 @@
         "timestamp": "2026-01-05T08:42:23.959Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "c50d19336dae43b41181d0dae58c21fd",
         "item_ids": [
@@ -3822,7 +4153,7 @@
         "timestamp": "2026-01-05T23:16:17.133Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "15bf218a-dae1-4670-8166-33641627c7c1"
@@ -3879,7 +4210,7 @@
         "timestamp": "2026-01-06T03:19:14.152Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false
     },
     {
@@ -3916,7 +4247,7 @@
         "timestamp": "2026-01-05T10:12:51.353Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "72c6e654d608fc44b181bb36a622e21b",
         "item_ids": [
@@ -3957,7 +4288,7 @@
         "timestamp": "2026-01-06T00:07:37.587Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "90891612-93b3-4258-949e-5d9c5a7d7bfa"
@@ -4015,7 +4346,7 @@
         "timestamp": "2026-01-05T23:09:21.417Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "15bf218a-dae1-4670-8166-33641627c7c1",
@@ -4090,7 +4421,7 @@
         "timestamp": "2026-01-05T10:59:08.525Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "2886a0fbc613fd432a8ae17d56fa4e1d",
         "item_ids": [
@@ -4150,7 +4481,7 @@
         "timestamp": "2026-01-05T08:05:50.172Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "12e77ef6f0e9c96e57ba09663a26033e",
         "item_ids": [
@@ -4243,7 +4574,7 @@
         "timestamp": "2026-01-06T02:03:50.861Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "ec62c782-1897-4e14-a558-cdd306124ad0",
@@ -4312,7 +4643,7 @@
         "sync_status": 1,
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "b78c4dbb5084fbd6488e198a9a43948c",
         "item_ids": [
@@ -4356,7 +4687,7 @@
         "timestamp": "2026-01-05T10:58:31.628Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "4fc9463977418c5242acf290c2745c9a",
         "item_ids": [
@@ -4448,7 +4779,7 @@
         "timestamp": "2026-01-05T06:43:50.275Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "272c49439d2173d261738e1403681419",
         "item_ids": [
@@ -4492,7 +4823,7 @@
         "timestamp": "2026-01-05T08:55:39.224Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "014c6355e746cdbfcd51c4c93aa60d35",
         "item_ids": [
@@ -4587,7 +4918,7 @@
         "sync_status": 1,
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "a1ac5958aa38bcf69999a62e4eaf2f0b",
         "item_ids": [
@@ -4632,7 +4963,7 @@
         "timestamp": "2026-01-05T07:45:35.350Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "d0851ee6876349cca17af2c74965ac5f",
         "item_ids": [
@@ -4674,7 +5005,7 @@
         "timestamp": "2026-01-05T10:31:59.748Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "78f83960fdefdb7beabe99341abc67c9",
         "item_ids": [
@@ -4715,7 +5046,7 @@
         "timestamp": "2026-01-05T10:08:22.660Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "3b2fec63f011081d7e3d4c71eeb5a950",
         "item_ids": [
@@ -4756,7 +5087,7 @@
         "timestamp": "2026-01-05T23:38:05.322Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "1b1f2406-4773-4deb-9ff4-06835241e0bc"
@@ -4915,7 +5246,7 @@
         "timestamp": "2026-01-05T07:41:23.109Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "a8b01ee77a39623619be58c841a21914",
         "item_ids": [
@@ -4980,7 +5311,7 @@
         "timestamp": "2026-01-05T09:33:29.402Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "fb6cad6073b7f5d1282c0884da2cd0a8",
         "item_ids": [
@@ -5022,11 +5353,48 @@
         "timestamp": "2026-01-06T02:26:47.467Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "ec62c782-1897-4e14-a558-cdd306124ad0"
         ]
+    },
+    {
+        "id": "44c6d15c-a142-48dd-ab67-b0bd5e44489b",
+        "items": [
+            {
+                "id": "b40edf00-20cd-49b5-80ac-62f3e2592f11",
+                "barcode": "7896785450443",
+                "name": "Singer All Purpose Oil",
+                "category": "Hardware",
+                "cost_price": 42,
+                "selling_price": 57,
+                "min_stock": 1,
+                "stock_level": 5,
+                "base_unit": "Unit",
+                "supplier_id": "477866ad-cbcd-4bbc-b033-d98792778923",
+                "_version": 4,
+                "_updatedAt": 1767618756815,
+                "_deleted": false,
+                "_hash": "9b35ab4a246d47f4bb61b903604d6f84",
+                "qty": 1
+            }
+        ],
+        "total_amount": 57,
+        "amount_tendered": 57,
+        "change": 0,
+        "tax_amount": 6.107142857142861203101347200572490692138671875,
+        "payment_method": "Cash",
+        "user_email": "brad@lp.com",
+        "user_name": "Brad",
+        "customer_id": "Guest",
+        "customer_name": "Guest",
+        "points_earned": 0,
+        "timestamp": "2026-01-06T05:03:44.002Z",
+        "is_voided": false,
+        "_version": 1,
+        "_updatedAt": 1767676940134,
+        "_deleted": false
     },
     {
         "id": "45c00582-6518-4279-840c-292283da1648",
@@ -5062,7 +5430,7 @@
         "timestamp": "2026-01-06T00:56:17.423Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "26a9ae89-28ef-41b5-949f-ddd7b306884f"
@@ -5119,7 +5487,7 @@
         "timestamp": "2026-01-05T07:47:21.613Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "6d04f2bc2dcb8b81f682f357b6bc2647",
         "item_ids": [
@@ -5162,7 +5530,7 @@
         "timestamp": "2026-01-05T10:29:16.114Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "c945a85a859dacf71be5030d63ee09d1",
         "item_ids": [
@@ -5203,7 +5571,7 @@
         "timestamp": "2026-01-05T23:58:39.251Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "dd78bb90-5ddf-4129-8201-8a0e1e1d1525"
@@ -5243,12 +5611,66 @@
         "timestamp": "2026-01-05T08:25:34.569Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "9ee7ef2d4aa03adf945841d7124b7ded",
         "item_ids": [
             "b5b4b2f4-7ec4-4be2-94d3-33b89bcc8707"
         ]
+    },
+    {
+        "id": "48c864e5-0d99-40b5-9ba2-a7e4cb9267ab",
+        "items": [
+            {
+                "id": "8ea779c9-d917-41b4-a213-a66a27290cb9",
+                "barcode": "4801981116072",
+                "name": "Coke 1.5L",
+                "category": "DRINK",
+                "cost_price": 64,
+                "selling_price": 68,
+                "min_stock": 2,
+                "stock_level": -4,
+                "base_unit": "Unit",
+                "supplier_id": "b520e7c9-da6c-47b2-ab77-694e7f76e6cc",
+                "_version": 7,
+                "_updatedAt": 1767618754260,
+                "_deleted": false,
+                "_hash": "ae60e81813ec5355d9079569451380cf",
+                "qty": 1
+            },
+            {
+                "id": "4a4fc3ad-b556-4cda-bf7d-b389c89c81bf",
+                "barcode": "3118917538",
+                "name": "BENTA | Toys and Candy",
+                "category": "misc",
+                "cost_price": 0.65000000000000002220446049250313080847263336181640625,
+                "selling_price": 1,
+                "min_stock": 2,
+                "stock_level": -837,
+                "base_unit": "Unit",
+                "supplier_id": "",
+                "_version": 36,
+                "_updatedAt": 1767673445478,
+                "_deleted": false,
+                "_hash": "a13672b861017fbbe8d1ed0c664da3be",
+                "qty": 30
+            }
+        ],
+        "total_amount": 98,
+        "amount_tendered": 100,
+        "change": 2,
+        "tax_amount": 10.5000000000000142108547152020037174224853515625,
+        "payment_method": "Cash",
+        "user_email": "brad@lp.com",
+        "user_name": "Brad",
+        "customer_id": "Guest",
+        "customer_name": "Guest",
+        "points_earned": 0,
+        "timestamp": "2026-01-06T04:53:53.150Z",
+        "is_voided": false,
+        "_version": 1,
+        "_updatedAt": 1767676940134,
+        "_deleted": false
     },
     {
         "id": "49782912-331e-4491-b0f0-751a36742aa4",
@@ -5284,7 +5706,7 @@
         "timestamp": "2026-01-06T01:50:20.311Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "b5b4b2f4-7ec4-4be2-94d3-33b89bcc8707"
@@ -5352,7 +5774,7 @@
         "voided_by": "admin@lightpos.com",
         "void_reason": "lol",
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "63de287ee0d2dbeadfa1f44d88ea815a",
         "item_ids": [
@@ -5395,12 +5817,50 @@
         "timestamp": "2026-01-05T09:07:59.575Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "05ae9f8a2a6a5a4da34618aa32d12c2d",
         "item_ids": [
             "a90de642-25a2-4924-81fe-6753d8a23e3e"
         ]
+    },
+    {
+        "id": "4c9167e6-aa40-4ffc-8685-1a9fbe308107",
+        "items": [
+            {
+                "id": "c4e4a285-8436-426b-9eff-f1e54075dd1a",
+                "barcode": "6944050200550",
+                "name": "Shoe Glue grn",
+                "category": "OFFICE SUPPLIES",
+                "cost_price": 9.5,
+                "selling_price": 12,
+                "min_stock": 2,
+                "stock_level": -1,
+                "base_unit": "Unit",
+                "supplier_id": "18e3267f-0a84-47d5-af2d-d50188469e56",
+                "_version": 4,
+                "_updatedAt": 1767618759775,
+                "_deleted": false,
+                "_hash": "95aad4321284cb0f3f85176ceacff157",
+                "updatedAt": "2026-01-05T02:58:20.341Z",
+                "qty": 1
+            }
+        ],
+        "total_amount": 12,
+        "amount_tendered": 12,
+        "change": 0,
+        "tax_amount": 1.2857142857142864755815026001073420047760009765625,
+        "payment_method": "Cash",
+        "user_email": "brad@lp.com",
+        "user_name": "Brad",
+        "customer_id": "Guest",
+        "customer_name": "Guest",
+        "points_earned": 0,
+        "timestamp": "2026-01-06T04:03:01.275Z",
+        "is_voided": false,
+        "_version": 1,
+        "_updatedAt": 1767676940134,
+        "_deleted": false
     },
     {
         "id": "4ca1d3a4-abe7-4167-a8ab-19a81e937385",
@@ -5436,7 +5896,7 @@
         "timestamp": "2026-01-05T08:47:28.678Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "7824edf6c3a3d5cc1232588da7cbef69",
         "item_ids": [
@@ -5477,7 +5937,7 @@
         "timestamp": "2026-01-05T07:04:22.407Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "b404bf0bcc61583e6d277618220bb71d",
         "item_ids": [
@@ -5572,7 +6032,7 @@
         "timestamp": "2026-01-05T10:08:44.685Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "3d7c7846fc7c2efa36d118b76f94af51",
         "item_ids": [
@@ -5651,7 +6111,7 @@
         "timestamp": "2026-01-05T11:05:25.262Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "a9fa1f20e44eb5b32961364b3d4f1909",
         "item_ids": [
@@ -5694,7 +6154,7 @@
         "timestamp": "2026-01-06T01:44:41.795Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "b5b4b2f4-7ec4-4be2-94d3-33b89bcc8707"
@@ -5734,7 +6194,7 @@
         "timestamp": "2026-01-06T00:36:41.852Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "846fcfe5-1758-4de5-b07a-4307cd3c50eb"
@@ -5774,7 +6234,7 @@
         "timestamp": "2026-01-05T22:54:16.642Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "fa5b2140-62e4-433e-bea6-165ef06839a3"
@@ -5814,7 +6274,7 @@
         "timestamp": "2026-01-06T01:10:27.869Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "129b2854-fa81-47b1-a33e-07183baa682e"
@@ -5854,7 +6314,7 @@
         "timestamp": "2026-01-06T01:45:02.562Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "90891612-93b3-4258-949e-5d9c5a7d7bfa"
@@ -5894,7 +6354,7 @@
         "timestamp": "2026-01-06T01:06:52.119Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "fdf09076-8fcc-471b-9194-10000947a535"
@@ -5934,7 +6394,7 @@
         "timestamp": "2026-01-06T03:08:36.700Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false
     },
     {
@@ -5971,7 +6431,7 @@
         "timestamp": "2026-01-05T10:20:46.724Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "b51ad23df7ba7fc862239de7d7d25367",
         "item_ids": [
@@ -6013,7 +6473,7 @@
         "timestamp": "2026-01-05T10:14:27.856Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "e1660631910cffabdc2ecb343fa71bf9",
         "item_ids": [
@@ -6054,7 +6514,7 @@
         "timestamp": "2026-01-05T09:05:44.386Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "5c6716566c4582e094c2c9d9d1d88b92",
         "item_ids": [
@@ -6112,12 +6572,84 @@
         "timestamp": "2026-01-05T23:40:08.512Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "1beb6c57-184e-46c1-9d22-7395c424a1d7",
             "7e353919-1659-48f4-bd47-4206f447ae43"
         ]
+    },
+    {
+        "id": "5c0d67cb-180d-407f-8881-cbfc6af2bc8e",
+        "items": [
+            {
+                "id": "d4c8e2f9-c933-45cf-badd-422b2f5f3d6e",
+                "barcode": "4800488959236",
+                "name": "Caress Adult Diaper L2",
+                "category": "DIAPERS",
+                "cost_price": 45.52000000000000312638803734444081783294677734375,
+                "selling_price": 50,
+                "min_stock": 1,
+                "stock_level": -1,
+                "base_unit": "Unit",
+                "supplier_id": "4eb03e38-c6bf-4c54-9a63-ad602a58b5ad",
+                "_version": 4,
+                "_updatedAt": 1767618753613,
+                "_deleted": false,
+                "_hash": "19cc708856cf4384a66a0050cd9ed1d4",
+                "updatedAt": "2026-01-05T02:58:20.342Z",
+                "qty": 1
+            },
+            {
+                "id": "a3539038-00da-4a33-9dfc-e02b9cc93df9",
+                "barcode": "4800047840043",
+                "name": "zonrox orig 100ml",
+                "category": "DETERGENT",
+                "cost_price": 8.800000000000000710542735760100185871124267578125,
+                "selling_price": 11,
+                "min_stock": 2,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "fe91ce2b-e0a0-4352-b0de-73072f8a1123",
+                "_version": 3,
+                "_updatedAt": 1767618753586,
+                "_deleted": false,
+                "_hash": "9c84075eb5f57c72da19fb30af8b2b30",
+                "qty": 1
+            },
+            {
+                "id": "b8033be3-dab3-4bad-83f5-b900377841c1",
+                "barcode": "4800067124277",
+                "name": "Wipe bathroom tissue single",
+                "category": "TISSUE",
+                "cost_price": 12.5,
+                "selling_price": 15,
+                "min_stock": 1,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "",
+                "_version": 3,
+                "_updatedAt": 1767618777122,
+                "_deleted": false,
+                "_hash": "894f84cb83f4e4c8a1b7314228c7a5cc",
+                "qty": 1
+            }
+        ],
+        "total_amount": 76,
+        "amount_tendered": 100,
+        "change": 24,
+        "tax_amount": 8.1428571428571530077533680014312267303466796875,
+        "payment_method": "Cash",
+        "user_email": "brad@lp.com",
+        "user_name": "Brad",
+        "customer_id": "Guest",
+        "customer_name": "Guest",
+        "points_earned": 0,
+        "timestamp": "2026-01-06T05:15:09.721Z",
+        "is_voided": false,
+        "_version": 1,
+        "_updatedAt": 1767676940134,
+        "_deleted": false
     },
     {
         "id": "5e11a41e-6547-4dfb-b0b0-e06498ac6fbc",
@@ -6221,7 +6753,7 @@
         "timestamp": "2026-01-06T00:08:27.802Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "596c2296-169a-47a1-a4ea-e053e42baa5a",
@@ -6291,7 +6823,7 @@
         "sync_status": 1,
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "6474f8dce8be83f4884f2f4e7848acd3",
         "item_ids": [
@@ -6352,7 +6884,7 @@
         "timestamp": "2026-01-05T09:38:45.527Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "d06a8699c4aa97d0011018eacced98d7",
         "item_ids": [
@@ -6430,7 +6962,7 @@
         "timestamp": "2026-01-05T22:59:43.943Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "d2c81bba-d346-4970-9988-3e061c29391b",
@@ -6472,7 +7004,7 @@
         "timestamp": "2026-01-05T09:37:44.055Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "37191517e0524ed73b35847cffc2402b",
         "item_ids": [
@@ -6530,7 +7062,7 @@
         "timestamp": "2026-01-05T10:36:17.806Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "db04fbac2e5c4551735cc750eb00aa20",
         "item_ids": [
@@ -6624,7 +7156,7 @@
         "timestamp": "2026-01-06T01:17:22.750Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "30dd31a7-2406-4cc6-bb07-f928be97feed",
@@ -6668,7 +7200,7 @@
         "timestamp": "2026-01-05T10:13:10.337Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "07e239fc4c356fe921974741afe0e421",
         "item_ids": [
@@ -6743,7 +7275,7 @@
         "timestamp": "2026-01-05T13:46:51.652Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "591ab054f071dfb70be7316ee2a95daf",
         "item_ids": [
@@ -6826,7 +7358,7 @@
         "sync_status": 1,
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "4ce893e3625afc5aaaaeb20d1437cf49",
         "item_ids": [
@@ -6897,7 +7429,7 @@
         "voided_at": "2026-01-04T05:12:30.816Z",
         "voided_by": "admin@lightpos.com",
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "4682883c7b8f0163e600811ef9663eb4",
         "item_ids": [
@@ -6957,7 +7489,7 @@
         "timestamp": "2026-01-06T00:12:26.014Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "dd78bb90-5ddf-4129-8201-8a0e1e1d1525",
@@ -7015,7 +7547,7 @@
         "timestamp": "2026-01-05T23:39:35.197Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "90891612-93b3-4258-949e-5d9c5a7d7bfa",
@@ -7056,7 +7588,7 @@
         "timestamp": "2026-01-05T06:51:02.277Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "bbdec6216debc8ad56f66343bcb07415",
         "item_ids": [
@@ -7098,7 +7630,7 @@
         "timestamp": "2026-01-05T10:06:03.632Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "8802b16aa730bdbabae750283e4073d7",
         "item_ids": [
@@ -7139,7 +7671,7 @@
         "timestamp": "2026-01-06T02:51:59.883Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "b5b4b2f4-7ec4-4be2-94d3-33b89bcc8707"
@@ -7214,7 +7746,7 @@
         "timestamp": "2026-01-05T09:22:22.495Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "447b9d0a673ee70ec79fe3c1a8706fa6",
         "item_ids": [
@@ -7257,7 +7789,7 @@
         "timestamp": "2026-01-05T08:57:30.569Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "f0cc2bcbf7cee1a62d46fd4283e87c85",
         "item_ids": [
@@ -7298,7 +7830,7 @@
         "timestamp": "2026-01-06T00:33:11.406Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "34f89de7-d3a6-46c6-985d-fff823e96a88"
@@ -7338,7 +7870,7 @@
         "timestamp": "2026-01-05T22:29:16.853Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "90891612-93b3-4258-949e-5d9c5a7d7bfa"
@@ -7395,7 +7927,7 @@
         "timestamp": "2026-01-06T01:44:16.945Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "4d678513-6bb2-4dd3-88c4-9bf90fcaacd0",
@@ -7436,7 +7968,44 @@
         "timestamp": "2026-01-06T03:11:44.702Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
+        "_deleted": false
+    },
+    {
+        "id": "6d3104f1-8cc5-4ee2-8d22-8d693b4a9668",
+        "items": [
+            {
+                "id": "c6bfa33d-1503-456d-8dff-4107c7494b53",
+                "barcode": "4800009000034",
+                "name": "Dole Pineapple Juice Unsweetened 240ml",
+                "category": "DRINK",
+                "cost_price": 28.309999999999998721023075631819665431976318359375,
+                "selling_price": 33,
+                "min_stock": 2,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "e9f6ef1b-cbfc-48ed-8512-a747a8908f0f",
+                "_version": 3,
+                "_updatedAt": 1767618754374,
+                "_deleted": false,
+                "_hash": "837354961899ab8d6b676812adba6e88",
+                "qty": 2
+            }
+        ],
+        "total_amount": 66,
+        "amount_tendered": 100,
+        "change": 34,
+        "tax_amount": 7.07142857142857650387668400071561336517333984375,
+        "payment_method": "Cash",
+        "user_email": "brad@lp.com",
+        "user_name": "Brad",
+        "customer_id": "Guest",
+        "customer_name": "Guest",
+        "points_earned": 0,
+        "timestamp": "2026-01-06T05:02:39.985Z",
+        "is_voided": false,
+        "_version": 1,
+        "_updatedAt": 1767676940134,
         "_deleted": false
     },
     {
@@ -7508,7 +8077,7 @@
         "timestamp": "2026-01-05T22:34:58.267Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "d5af96e2-e428-476d-8005-66542d21a5d9",
@@ -7567,7 +8136,7 @@
         "timestamp": "2026-01-05T07:43:32.941Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "93790e3a10fe86f5ef1217456533973f",
         "item_ids": [
@@ -7626,12 +8195,50 @@
         "timestamp": "2026-01-06T02:32:53.846Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "b5b4b2f4-7ec4-4be2-94d3-33b89bcc8707",
             "e8eea203-ee77-46a9-a684-2d117360ed63"
         ]
+    },
+    {
+        "id": "724c748a-cb46-47b0-8f83-f03797817b9d",
+        "items": [
+            {
+                "id": "70be3462-3f1a-4221-9db0-d46ade0b3b1c",
+                "barcode": "6205863488",
+                "name": "Wash Sugar 1\/4kl",
+                "category": "BAKING ESSENTIALS",
+                "cost_price": 20,
+                "selling_price": 24,
+                "min_stock": 2,
+                "stock_level": -3,
+                "base_unit": "Unit",
+                "supplier_id": "48476013-1c5f-4bc8-a51c-dc506fb4f14b",
+                "_version": 6,
+                "_updatedAt": 1767656491749,
+                "_deleted": false,
+                "_hash": "283b15320f2caa6ff8775863027dfbd6",
+                "updatedAt": "2026-01-05T02:58:20.334Z",
+                "qty": 1
+            }
+        ],
+        "total_amount": 24,
+        "amount_tendered": 24,
+        "change": 0,
+        "tax_amount": 2.571428571428572951163005200214684009552001953125,
+        "payment_method": "Cash",
+        "user_email": "brad@lp.com",
+        "user_name": "Brad",
+        "customer_id": "Guest",
+        "customer_name": "Guest",
+        "points_earned": 0,
+        "timestamp": "2026-01-06T04:09:28.276Z",
+        "is_voided": false,
+        "_version": 1,
+        "_updatedAt": 1767676940134,
+        "_deleted": false
     },
     {
         "id": "72a8ee4f-4dfb-4c5b-8b98-aea543e5e153",
@@ -7668,7 +8275,7 @@
         "timestamp": "2026-01-05T09:52:36.555Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "ecc7230aad720b82e428da9430edb968",
         "item_ids": [
@@ -7709,7 +8316,7 @@
         "timestamp": "2026-01-05T09:56:37.125Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "afbd102314979c6e2306d1fa1c78a7b7",
         "item_ids": [
@@ -7790,7 +8397,7 @@
         "sync_status": 1,
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "f26387cdfce6ea030d765cb2a5555ea8",
         "item_ids": [
@@ -7835,7 +8442,7 @@
         "timestamp": "2026-01-06T01:03:42.137Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "31f63bfd-6e08-4448-9590-e1176891be9b"
@@ -7894,13 +8501,50 @@
         "timestamp": "2026-01-05T09:33:09.066Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "18b33966f3756dd6ac4c893bca69993f",
         "item_ids": [
             "d59bcaa8-ab3f-484b-af44-89e5ea5bf7c0",
             "7e1b90f8-0629-4a6b-afd9-936a5e7391ef"
         ]
+    },
+    {
+        "id": "79797f6b-1277-478b-871d-dadcc8b1524f",
+        "items": [
+            {
+                "id": "cb53718c-8b28-4756-b331-440fd76cd485",
+                "barcode": "NULL",
+                "name": "scented wipes fresco 15pcs",
+                "category": "PERSONAL HYGIENE",
+                "cost_price": 14,
+                "selling_price": 21,
+                "min_stock": 1,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "38f918d6-a624-4a13-a8b8-6a6a3e0e2285",
+                "_version": 3,
+                "_updatedAt": 1767618763537,
+                "_deleted": false,
+                "_hash": "835d6cdd0f3698fe97cd48759313b77c",
+                "qty": 2
+            }
+        ],
+        "total_amount": 42,
+        "amount_tendered": 42,
+        "change": 0,
+        "tax_amount": 4.50000000000000710542735760100185871124267578125,
+        "payment_method": "Cash",
+        "user_email": "brad@lp.com",
+        "user_name": "Brad",
+        "customer_id": "Guest",
+        "customer_name": "Guest",
+        "points_earned": 0,
+        "timestamp": "2026-01-06T03:40:55.304Z",
+        "is_voided": false,
+        "_version": 1,
+        "_updatedAt": 1767676940134,
+        "_deleted": false
     },
     {
         "id": "79fce2dd-7d05-4b06-89c1-bd9608751c3b",
@@ -7936,7 +8580,7 @@
         "timestamp": "2026-01-06T00:35:17.837Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "d3f4c66e-9082-4118-94cd-b41101520c92"
@@ -7995,7 +8639,7 @@
         "timestamp": "2026-01-05T09:52:00.470Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "ae3ed26b27ccaa172cad3aeb61306a4b",
         "item_ids": [
@@ -8092,7 +8736,7 @@
         "timestamp": "2026-01-05T10:22:49.026Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "85be7ca327ca327d73e48ba0b37b7dda",
         "item_ids": [
@@ -8187,7 +8831,7 @@
         "timestamp": "2026-01-05T09:21:05.904Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "83cd649e03bfbf2e97c0a1785722903e",
         "item_ids": [
@@ -8231,7 +8875,7 @@
         "timestamp": "2026-01-05T23:54:56.477Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "299a8bae-20f8-4b79-b595-035417eeb379"
@@ -8271,7 +8915,7 @@
         "timestamp": "2026-01-05T07:57:47.539Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "0bc0cab1c7026d6bc4ee6d11082bf18b",
         "item_ids": [
@@ -8385,7 +9029,7 @@
         "timestamp": "2026-01-05T10:54:36.344Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "a5df15db478e6c970a222d8df400f916",
         "item_ids": [
@@ -8555,7 +9199,7 @@
         "timestamp": "2026-01-05T09:17:12.342Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "af42366bc35faca4f2513008961ad6d6",
         "item_ids": [
@@ -8604,7 +9248,7 @@
         "timestamp": "2026-01-05T10:29:30.881Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "12a2c0efe271c6e0e0f8b2e3efc896b9",
         "item_ids": [
@@ -8664,7 +9308,7 @@
         "timestamp": "2026-01-05T08:57:36.904Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "06a86b2d82fa6903301aa0d76c973d03",
         "item_ids": [
@@ -8707,7 +9351,7 @@
         "timestamp": "2026-01-05T10:35:34.801Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "eb70b00cf37fffdd405423474eaa007f",
         "item_ids": [
@@ -8748,7 +9392,7 @@
         "timestamp": "2026-01-06T00:14:19.095Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "fe97cc8b-c53a-4e52-9bc0-2dff13db6fe4"
@@ -8813,7 +9457,7 @@
         "sync_status": 1,
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "c6381da8a26f80668ef74c444b30a00c",
         "item_ids": [
@@ -8821,6 +9465,78 @@
             "aadd7666-6e4d-4ae0-8454-a69612cc2ee1",
             "aab23c7a-37eb-4f28-9425-9f40c4825662"
         ]
+    },
+    {
+        "id": "85224bf4-6c94-4e2b-b5f4-2cab31083de1",
+        "items": [
+            {
+                "id": "147bb7ec-2282-4820-a068-2c43ef4d4ea2",
+                "barcode": "4800016052040",
+                "name": "C2 Green Tea Apple 355ml",
+                "category": "DRINK",
+                "cost_price": 23.550000000000000710542735760100185871124267578125,
+                "selling_price": 28,
+                "min_stock": 2,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "f315a97a-d8b7-4b46-9a75-ec4d050d3cf2",
+                "_version": 3,
+                "_updatedAt": 1767618754198,
+                "_deleted": false,
+                "_hash": "a990b037365d21ebaeddac3e231675bd",
+                "qty": 1
+            },
+            {
+                "id": "0d4180bb-c589-4a0c-9380-ca74e2fada42",
+                "barcode": "4807770101540",
+                "name": "Bingo Vanilla 25g",
+                "category": "BISCUITS",
+                "cost_price": 5.5,
+                "selling_price": 7,
+                "min_stock": 2,
+                "stock_level": -1,
+                "base_unit": "Unit",
+                "supplier_id": "",
+                "_version": 4,
+                "_updatedAt": 1767618745636,
+                "_deleted": false,
+                "_hash": "80cf946e630478d88014b966034255d2",
+                "updatedAt": "2026-01-05T02:58:20.340Z",
+                "qty": 2
+            },
+            {
+                "id": "aca9e19b-f301-4ad3-889e-200b4816f950",
+                "barcode": "4807770101854",
+                "name": "Eggnog 18g",
+                "category": "BISCUITS",
+                "cost_price": 5.5999999999999996447286321199499070644378662109375,
+                "selling_price": 7,
+                "min_stock": 2,
+                "stock_level": -1,
+                "base_unit": "Unit",
+                "supplier_id": "657ea96d-b483-46e7-9ef5-7db7b35e0bcc",
+                "_version": 4,
+                "_updatedAt": 1767661451212,
+                "_deleted": false,
+                "_hash": "bdf18ea066b95861657f5ab221e79ce2",
+                "qty": 1
+            }
+        ],
+        "total_amount": 49,
+        "amount_tendered": 100,
+        "change": 51,
+        "tax_amount": 5.25000000000000710542735760100185871124267578125,
+        "payment_method": "Cash",
+        "user_email": "brad@lp.com",
+        "user_name": "Brad",
+        "customer_id": "Guest",
+        "customer_name": "Guest",
+        "points_earned": 0,
+        "timestamp": "2026-01-06T04:48:06.499Z",
+        "is_voided": false,
+        "_version": 1,
+        "_updatedAt": 1767676940134,
+        "_deleted": false
     },
     {
         "id": "8550ecc0-71b6-4092-a653-39bfcbc59add",
@@ -8857,7 +9573,7 @@
         "timestamp": "2026-01-05T09:51:06.386Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "f47d793209b52269c13a3227abb0581b",
         "item_ids": [
@@ -8968,7 +9684,7 @@
         "timestamp": "2026-01-05T05:04:38.405Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "3c18cc29ed3b2b83ca988c5cb0f149e5",
         "item_ids": [
@@ -9013,7 +9729,7 @@
         "timestamp": "2026-01-05T08:02:11.361Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "9761075c3060914deeba50eecf9652f7",
         "item_ids": [
@@ -9054,7 +9770,7 @@
         "timestamp": "2026-01-05T08:00:36.993Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "35ac8d0cd31d9b43a4a3df3189d87337",
         "item_ids": [
@@ -9129,7 +9845,7 @@
         "timestamp": "2026-01-05T22:52:03.630Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "3a1860c9-7c5e-489d-91cb-c36469747f52",
@@ -9171,7 +9887,7 @@
         "timestamp": "2026-01-05T23:34:06.215Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "4a4fc3ad-b556-4cda-bf7d-b389c89c81bf"
@@ -9229,7 +9945,7 @@
         "timestamp": "2026-01-05T11:01:13.928Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "ec69ee82ef5a8c37273d50de529a2cc2",
         "item_ids": [
@@ -9272,7 +9988,7 @@
         "timestamp": "2026-01-05T09:57:10.858Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "831092bacfcd3f5e2d156da43ad865e1",
         "item_ids": [
@@ -9313,7 +10029,7 @@
         "timestamp": "2026-01-05T22:30:36.620Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "dd78bb90-5ddf-4129-8201-8a0e1e1d1525"
@@ -9354,11 +10070,48 @@
         "timestamp": "2026-01-06T01:00:01.139Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "8759bc1a-a88a-4523-a16d-a5665437ca33"
         ]
+    },
+    {
+        "id": "8e4358d3-7e9b-4c1e-8dbf-fdf5dce91674",
+        "items": [
+            {
+                "id": "90891612-93b3-4258-949e-5d9c5a7d7bfa",
+                "barcode": "4800177075209",
+                "name": "Camel red stick",
+                "category": "CIGARETTES",
+                "cost_price": 8.449999999999999289457264239899814128875732421875,
+                "selling_price": 10,
+                "min_stock": 2,
+                "stock_level": -47,
+                "base_unit": "Unit",
+                "supplier_id": "a671b42e-d361-4e04-81ca-6df3dafe0b2d",
+                "_version": 30,
+                "_updatedAt": 1767671996734,
+                "_deleted": false,
+                "_hash": "6341a2d5e00e0cb3aeca98591dac45f9",
+                "qty": 3
+            }
+        ],
+        "total_amount": 30,
+        "amount_tendered": 30,
+        "change": 0,
+        "tax_amount": 3.21428571428571530077533680014312267303466796875,
+        "payment_method": "Cash",
+        "user_email": "brad@lp.com",
+        "user_name": "Brad",
+        "customer_id": "Guest",
+        "customer_name": "Guest",
+        "points_earned": 0,
+        "timestamp": "2026-01-06T05:10:33.153Z",
+        "is_voided": false,
+        "_version": 1,
+        "_updatedAt": 1767676940134,
+        "_deleted": false
     },
     {
         "id": "8e60ce4d-4347-4df0-b473-039a911f342f",
@@ -9428,7 +10181,7 @@
         "timestamp": "2026-01-05T07:30:15.399Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "c702a19eaa96dbb903745f5a4efe6f19",
         "item_ids": [
@@ -9489,7 +10242,7 @@
         "timestamp": "2026-01-06T01:51:45.361Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "89a2167f-e6d8-4f77-bfe0-2aee385bc56f",
@@ -9531,7 +10284,7 @@
         "timestamp": "2026-01-05T09:28:30.277Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "061b7c96b69325614dcd7ae01d8f1375",
         "item_ids": [
@@ -9572,7 +10325,7 @@
         "timestamp": "2026-01-05T07:11:49.526Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "60c3b0fcb699cf3f98a6df7924e3ec22",
         "item_ids": [
@@ -9625,13 +10378,153 @@
         "sync_status": 1,
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "2d38243d275d080fbe9d6197085f5bdb",
         "item_ids": [
             "0056801f-2563-4397-89ce-f516504e9fb3",
             "0091534e-b605-4d75-b167-aeb71d258284"
         ]
+    },
+    {
+        "id": "92cc2f9e-1e8e-4816-acb9-1b88bcb6e61f",
+        "items": [
+            {
+                "id": "db9e410c-5eec-474b-841c-d40c0ba09325",
+                "barcode": "4806507832214",
+                "name": "Silka Green Papaya 65g",
+                "category": "PERSONAL HYGIENE",
+                "cost_price": 21,
+                "selling_price": 25,
+                "min_stock": 2,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "cd176acb-ff88-44c2-8788-476fb2103281",
+                "_version": 3,
+                "_updatedAt": 1767618763568,
+                "_deleted": false,
+                "_hash": "3f3afc210f3fc6f6e3d7c1e479e5df9a",
+                "qty": 2
+            },
+            {
+                "id": "aa53634e-3fc0-4a90-ae41-507c18ba1bae",
+                "barcode": "4800888199133",
+                "name": "Surf Powder Purple Blooms 65g",
+                "category": "DETERGENT",
+                "cost_price": 6.4199999999999999289457264239899814128875732421875,
+                "selling_price": 8,
+                "min_stock": 2,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "3360d95f-6b60-45f7-90e0-1fe26c6043e0",
+                "_version": 3,
+                "_updatedAt": 1767618753399,
+                "_deleted": false,
+                "_hash": "f0ca9b9ca23159b20a9ead5025aae9c7",
+                "qty": 6
+            },
+            {
+                "id": "dd66f797-1f70-463b-abe5-4f030ddebac3",
+                "barcode": "4902430333597",
+                "name": "Head n Shoulder cool Menthol 12ml",
+                "category": "SHAMPOO",
+                "cost_price": 8.4000000000000003552713678800500929355621337890625,
+                "selling_price": 9,
+                "min_stock": 2,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "23601597-d827-43d9-95b9-bcbec0887e2d",
+                "_version": 3,
+                "_updatedAt": 1767618769252,
+                "_deleted": false,
+                "_hash": "f93545db231e8bcf8d12c3e3f608b5ae",
+                "qty": 2
+            },
+            {
+                "id": "017b0702-362a-4fb9-bf27-0ad25ad46d50",
+                "barcode": "4902430729925",
+                "name": "DOWNY Mystique 20ml",
+                "category": "DETERGENT",
+                "cost_price": 6.70000000000000017763568394002504646778106689453125,
+                "selling_price": 8,
+                "min_stock": 2,
+                "stock_level": -2,
+                "base_unit": "Unit",
+                "supplier_id": "23601597-d827-43d9-95b9-bcbec0887e2d",
+                "_version": 4,
+                "_updatedAt": 1767618753109,
+                "_deleted": false,
+                "_hash": "686c301217c6d5112fac1a22fc900e6c",
+                "updatedAt": "2026-01-05T02:58:20.341Z",
+                "qty": 6
+            },
+            {
+                "id": "99f7b646-541a-4189-a471-752e36f12ce2",
+                "barcode": "4800092330131",
+                "name": "Dingdong mixed nuts 100g",
+                "category": "CHIPS",
+                "cost_price": 21.64999999999999857891452847979962825775146484375,
+                "selling_price": 26,
+                "min_stock": 5,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "477866ad-cbcd-4bbc-b033-d98792778923",
+                "_version": 3,
+                "_updatedAt": 1767618750023,
+                "_deleted": false,
+                "_hash": "be4082ce6cabbf052b8caf48d61be00f",
+                "qty": 1
+            },
+            {
+                "id": "46437efd-c1af-48b5-b40b-4fdd91420951",
+                "barcode": "731126105040",
+                "name": "Nagaraya Hot & Spicy 40g",
+                "category": "NUTS",
+                "cost_price": 11.480000000000000426325641456060111522674560546875,
+                "selling_price": 14,
+                "min_stock": 2,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "084b8fcd-c04a-43ed-b633-35c20b641754",
+                "_version": 3,
+                "_updatedAt": 1767618759659,
+                "_deleted": false,
+                "_hash": "c6d38d2a86a0fe73f2b57aa4ae0dedd7",
+                "qty": 1
+            },
+            {
+                "id": "9ec70e9a-5bfe-4394-ba5c-a0a48eceaf80",
+                "barcode": "731126104043",
+                "name": "Nagaraya Garlic 40g",
+                "category": "NUTS",
+                "cost_price": 11.480000000000000426325641456060111522674560546875,
+                "selling_price": 14,
+                "min_stock": 2,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "084b8fcd-c04a-43ed-b633-35c20b641754",
+                "_version": 3,
+                "_updatedAt": 1767618759655,
+                "_deleted": false,
+                "_hash": "8bcfd5f9cca99ba5d143a4cd662f1a96",
+                "qty": 1
+            }
+        ],
+        "total_amount": 218,
+        "amount_tendered": 500,
+        "change": 282,
+        "tax_amount": 23.357142857142889624810777604579925537109375,
+        "payment_method": "Cash",
+        "user_email": "brad@lp.com",
+        "user_name": "Brad",
+        "customer_id": "Guest",
+        "customer_name": "Guest",
+        "points_earned": 1,
+        "timestamp": "2026-01-06T05:12:49.555Z",
+        "is_voided": false,
+        "_version": 1,
+        "_updatedAt": 1767676940134,
+        "_deleted": false
     },
     {
         "id": "92f97914-bcc9-40c9-a955-e04ba0456afa",
@@ -9706,7 +10599,7 @@
         "sync_status": 1,
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "9132f01ec29d8c223b41847b45299013",
         "item_ids": [
@@ -9750,7 +10643,7 @@
         "timestamp": "2026-01-06T02:31:12.462Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "34f89de7-d3a6-46c6-985d-fff823e96a88"
@@ -9858,7 +10751,7 @@
         "timestamp": "2026-01-05T06:30:23.748Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "0eda9b80622e5c78252fea247d055b3e",
         "item_ids": [
@@ -9920,7 +10813,7 @@
         "timestamp": "2026-01-06T02:37:56.064Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "90891612-93b3-4258-949e-5d9c5a7d7bfa",
@@ -9973,7 +10866,7 @@
         "sync_status": 1,
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "76f954ce92bdfd2a2f242a94ff5194dc",
         "item_ids": [
@@ -10033,7 +10926,7 @@
         "timestamp": "2026-01-06T03:04:18.633Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false
     },
     {
@@ -10070,11 +10963,85 @@
         "timestamp": "2026-01-05T23:57:22.973Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "90891612-93b3-4258-949e-5d9c5a7d7bfa"
         ]
+    },
+    {
+        "id": "99ae652a-de2e-4d8f-94dd-ea45d358e8ca",
+        "items": [
+            {
+                "id": "e469fc89-070e-453a-9c4c-10e3026c1b12",
+                "barcode": "9877656789",
+                "name": "Coy & Dags Calamansi Juice",
+                "category": "DRINK",
+                "cost_price": 18,
+                "selling_price": 25,
+                "min_stock": 2,
+                "stock_level": -1,
+                "base_unit": "Unit",
+                "supplier_id": "",
+                "_version": 4,
+                "_updatedAt": 1767618754309,
+                "_deleted": false,
+                "_hash": "51f1083ca94528f4803813cf1a0c628f",
+                "qty": 2
+            }
+        ],
+        "total_amount": 50,
+        "amount_tendered": 50,
+        "change": 0,
+        "tax_amount": 5.357142857142861203101347200572490692138671875,
+        "payment_method": "Cash",
+        "user_email": "brad@lp.com",
+        "user_name": "Brad",
+        "customer_id": "Guest",
+        "customer_name": "Guest",
+        "points_earned": 0,
+        "timestamp": "2026-01-06T03:59:31.724Z",
+        "is_voided": false,
+        "_version": 1,
+        "_updatedAt": 1767676940134,
+        "_deleted": false
+    },
+    {
+        "id": "9b6ad3fe-abbf-4d79-b962-9706e48c9b9b",
+        "items": [
+            {
+                "id": "6b7d5342-f532-446e-9de6-defc0f53a002",
+                "barcode": "880115142723",
+                "name": "Alaska Choco  6x40g",
+                "category": "MILK",
+                "cost_price": 9.089999999999999857891452847979962825775146484375,
+                "selling_price": 11,
+                "min_stock": 2,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "53ecfa8e-3c3e-4daa-9987-2794366cc070",
+                "_version": 3,
+                "_updatedAt": 1767618758638,
+                "_deleted": false,
+                "_hash": "51cdf103cfb198484b8c0d50c3f7014c",
+                "qty": 4
+            }
+        ],
+        "total_amount": 44,
+        "amount_tendered": 50,
+        "change": 6,
+        "tax_amount": 4.71428571428571530077533680014312267303466796875,
+        "payment_method": "Cash",
+        "user_email": "brad@lp.com",
+        "user_name": "Brad",
+        "customer_id": "Guest",
+        "customer_name": "Guest",
+        "points_earned": 0,
+        "timestamp": "2026-01-06T04:50:39.033Z",
+        "is_voided": false,
+        "_version": 1,
+        "_updatedAt": 1767676940134,
+        "_deleted": false
     },
     {
         "id": "9d1ec53b-67e8-40c2-af76-cb3e6d9c5935",
@@ -10127,7 +11094,7 @@
         "timestamp": "2026-01-06T02:05:07.800Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "dd78bb90-5ddf-4129-8201-8a0e1e1d1525",
@@ -10185,7 +11152,7 @@
         "timestamp": "2026-01-05T09:23:24.807Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "ce8559aa4a7c9128e7088a07f381e05d",
         "item_ids": [
@@ -10228,7 +11195,7 @@
         "timestamp": "2026-01-05T11:05:22.647Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "f13026fa113624d81773a45be8804f00",
         "item_ids": [
@@ -10269,7 +11236,7 @@
         "timestamp": "2026-01-06T00:58:04.107Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "37d90658-96c0-4628-97c6-f73679c29bc7"
@@ -10328,7 +11295,7 @@
         "timestamp": "2026-01-05T09:56:58.075Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "95f0c71359bfcdb56a77585a2edc83fd",
         "item_ids": [
@@ -10370,12 +11337,50 @@
         "timestamp": "2026-01-05T06:57:54.360Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "472019a5c41c827f8640388828f3c1fb",
         "item_ids": [
             "b5b4b2f4-7ec4-4be2-94d3-33b89bcc8707"
         ]
+    },
+    {
+        "id": "a1844557-7527-45d2-9afb-95dc6bd5676f",
+        "items": [
+            {
+                "id": "aa7786e8-917a-4555-bdc7-bf81992168ee",
+                "barcode": "6904697173",
+                "name": "Fortune Menthol stick",
+                "category": "CIGARETTES",
+                "cost_price": 7,
+                "selling_price": 8,
+                "min_stock": 2,
+                "stock_level": -3,
+                "base_unit": "Unit",
+                "supplier_id": "",
+                "_version": 6,
+                "_updatedAt": 1767659599060,
+                "_deleted": false,
+                "_hash": "140288883aacd0526fdba7588e5916f5",
+                "updatedAt": "2026-01-05T02:58:20.334Z",
+                "qty": 1
+            }
+        ],
+        "total_amount": 8,
+        "amount_tendered": 8,
+        "change": 0,
+        "tax_amount": 0.857142857142857650387668400071561336517333984375,
+        "payment_method": "Cash",
+        "user_email": "brad@lp.com",
+        "user_name": "Brad",
+        "customer_id": "Guest",
+        "customer_name": "Guest",
+        "points_earned": 0,
+        "timestamp": "2026-01-06T03:41:13.007Z",
+        "is_voided": false,
+        "_version": 1,
+        "_updatedAt": 1767676940134,
+        "_deleted": false
     },
     {
         "id": "a1f47f5c-3367-45b5-a2db-8f7d54e7bbeb",
@@ -10412,7 +11417,7 @@
         "timestamp": "2026-01-05T08:41:22.427Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "19c6f90a5ad510e9abd52f53f1d4d8ca",
         "item_ids": [
@@ -10470,7 +11475,7 @@
         "timestamp": "2026-01-05T07:46:17.903Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "df8e349a3908d33c432506a781cdf68f",
         "item_ids": [
@@ -10563,7 +11568,7 @@
         "timestamp": "2026-01-05T22:59:01.301Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "d088e1c7-a8c4-480f-b5db-646e068d3640",
@@ -10607,11 +11612,48 @@
         "timestamp": "2026-01-05T23:11:08.655Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "430da045-3343-4bc9-b419-116f7da951d3"
         ]
+    },
+    {
+        "id": "a5d9ee29-c4e8-4bb6-9384-b5f9e59edf52",
+        "items": [
+            {
+                "id": "0f01b872-0288-48de-b72d-8a818ab0a749",
+                "barcode": "8502825727",
+                "name": "Packing Tape brown 2x80",
+                "category": "SCHOOL SUPPLIES",
+                "cost_price": 30,
+                "selling_price": 35,
+                "min_stock": 2,
+                "stock_level": -1,
+                "base_unit": "Unit",
+                "supplier_id": "",
+                "_version": 4,
+                "_updatedAt": 1767670034409,
+                "_deleted": false,
+                "_hash": "168dc1d65bebd59bff990ccfa095dbaa",
+                "qty": 1
+            }
+        ],
+        "total_amount": 35,
+        "amount_tendered": 35,
+        "change": 0,
+        "tax_amount": 3.750000000000003552713678800500929355621337890625,
+        "payment_method": "Cash",
+        "user_email": "brad@lp.com",
+        "user_name": "Brad",
+        "customer_id": "Guest",
+        "customer_name": "Guest",
+        "points_earned": 0,
+        "timestamp": "2026-01-06T03:49:02.022Z",
+        "is_voided": false,
+        "_version": 1,
+        "_updatedAt": 1767676940134,
+        "_deleted": false
     },
     {
         "id": "a643b284-0bc6-40a4-84e6-4a8c0eb4f215",
@@ -10647,7 +11689,7 @@
         "timestamp": "2026-01-05T09:33:33.500Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "ed6def583d9bf574888e801daba63eef",
         "item_ids": [
@@ -10688,7 +11730,7 @@
         "timestamp": "2026-01-06T03:27:50.305Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false
     },
     {
@@ -10795,7 +11837,7 @@
         "timestamp": "2026-01-05T22:25:47.337Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "892ae825-e204-4aeb-baea-471b658f4cd2",
@@ -10840,7 +11882,7 @@
         "timestamp": "2026-01-05T09:01:13.628Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "761be6c57654ec04a6d1ab31dea5e122",
         "item_ids": [
@@ -10881,7 +11923,7 @@
         "timestamp": "2026-01-06T00:29:30.011Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "958b257b-ea01-497f-bb96-3e0ce49e8be4"
@@ -10939,7 +11981,7 @@
         "timestamp": "2026-01-06T02:57:58.932Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false
     },
     {
@@ -10976,11 +12018,190 @@
         "timestamp": "2026-01-05T23:01:12.248Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "90891612-93b3-4258-949e-5d9c5a7d7bfa"
         ]
+    },
+    {
+        "id": "aac196f2-f88c-4be0-89f5-a30aeb6dee75",
+        "items": [
+            {
+                "id": "3d40fae1-4d9e-4e99-a45f-b032aa639529",
+                "barcode": "748485400716",
+                "name": "Angel evaporada 410ml",
+                "category": "CANNED MILK",
+                "cost_price": 31.14999999999999857891452847979962825775146484375,
+                "selling_price": 37,
+                "min_stock": 2,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "baea10eb-bd21-4dae-b415-6c2328296322",
+                "_version": 3,
+                "_updatedAt": 1767618749103,
+                "_deleted": false,
+                "_hash": "0393093b783dcb4fd6106b474dc77f30",
+                "qty": 1
+            },
+            {
+                "id": "cb9a8830-8367-4a8d-b89d-fbed87826952",
+                "barcode": "748485401225",
+                "name": "Angel Kremdensada 410ml",
+                "category": "CANNED GOODS",
+                "cost_price": 59.9500000000000028421709430404007434844970703125,
+                "selling_price": 66,
+                "min_stock": 2,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "baea10eb-bd21-4dae-b415-6c2328296322",
+                "_version": 3,
+                "_updatedAt": 1767618748061,
+                "_deleted": false,
+                "_hash": "9f9cdeb0ad3ee93e9bd1ba4714387d73",
+                "qty": 1
+            },
+            {
+                "id": "4494dfff-e774-4d6d-93ab-b49f3664b2a3",
+                "barcode": "4806526400463",
+                "name": "MENU MAGIC  INSTANT LECHE FLAN 24g",
+                "category": "TBA",
+                "cost_price": 22.949999999999999289457264239899814128875732421875,
+                "selling_price": 26,
+                "min_stock": 2,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "",
+                "_version": 2,
+                "_updatedAt": 1767618759726,
+                "_deleted": false,
+                "_hash": "d05f5f853fb9e0e18f968929f38e3201",
+                "qty": 1
+            }
+        ],
+        "total_amount": 129,
+        "amount_tendered": 150,
+        "change": 21,
+        "tax_amount": 13.821428571428583609304041601717472076416015625,
+        "payment_method": "Cash",
+        "user_email": "brad@lp.com",
+        "user_name": "Brad",
+        "customer_id": "Guest",
+        "customer_name": "Guest",
+        "points_earned": 0,
+        "timestamp": "2026-01-06T04:37:24.416Z",
+        "is_voided": false,
+        "_version": 1,
+        "_updatedAt": 1767676940134,
+        "_deleted": false
+    },
+    {
+        "id": "aafb5318-c862-4017-9aae-e5cf0005b43a",
+        "items": [
+            {
+                "id": "9de682c1-11d1-4630-a5b7-621a95e27071",
+                "barcode": "6928394900659",
+                "name": "Kingever AA 4s",
+                "category": "BATTERY",
+                "cost_price": 15,
+                "selling_price": 22,
+                "min_stock": 2,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "18e3267f-0a84-47d5-af2d-d50188469e56",
+                "_version": 3,
+                "_updatedAt": 1767618745510,
+                "_deleted": false,
+                "_hash": "a0c8cac77dccc802d112e9cb2f37cad5",
+                "qty": 1
+            }
+        ],
+        "total_amount": 22,
+        "amount_tendered": 22,
+        "change": 0,
+        "tax_amount": 2.357142857142857650387668400071561336517333984375,
+        "payment_method": "Cash",
+        "user_email": "brad@lp.com",
+        "user_name": "Brad",
+        "customer_id": "Guest",
+        "customer_name": "Guest",
+        "points_earned": 0,
+        "timestamp": "2026-01-06T04:10:19.928Z",
+        "is_voided": false,
+        "_version": 1,
+        "_updatedAt": 1767676940134,
+        "_deleted": false
+    },
+    {
+        "id": "ab79c7c4-56a4-4c37-992b-7f459fbcae7d",
+        "items": [
+            {
+                "id": "2445e1f4-65fe-412f-a9d2-638e0f174c62",
+                "barcode": "8853002303110",
+                "name": "Dutchmill 4 Superfruits MB 90ml",
+                "category": "DRINK",
+                "cost_price": 10.6500000000000003552713678800500929355621337890625,
+                "selling_price": 13,
+                "min_stock": 2,
+                "stock_level": -1,
+                "base_unit": "Unit",
+                "supplier_id": "657ea96d-b483-46e7-9ef5-7db7b35e0bcc",
+                "_version": 4,
+                "_updatedAt": 1767661451222,
+                "_deleted": false,
+                "_hash": "bf3b3a3ee2a2721119f530e050feb70d",
+                "qty": 1
+            },
+            {
+                "id": "5f8035c9-821f-4b30-88db-cadc0e9c668a",
+                "barcode": "4800888139306",
+                "name": "CreamSilk Conditioner Standout Straight Pink 13ml",
+                "category": "SHAMPOO",
+                "cost_price": 6.75,
+                "selling_price": 8,
+                "min_stock": 2,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "3360d95f-6b60-45f7-90e0-1fe26c6043e0",
+                "_version": 3,
+                "_updatedAt": 1767618769107,
+                "_deleted": false,
+                "_hash": "b1f077b710ce13b3732dfb2192ab4620",
+                "qty": 1
+            },
+            {
+                "id": "17b6fce2-80f9-4995-9870-9f2e13790d41",
+                "barcode": "8996001350584",
+                "name": "Cal Cheese Wafer 48g",
+                "category": "BISCUITS",
+                "cost_price": 12.3499999999999996447286321199499070644378662109375,
+                "selling_price": 15,
+                "min_stock": 2,
+                "stock_level": -5,
+                "base_unit": "Unit",
+                "supplier_id": "53ecfa8e-3c3e-4daa-9987-2794366cc070",
+                "_version": 6,
+                "_updatedAt": 1767672422780,
+                "_deleted": false,
+                "_hash": "bb8d98094d2f203db805d11d65560af2",
+                "qty": 1
+            }
+        ],
+        "total_amount": 36,
+        "amount_tendered": 1000,
+        "change": 964,
+        "tax_amount": 3.857142857142861203101347200572490692138671875,
+        "payment_method": "Cash",
+        "user_email": "brad@lp.com",
+        "user_name": "Brad",
+        "customer_id": "Guest",
+        "customer_name": "Guest",
+        "points_earned": 0,
+        "timestamp": "2026-01-06T04:33:03.580Z",
+        "is_voided": false,
+        "_version": 1,
+        "_updatedAt": 1767676940134,
+        "_deleted": false
     },
     {
         "id": "ac3c0471-6202-4742-8d62-e79af9245745",
@@ -11070,7 +12291,7 @@
         "sync_status": 1,
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "848ed2728ff32dce76cda12eca7fe675",
         "item_ids": [
@@ -11115,7 +12336,7 @@
         "timestamp": "2026-01-05T09:37:25.905Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "723afd1ecd0157f0736fbce559eae7d5",
         "item_ids": [
@@ -11173,13 +12394,50 @@
         "timestamp": "2026-01-05T07:50:48.261Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "52adc04b1929975ed63986c4422acb30",
         "item_ids": [
             "9e8ce33f-1b2c-4a7f-adf8-843f7bb6b2e7",
             "4c2f52b5-ebce-40d0-83fa-11a171ccb923"
         ]
+    },
+    {
+        "id": "ada0d103-2228-4985-912a-60633ad053bc",
+        "items": [
+            {
+                "id": "90891612-93b3-4258-949e-5d9c5a7d7bfa",
+                "barcode": "4800177075209",
+                "name": "Camel red stick",
+                "category": "CIGARETTES",
+                "cost_price": 8.449999999999999289457264239899814128875732421875,
+                "selling_price": 10,
+                "min_stock": 2,
+                "stock_level": -44,
+                "base_unit": "Unit",
+                "supplier_id": "a671b42e-d361-4e04-81ca-6df3dafe0b2d",
+                "_version": 28,
+                "_updatedAt": 1767669564957,
+                "_deleted": false,
+                "_hash": "6341a2d5e00e0cb3aeca98591dac45f9",
+                "qty": 2
+            }
+        ],
+        "total_amount": 20,
+        "amount_tendered": 20,
+        "change": 0,
+        "tax_amount": 2.14285714285714590232601040042936801910400390625,
+        "payment_method": "Cash",
+        "user_email": "brad@lp.com",
+        "user_name": "Brad",
+        "customer_id": "Guest",
+        "customer_name": "Guest",
+        "points_earned": 0,
+        "timestamp": "2026-01-06T03:58:39.559Z",
+        "is_voided": false,
+        "_version": 1,
+        "_updatedAt": 1767676940134,
+        "_deleted": false
     },
     {
         "id": "ae8c3243-120b-472d-bd19-ac35b764f3f8",
@@ -11233,7 +12491,7 @@
         "timestamp": "2026-01-05T10:06:59.252Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "160863814d88147bd2c087c15980a2db",
         "item_ids": [
@@ -11326,7 +12584,7 @@
         "timestamp": "2026-01-06T00:10:25.766Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "a5ecbc0c-a896-4f3a-871b-ef55be2d898e",
@@ -11370,7 +12628,7 @@
         "timestamp": "2026-01-05T10:50:24.174Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "b67f4773a6a6796e8eeeb712c40f1240",
         "item_ids": [
@@ -11451,7 +12709,7 @@
         "sync_status": 1,
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "9fd73423bc98977258229241221f5fdd",
         "item_ids": [
@@ -11512,7 +12770,7 @@
         "timestamp": "2026-01-06T02:13:58.547Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "dd78bb90-5ddf-4129-8201-8a0e1e1d1525",
@@ -11604,7 +12862,7 @@
         "timestamp": "2026-01-05T22:57:58.707Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "7fcc8fd0-955b-49bd-967e-ba45d2c213c4",
@@ -11664,7 +12922,7 @@
         "timestamp": "2026-01-05T23:20:16.698Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "24c331eb-ff1a-438b-b884-4e1ef98d8b11",
@@ -11724,7 +12982,7 @@
         "timestamp": "2026-01-05T10:13:58.971Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "5641f4d16e83284d8419657635f79443",
         "item_ids": [
@@ -11806,7 +13064,7 @@
         "sync_status": 1,
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "0217b041cedb2e913f89c3fe5feb726b",
         "item_ids": [
@@ -11952,7 +13210,7 @@
         "timestamp": "2026-01-06T02:15:55.145Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "22f3eacc-8437-45f8-a6cd-36318da7f682",
@@ -11998,12 +13256,83 @@
         "timestamp": "2026-01-05T07:09:02.762Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "9d925836ef2bb26f73f5e0cc778e3804",
         "item_ids": [
             "1012f0a8-4aab-47e5-8334-9b59ea24d95b"
         ]
+    },
+    {
+        "id": "b60fa38a-7bd4-44ce-bcec-c1a940aa87e9",
+        "items": [
+            {
+                "id": "aa606e8d-c170-475d-8e66-1ca495d87f6d",
+                "barcode": "7622300559991",
+                "name": "Tang Orange 25g",
+                "category": "POWDERED FRUIT DRINK",
+                "cost_price": 18.3599999999999994315658113919198513031005859375,
+                "selling_price": 21,
+                "min_stock": 2,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "477866ad-cbcd-4bbc-b033-d98792778923",
+                "_version": 3,
+                "_updatedAt": 1767618764472,
+                "_deleted": false,
+                "_hash": "7622ccdc0f6b212021c59a79648c73f6",
+                "qty": 1
+            },
+            {
+                "id": "8d26072f-e259-4523-b5af-4a22570b40a6",
+                "barcode": "4800361382083",
+                "name": "Nestea Apple Blend 25g",
+                "category": "POWDERED FRUIT DRINK",
+                "cost_price": 19.949999999999999289457264239899814128875732421875,
+                "selling_price": 22,
+                "min_stock": 2,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "849bb661-ef50-44cc-b5c7-b14465c024b5",
+                "_version": 3,
+                "_updatedAt": 1767618764430,
+                "_deleted": false,
+                "_hash": "d9f4dc209558f416cb14c8d33287e4ed",
+                "qty": 1
+            },
+            {
+                "id": "5d2885c0-d021-497a-a43b-9eb146332dd1",
+                "barcode": "6920354838378",
+                "name": "Colgate Fresh Confidence 20g",
+                "category": "PERSONAL HYGIENE",
+                "cost_price": 9.199999999999999289457264239899814128875732421875,
+                "selling_price": 11,
+                "min_stock": 1,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "38f918d6-a624-4a13-a8b8-6a6a3e0e2285",
+                "_version": 3,
+                "_updatedAt": 1767618760593,
+                "_deleted": false,
+                "_hash": "287ea11f60e1f2549c254398a31d49a9",
+                "qty": 2
+            }
+        ],
+        "total_amount": 65,
+        "amount_tendered": 100,
+        "change": 35,
+        "tax_amount": 6.96428571428572240620269440114498138427734375,
+        "payment_method": "Cash",
+        "user_email": "brad@lp.com",
+        "user_name": "Brad",
+        "customer_id": "Guest",
+        "customer_name": "Guest",
+        "points_earned": 0,
+        "timestamp": "2026-01-06T04:06:41.009Z",
+        "is_voided": false,
+        "_version": 1,
+        "_updatedAt": 1767676940134,
+        "_deleted": false
     },
     {
         "id": "b60ff5d7-cca6-448a-90b4-361873c959f1",
@@ -12056,7 +13385,7 @@
         "timestamp": "2026-01-05T08:11:48.850Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "9cc68d7dd88af5d90e30eac32375fec5",
         "item_ids": [
@@ -12133,7 +13462,7 @@
         "timestamp": "2026-01-05T05:06:57.122Z",
         "is_voided": false,
         "_version": 2,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "0eb8f4e9539cd9a13e36ca26d4986a31",
         "item_ids": [
@@ -12193,7 +13522,7 @@
         "timestamp": "2026-01-06T00:50:41.626Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "4a4fc3ad-b556-4cda-bf7d-b389c89c81bf",
@@ -12234,7 +13563,7 @@
         "timestamp": "2026-01-05T09:11:57.459Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "937174791e93110f1e2586eadf2c67c2",
         "item_ids": [
@@ -12275,7 +13604,7 @@
         "timestamp": "2026-01-06T00:36:29.940Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "affd39d2-6d4b-4b8e-8762-2e6bab56af67"
@@ -12332,7 +13661,7 @@
         "timestamp": "2026-01-05T07:38:27.729Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "9e43e858e71630c7ee7fd378609c6120",
         "item_ids": [
@@ -12374,7 +13703,7 @@
         "timestamp": "2026-01-05T09:29:39.361Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "e14a50f986e528cbe572a90fb039d565",
         "item_ids": [
@@ -12451,7 +13780,7 @@
         "timestamp": "2026-01-05T10:49:17.473Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "e3cd5acfce95a3a2357fe80035147ca5",
         "item_ids": [
@@ -12511,7 +13840,7 @@
         "timestamp": "2026-01-05T08:52:02.122Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "293a38b666d1d7af9dfedee556d9544e",
         "item_ids": [
@@ -12553,7 +13882,7 @@
         "timestamp": "2026-01-05T09:58:28.327Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "fa7a2820e8f4bf0736352ffadc818f77",
         "item_ids": [
@@ -12595,12 +13924,49 @@
         "timestamp": "2026-01-05T09:57:38.209Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "46b07f800e917a815237968aa55500b8",
         "item_ids": [
             "161beac0-590b-496e-8e69-5bed64b12c3e"
         ]
+    },
+    {
+        "id": "c17c4e93-234b-430b-8ff3-033019a61caf",
+        "items": [
+            {
+                "id": "9c4241ec-67f6-4b1a-977e-18dce7633a0a",
+                "barcode": "4806018407703",
+                "name": "Choochoo Strawberry 38g",
+                "category": "CAKE BAR",
+                "cost_price": 7.70000000000000017763568394002504646778106689453125,
+                "selling_price": 9,
+                "min_stock": 1,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "",
+                "_version": 3,
+                "_updatedAt": 1767618746918,
+                "_deleted": false,
+                "_hash": "e86184690ae9d045441189bc02614f7e",
+                "qty": 1
+            }
+        ],
+        "total_amount": 9,
+        "amount_tendered": 9,
+        "change": 0,
+        "tax_amount": 0.96428571428571530077533680014312267303466796875,
+        "payment_method": "Cash",
+        "user_email": "brad@lp.com",
+        "user_name": "Brad",
+        "customer_id": "Guest",
+        "customer_name": "Guest",
+        "points_earned": 0,
+        "timestamp": "2026-01-06T04:21:22.311Z",
+        "is_voided": false,
+        "_version": 1,
+        "_updatedAt": 1767676940134,
+        "_deleted": false
     },
     {
         "id": "c1d0e036-66eb-4cf9-9007-0026ad2c72cf",
@@ -12636,7 +14002,7 @@
         "timestamp": "2026-01-05T23:37:01.223Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "422e33cd-456b-4923-8284-00c587524321"
@@ -12730,7 +14096,7 @@
         "timestamp": "2026-01-05T09:22:45.736Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "9ba6ad793b86476806f9295ebde561d8",
         "item_ids": [
@@ -12809,13 +14175,68 @@
         "timestamp": "2026-01-05T23:41:31.726Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "298479bc-6be9-4156-b6ee-baab8ef68b73",
             "3e136d11-10b9-42dc-a542-86b22a78d89b",
             "70be3462-3f1a-4221-9db0-d46ade0b3b1c"
         ]
+    },
+    {
+        "id": "c45d74d2-5d4c-4074-8da3-cfcf45931c5c",
+        "items": [
+            {
+                "id": "31f63bfd-6e08-4448-9590-e1176891be9b",
+                "barcode": "4806504616213",
+                "name": "Marlboro Ice Blast Stick",
+                "category": "CIGARETTES",
+                "cost_price": 7.8499999999999996447286321199499070644378662109375,
+                "selling_price": 9,
+                "min_stock": 2,
+                "stock_level": -13,
+                "base_unit": "Unit",
+                "supplier_id": "c68b5b60-64b1-4378-a852-2ec538d96bde",
+                "_version": 6,
+                "_updatedAt": 1767668658648,
+                "_deleted": false,
+                "_hash": "d64413592735fec6b844ea3a2783795a",
+                "updatedAt": "2026-01-05T02:58:20.337Z",
+                "qty": 5
+            },
+            {
+                "id": "4a4fc3ad-b556-4cda-bf7d-b389c89c81bf",
+                "barcode": "3118917538",
+                "name": "BENTA | Toys and Candy",
+                "category": "misc",
+                "cost_price": 0.65000000000000002220446049250313080847263336181640625,
+                "selling_price": 1,
+                "min_stock": 2,
+                "stock_level": -738,
+                "base_unit": "Unit",
+                "supplier_id": "",
+                "_version": 32,
+                "_updatedAt": 1767669902991,
+                "_deleted": false,
+                "_hash": "a13672b861017fbbe8d1ed0c664da3be",
+                "qty": 5
+            }
+        ],
+        "total_amount": 50,
+        "amount_tendered": 50,
+        "change": 0,
+        "tax_amount": 5.357142857142861203101347200572490692138671875,
+        "payment_method": "Cash",
+        "user_email": "brad@lp.com",
+        "user_name": "Brad",
+        "customer_id": "Guest",
+        "customer_name": "Guest",
+        "points_earned": 0,
+        "timestamp": "2026-01-06T04:24:05.464Z",
+        "is_voided": false,
+        "_version": 1,
+        "_updatedAt": 1767676940134,
+        "_deleted": false
     },
     {
         "id": "c5404519-74eb-4d78-b667-be2b3c2176e5",
@@ -12902,7 +14323,7 @@
         "timestamp": "2026-01-05T22:50:58.672Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "fa5b2140-62e4-433e-bea6-165ef06839a3",
@@ -12945,7 +14366,7 @@
         "timestamp": "2026-01-05T06:41:12.327Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "379fae0e11b8546fbb0ae78cd50aebde",
         "item_ids": [
@@ -12998,7 +14419,7 @@
         "sync_status": 1,
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "f963b395798cd9b5e8eb529ef275c805",
         "item_ids": [
@@ -13040,11 +14461,187 @@
         "timestamp": "2026-01-05T23:18:06.927Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "a0f43591-159a-4720-b653-eadc50ea101e"
         ]
+    },
+    {
+        "id": "c8c0e231-1535-40c8-9df3-8ee5e998a34b",
+        "items": [
+            {
+                "id": "a5ecbc0c-a896-4f3a-871b-ef55be2d898e",
+                "barcode": "4806510788942",
+                "name": "PRITONG BANGOS CRACKERS 35G",
+                "category": "chip",
+                "cost_price": 7.1500000000000003552713678800500929355621337890625,
+                "selling_price": 10,
+                "min_stock": 1,
+                "stock_level": -19,
+                "base_unit": "Unit",
+                "supplier_id": "f6e59606-4560-407e-9777-fb5ff75e4e09",
+                "_version": 11,
+                "_updatedAt": 1767667527520,
+                "_deleted": false,
+                "_hash": "3242ff4beb6719993b0c20f71f48a12a",
+                "qty": 3
+            },
+            {
+                "id": "c0d6d0a2-0698-4360-a132-9bf10c0126d4",
+                "barcode": "4800575145016",
+                "name": "Alaska Frutti Yo Orange 80ml",
+                "category": "DRINK",
+                "cost_price": 8.5,
+                "selling_price": 10,
+                "min_stock": 1,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "53ecfa8e-3c3e-4daa-9987-2794366cc070",
+                "_version": 3,
+                "_updatedAt": 1767618754162,
+                "_deleted": false,
+                "_hash": "2f68035695694583bfcfdcca07999020",
+                "qty": 2
+            },
+            {
+                "id": "c1bdbde8-5505-4d78-984e-b734a46c42ff",
+                "barcode": "4800016079573",
+                "name": "Hello Coated Vanilla",
+                "category": "BISCUITS",
+                "cost_price": 51.14999999999999857891452847979962825775146484375,
+                "selling_price": 57,
+                "min_stock": 2,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "477866ad-cbcd-4bbc-b033-d98792778923",
+                "_version": 3,
+                "_updatedAt": 1767618746009,
+                "_deleted": false,
+                "_hash": "260ac9d9b6af3d80303ad5139f8ed9d4",
+                "qty": 1
+            },
+            {
+                "id": "4a4fc3ad-b556-4cda-bf7d-b389c89c81bf",
+                "barcode": "3118917538",
+                "name": "BENTA | Toys and Candy",
+                "category": "misc",
+                "cost_price": 0.65000000000000002220446049250313080847263336181640625,
+                "selling_price": 1,
+                "min_stock": 2,
+                "stock_level": -738,
+                "base_unit": "Unit",
+                "supplier_id": "",
+                "_version": 32,
+                "_updatedAt": 1767669902991,
+                "_deleted": false,
+                "_hash": "a13672b861017fbbe8d1ed0c664da3be",
+                "qty": 45
+            },
+            {
+                "id": "a5b2c6c8-0d76-4040-974f-96759fdc9bc4",
+                "barcode": "4801688103726",
+                "name": "Regent Golden Sweet Corn 60g",
+                "category": "CHIPS",
+                "cost_price": 15.4000000000000003552713678800500929355621337890625,
+                "selling_price": 19,
+                "min_stock": 2,
+                "stock_level": -1,
+                "base_unit": "Unit",
+                "supplier_id": "cd176acb-ff88-44c2-8788-476fb2103281",
+                "_version": 4,
+                "_updatedAt": 1767658309879,
+                "_deleted": false,
+                "_hash": "b6940604e76fb95120f40aad9355d809",
+                "qty": 1
+            },
+            {
+                "id": "34f89de7-d3a6-46c6-985d-fff823e96a88",
+                "barcode": "4261373",
+                "name": "Chesterfield Stick",
+                "category": "CIGARETTES",
+                "cost_price": 6.29999999999999982236431605997495353221893310546875,
+                "selling_price": 7,
+                "min_stock": 2,
+                "stock_level": -40,
+                "base_unit": "Unit",
+                "supplier_id": "c68b5b60-64b1-4378-a852-2ec538d96bde",
+                "_version": 13,
+                "_updatedAt": 1767666672467,
+                "_deleted": false,
+                "_hash": "c313f324b920b7cdc20cebb8a15f847f",
+                "qty": 5
+            }
+        ],
+        "total_amount": 206,
+        "amount_tendered": 506,
+        "change": 300,
+        "tax_amount": 22.071428571428583609304041601717472076416015625,
+        "payment_method": "Cash",
+        "user_email": "brad@lp.com",
+        "user_name": "Brad",
+        "customer_id": "Guest",
+        "customer_name": "Guest",
+        "points_earned": 1,
+        "timestamp": "2026-01-06T04:06:08.043Z",
+        "is_voided": false,
+        "_version": 1,
+        "_updatedAt": 1767676940134,
+        "_deleted": false
+    },
+    {
+        "id": "c959197e-b25e-4472-9dca-2b17097e5eae",
+        "items": [
+            {
+                "id": "45ef3535-6d3e-4d79-bd1d-44977a18b87b",
+                "barcode": "4800014141180",
+                "name": "Absolute 5L",
+                "category": "DRINK",
+                "cost_price": 65,
+                "selling_price": 73,
+                "min_stock": 2,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "07912303-2ba5-499a-936f-9e16b38297f6",
+                "_version": 3,
+                "_updatedAt": 1767618754156,
+                "_deleted": false,
+                "_hash": "30455a5f760698617bc120ea00aed275",
+                "qty": 1
+            },
+            {
+                "id": "7b61681f-036c-4b2a-88b8-1312e5ef5311",
+                "barcode": "4808647010057",
+                "name": "Cheez Whiz Pim 210g",
+                "category": "CONDIMENTS",
+                "cost_price": 95.75,
+                "selling_price": 109,
+                "min_stock": 2,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "477866ad-cbcd-4bbc-b033-d98792778923",
+                "_version": 3,
+                "_updatedAt": 1767618752191,
+                "_deleted": false,
+                "_hash": "34da2d00ccd79b0e29df531f61e30b9d",
+                "qty": 1
+            }
+        ],
+        "total_amount": 182,
+        "amount_tendered": 182,
+        "change": 0,
+        "tax_amount": 19.500000000000028421709430404007434844970703125,
+        "payment_method": "Cash",
+        "user_email": "brad@lp.com",
+        "user_name": "Brad",
+        "customer_id": "Guest",
+        "customer_name": "Guest",
+        "points_earned": 0,
+        "timestamp": "2026-01-06T03:42:36.189Z",
+        "is_voided": false,
+        "_version": 1,
+        "_updatedAt": 1767676940134,
+        "_deleted": false
     },
     {
         "id": "c98414be-bbbb-4520-9f7c-e512267e77ba",
@@ -13081,12 +14678,49 @@
         "timestamp": "2026-01-05T10:03:07.466Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "ae37402e2ef352d1364b0b29230f8f7b",
         "item_ids": [
             "f3146f0e-5de3-4ba7-86e2-7ec4edf942de"
         ]
+    },
+    {
+        "id": "c9a5ca47-45fc-4167-a4f0-ce3d4ccc7a69",
+        "items": [
+            {
+                "id": "4a4fc3ad-b556-4cda-bf7d-b389c89c81bf",
+                "barcode": "3118917538",
+                "name": "BENTA | Toys and Candy",
+                "category": "misc",
+                "cost_price": 0.65000000000000002220446049250313080847263336181640625,
+                "selling_price": 1,
+                "min_stock": 2,
+                "stock_level": -837,
+                "base_unit": "Unit",
+                "supplier_id": "",
+                "_version": 36,
+                "_updatedAt": 1767673445478,
+                "_deleted": false,
+                "_hash": "a13672b861017fbbe8d1ed0c664da3be",
+                "qty": 130
+            }
+        ],
+        "total_amount": 130,
+        "amount_tendered": 500,
+        "change": 370,
+        "tax_amount": 13.9285714285714448124053888022899627685546875,
+        "payment_method": "Cash",
+        "user_email": "brad@lp.com",
+        "user_name": "Brad",
+        "customer_id": "Guest",
+        "customer_name": "Guest",
+        "points_earned": 0,
+        "timestamp": "2026-01-06T04:32:30.797Z",
+        "is_voided": false,
+        "_version": 1,
+        "_updatedAt": 1767676940134,
+        "_deleted": false
     },
     {
         "id": "ca059037-bffc-4e53-b61d-71e02720a6d4",
@@ -13194,7 +14828,7 @@
         "timestamp": "2026-01-05T10:47:37.605Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "58fb69d7d01116f2f79a57bf658411c0",
         "item_ids": [
@@ -13239,7 +14873,7 @@
         "timestamp": "2026-01-06T00:48:58.714Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "90891612-93b3-4258-949e-5d9c5a7d7bfa"
@@ -13296,7 +14930,7 @@
         "timestamp": "2026-01-05T23:00:38.672Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "6fab2841-dbce-4c1a-ad03-539e40ef7ae8",
@@ -13372,7 +15006,7 @@
         "timestamp": "2026-01-05T08:36:09.140Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "6411cd3603d5eeea49a0bcdf265606e5",
         "item_ids": [
@@ -13433,7 +15067,7 @@
         "timestamp": "2026-01-05T09:58:08.626Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "a78eb8594c27836d443bd1fb6b42807d",
         "item_ids": [
@@ -13475,7 +15109,7 @@
         "timestamp": "2026-01-05T09:24:23.554Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "18cf9283936761cb7f2d435fed85fff0",
         "item_ids": [
@@ -13550,7 +15184,7 @@
         "timestamp": "2026-01-05T23:54:20.677Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "acd96205-8515-4a2d-9206-9fc2e7a76c5c",
@@ -13643,7 +15277,7 @@
         "timestamp": "2026-01-05T23:45:09.699Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "ae4baf2e-213e-43d9-aa89-1056e282f5f7",
@@ -13686,7 +15320,7 @@
         "timestamp": "2026-01-05T11:08:36.948Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "b02a7d85aebb20812e6afc505fcd4fe2",
         "item_ids": [
@@ -13727,11 +15361,66 @@
         "timestamp": "2026-01-05T23:45:36.397Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "d2132317-bc97-41a7-95c2-f087eaab6cd6"
         ]
+    },
+    {
+        "id": "d1110260-0102-4dbd-97ad-1612435af20e",
+        "items": [
+            {
+                "id": "1722f4e7-fc29-432d-a45a-d032d9674111",
+                "barcode": "4800086050632",
+                "name": "Selecta Rainbow Pop 45ml",
+                "category": "ICE CREAM",
+                "cost_price": 10,
+                "selling_price": 13,
+                "min_stock": 1,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "9fac64e4-26de-4d28-9c89-0751de12a582",
+                "_version": 3,
+                "_updatedAt": 1767618757903,
+                "_deleted": false,
+                "_hash": "c2acf6a5a76f2892cfe78eac16717299",
+                "qty": 1
+            },
+            {
+                "id": "393416d4-5358-44e9-874c-ddad4dafa788",
+                "barcode": "4800086045973",
+                "name": "SELECTA OOH BOOM WATERMELON SLICE 60ML",
+                "category": "ICE CREAM",
+                "cost_price": 9.089999999999999857891452847979962825775146484375,
+                "selling_price": 13,
+                "min_stock": 2,
+                "stock_level": -1,
+                "base_unit": "Unit",
+                "supplier_id": "9fac64e4-26de-4d28-9c89-0751de12a582",
+                "_version": 4,
+                "_updatedAt": 1767618757879,
+                "_deleted": false,
+                "_hash": "f740b591e5032a53a66dd8eb47a732cd",
+                "updatedAt": "2026-01-05T02:58:20.335Z",
+                "qty": 1
+            }
+        ],
+        "total_amount": 26,
+        "amount_tendered": 100,
+        "change": 74,
+        "tax_amount": 2.785714285714288251938342000357806682586669921875,
+        "payment_method": "Cash",
+        "user_email": "brad@lp.com",
+        "user_name": "Brad",
+        "customer_id": "Guest",
+        "customer_name": "Guest",
+        "points_earned": 0,
+        "timestamp": "2026-01-06T04:47:23.533Z",
+        "is_voided": false,
+        "_version": 1,
+        "_updatedAt": 1767676940134,
+        "_deleted": false
     },
     {
         "id": "d1ab9dc4-a8ee-48ac-b312-9eb4f0043bb3",
@@ -13767,7 +15456,7 @@
         "timestamp": "2026-01-06T01:07:33.221Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "df5bf7bb-d0e3-4502-9aad-9316a55d9388"
@@ -13807,7 +15496,7 @@
         "timestamp": "2026-01-05T10:03:17.163Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "cfdb835accfc9983f3836af64a8fbff5",
         "item_ids": [
@@ -13873,7 +15562,7 @@
         "sync_status": 1,
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "f39e015788ede28a9f00f4a4c9b58413",
         "item_ids": [
@@ -13951,7 +15640,7 @@
         "timestamp": "2026-01-05T10:09:58.352Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "9ae8219cae78e6acad68410345dc39b5",
         "item_ids": [
@@ -13994,7 +15683,7 @@
         "timestamp": "2026-01-05T10:16:25.628Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "32e681d32e07f4241d22afb45d21a245",
         "item_ids": [
@@ -14035,7 +15724,7 @@
         "timestamp": "2026-01-05T23:41:57.391Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "90891612-93b3-4258-949e-5d9c5a7d7bfa"
@@ -14075,7 +15764,7 @@
         "timestamp": "2026-01-06T00:09:40.833Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "513e419e-ea13-47c5-b343-f8b683eec779"
@@ -14133,12 +15822,50 @@
         "timestamp": "2026-01-05T23:16:57.734Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "2ce8d5d7-8e54-4c37-a316-0c5b6601dc98",
             "7c399ae0-050f-4089-9e99-ee22c301001f"
         ]
+    },
+    {
+        "id": "d7e0d9f4-f3ed-46af-8951-dbad9bf790c0",
+        "items": [
+            {
+                "id": "258d0239-beef-45b3-aec0-cd72cfd03858",
+                "barcode": "7616400001573",
+                "name": "Marlboro red stick",
+                "category": "CIGARETTES",
+                "cost_price": 7.8499999999999996447286321199499070644378662109375,
+                "selling_price": 9,
+                "min_stock": 2,
+                "stock_level": -7,
+                "base_unit": "Unit",
+                "supplier_id": "c68b5b60-64b1-4378-a852-2ec538d96bde",
+                "_version": 5,
+                "_updatedAt": 1767672956751,
+                "_deleted": false,
+                "_hash": "406bc84f636be19392a163ae1a405047",
+                "updatedAt": "2026-01-05T02:58:20.341Z",
+                "qty": 2
+            }
+        ],
+        "total_amount": 18,
+        "amount_tendered": 18,
+        "change": 0,
+        "tax_amount": 1.9285714285714306015506736002862453460693359375,
+        "payment_method": "Cash",
+        "user_email": "brad@lp.com",
+        "user_name": "Brad",
+        "customer_id": "Guest",
+        "customer_name": "Guest",
+        "points_earned": 0,
+        "timestamp": "2026-01-06T05:10:52.920Z",
+        "is_voided": false,
+        "_version": 1,
+        "_updatedAt": 1767676940134,
+        "_deleted": false
     },
     {
         "id": "d8dbeaf5-3bd6-42b3-a485-1a6b1b328971",
@@ -14191,7 +15918,7 @@
         "timestamp": "2026-01-05T22:28:36.520Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "39e0f3f1-1de3-46fb-b270-1ae875edd058",
@@ -14232,7 +15959,7 @@
         "timestamp": "2026-01-05T08:41:25.414Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "8c3b572134e2d1242cb3f43b95d5e94d",
         "item_ids": [
@@ -14312,7 +16039,7 @@
         "sync_status": 1,
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "2c18e400bb5a311dc42b4cbed5a1423f",
         "item_ids": [
@@ -14373,7 +16100,61 @@
         "timestamp": "2026-01-06T03:13:32.385Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
+        "_deleted": false
+    },
+    {
+        "id": "dc78499f-a811-4f63-ae48-2048e8b1a112",
+        "items": [
+            {
+                "id": "54813996-136f-4d37-a6a4-cc4083e4c266",
+                "barcode": "4800011133447",
+                "name": "Efficascent Extra 100ml",
+                "category": "OIL",
+                "cost_price": 103.2000000000000028421709430404007434844970703125,
+                "selling_price": 117,
+                "min_stock": 1,
+                "stock_level": 5,
+                "base_unit": "Unit",
+                "supplier_id": "477866ad-cbcd-4bbc-b033-d98792778923",
+                "_version": 4,
+                "_updatedAt": 1767618759875,
+                "_deleted": false,
+                "_hash": "cb306c24794569ac58b6821c9dc154b8",
+                "qty": 1
+            },
+            {
+                "id": "48ced3d4-a5ec-4dc1-8425-f2f02a9729ce",
+                "barcode": "748485900032",
+                "name": "Fresca Tuna Caldereta 175g",
+                "category": "CANNED GOODS",
+                "cost_price": 25.92999999999999971578290569595992565155029296875,
+                "selling_price": 29,
+                "min_stock": 2,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "baea10eb-bd21-4dae-b415-6c2328296322",
+                "_version": 3,
+                "_updatedAt": 1767618748272,
+                "_deleted": false,
+                "_hash": "7afd2129e1adbd9197073b4654dac905",
+                "qty": 1
+            }
+        ],
+        "total_amount": 146,
+        "amount_tendered": 150,
+        "change": 4,
+        "tax_amount": 15.64285714285716721860808320343494415283203125,
+        "payment_method": "Cash",
+        "user_email": "brad@lp.com",
+        "user_name": "Brad",
+        "customer_id": "Guest",
+        "customer_name": "Guest",
+        "points_earned": 0,
+        "timestamp": "2026-01-06T03:39:20.841Z",
+        "is_voided": false,
+        "_version": 1,
+        "_updatedAt": 1767676940134,
         "_deleted": false
     },
     {
@@ -14410,7 +16191,7 @@
         "timestamp": "2026-01-05T07:12:24.558Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "48120ae60695ffe8a4439fd846450d72",
         "item_ids": [
@@ -14469,7 +16250,7 @@
         "timestamp": "2026-01-05T22:55:25.241Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "65852137-3ce8-4baf-9221-eb2ae1d2826d",
@@ -14529,7 +16310,7 @@
         "timestamp": "2026-01-05T08:37:20.197Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "3be980ac6a239b976d0aa29d1459d478",
         "item_ids": [
@@ -14612,7 +16393,7 @@
         "voided_at": "2026-01-04T05:10:12.293Z",
         "voided_by": "admin@lightpos.com",
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "8baaf612908bc51b23aeff3c508e8477",
         "item_ids": [
@@ -14764,7 +16545,7 @@
         "timestamp": "2026-01-05T10:57:37.128Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "9d3f52ce282383553a618e45a975062e",
         "item_ids": [
@@ -14914,7 +16695,7 @@
         "timestamp": "2026-01-05T09:18:51.084Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "dd71a3812e24f4622fc34d52bc3d17a3",
         "item_ids": [
@@ -14962,7 +16743,7 @@
         "timestamp": "2026-01-06T00:33:19.057Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "aa7786e8-917a-4555-bdc7-bf81992168ee"
@@ -15019,7 +16800,7 @@
         "timestamp": "2026-01-05T06:57:37.014Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "f4ecb17060c5d6763bde3cb124ac38b7",
         "item_ids": [
@@ -15098,7 +16879,7 @@
         "timestamp": "2026-01-05T10:30:35.931Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "36eedbc313ce983c51d96d1bafa811a5",
         "item_ids": [
@@ -15158,7 +16939,7 @@
         "timestamp": "2026-01-06T02:45:27.514Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "a5ecbc0c-a896-4f3a-871b-ef55be2d898e",
@@ -15238,7 +17019,7 @@
         "sync_status": 1,
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "5f0242aec9d466d447df71fb2b9853e6",
         "item_ids": [
@@ -15283,7 +17064,7 @@
         "timestamp": "2026-01-05T08:51:09.936Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "4fde81c0f8c3c9cc2458667a47de91fb",
         "item_ids": [
@@ -15350,7 +17131,7 @@
         "sync_status": 1,
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "c619de6fb7751f6f6e04405eda8e501e",
         "item_ids": [
@@ -15444,7 +17225,7 @@
         "timestamp": "2026-01-06T01:24:28.914Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "ac7fca15-fd00-4c57-be7b-dcb98e0eb679",
@@ -15489,7 +17270,7 @@
         "timestamp": "2026-01-05T23:19:47.886Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "edde7880-93e6-49e9-888f-f72411ab8626"
@@ -15529,7 +17310,7 @@
         "timestamp": "2026-01-06T02:51:37.198Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "ad59e783-070e-4451-a008-dde9af0b5cb1"
@@ -15620,7 +17401,7 @@
         "timestamp": "2026-01-05T11:08:16.989Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "a1a1f0c8350717d031347dd7acd2aac5",
         "item_ids": [
@@ -15749,7 +17530,7 @@
         "timestamp": "2026-01-05T08:13:02.027Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "aad867bbe8d10b959f956de3e029180e",
         "item_ids": [
@@ -15795,7 +17576,7 @@
         "timestamp": "2026-01-05T23:21:07.249Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "4a4fc3ad-b556-4cda-bf7d-b389c89c81bf"
@@ -15879,7 +17660,7 @@
         "voided_by": "admin@lightpos.com",
         "void_reason": "mistake",
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "ad2380e1246938da0f407dd6e7ef5412",
         "item_ids": [
@@ -15923,7 +17704,7 @@
         "timestamp": "2026-01-05T08:27:22.015Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "b67f8901258a9d6e364baf0f32e9b5b5",
         "item_ids": [
@@ -15964,12 +17745,49 @@
         "timestamp": "2026-01-05T09:03:51.990Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "b738fbaea9cbc6bdbe4aa871246c8850",
         "item_ids": [
             "b5b4b2f4-7ec4-4be2-94d3-33b89bcc8707"
         ]
+    },
+    {
+        "id": "ed7be9a3-8c18-438d-8ba8-d3f7ba42c882",
+        "items": [
+            {
+                "id": "d6c0ed2f-67e6-45ad-83d5-2f8614ee158a",
+                "barcode": "4800014700004",
+                "name": "Absolute 6L",
+                "category": "DRINK",
+                "cost_price": 75.1700000000000017053025658242404460906982421875,
+                "selling_price": 88,
+                "min_stock": 2,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "07912303-2ba5-499a-936f-9e16b38297f6",
+                "_version": 3,
+                "_updatedAt": 1767618754158,
+                "_deleted": false,
+                "_hash": "b321e722be42fdb1f5ae4767196833d3",
+                "qty": 1
+            }
+        ],
+        "total_amount": 88,
+        "amount_tendered": 100,
+        "change": 12,
+        "tax_amount": 9.4285714285714306015506736002862453460693359375,
+        "payment_method": "Cash",
+        "user_email": "brad@lp.com",
+        "user_name": "Brad",
+        "customer_id": "Guest",
+        "customer_name": "Guest",
+        "points_earned": 0,
+        "timestamp": "2026-01-06T03:43:43.972Z",
+        "is_voided": false,
+        "_version": 1,
+        "_updatedAt": 1767676940134,
+        "_deleted": false
     },
     {
         "id": "ed8d0054-3364-47de-80ec-9500dcf104d4",
@@ -16005,7 +17823,7 @@
         "timestamp": "2026-01-05T10:59:38.448Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "46365c5b4774b7a1e03fae19d41575f9",
         "item_ids": [
@@ -16072,7 +17890,7 @@
         "sync_status": 1,
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "1f68d07ad0c9e8000e60a4e09a370794",
         "item_ids": [
@@ -16080,6 +17898,114 @@
             "005590b6-62e5-4cbb-8573-5dbcc9354cc1",
             "0078db4b-4e64-4601-84ab-d03a7ed782a1"
         ]
+    },
+    {
+        "id": "ee48afd1-cfca-4f14-9bda-41a5e95cc1b5",
+        "items": [
+            {
+                "id": "42132799-7233-4f3e-917b-64ca56e01041",
+                "barcode": "4800017917201",
+                "name": "Ram Raisins 200g",
+                "category": "SEASONINGS",
+                "cost_price": 89.5,
+                "selling_price": 102,
+                "min_stock": 2,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "ec6c241d-fa55-49af-aff8-34f19a08119e",
+                "_version": 3,
+                "_updatedAt": 1767618768939,
+                "_deleted": false,
+                "_hash": "cbfc9e7c32d354e13cbdfc278ea4bb5d",
+                "qty": 1
+            },
+            {
+                "id": "e1223450-b42b-4000-b7e6-402706125665",
+                "barcode": "4800888603173",
+                "name": "Best Foods Mayo Magic 470ml",
+                "category": "CONDIMENTS",
+                "cost_price": 132,
+                "selling_price": 148,
+                "min_stock": 2,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "",
+                "_version": 3,
+                "_updatedAt": 1767618752152,
+                "_deleted": false,
+                "_hash": "edb68da7ef9918b81b684a9d8db7c43d",
+                "qty": 1
+            }
+        ],
+        "total_amount": 250,
+        "amount_tendered": 250,
+        "change": 0,
+        "tax_amount": 26.785714285714306015506736002862453460693359375,
+        "payment_method": "Cash",
+        "user_email": "brad@lp.com",
+        "user_name": "Brad",
+        "customer_id": "Guest",
+        "customer_name": "Guest",
+        "points_earned": 1,
+        "timestamp": "2026-01-06T04:59:03.136Z",
+        "is_voided": false,
+        "_version": 1,
+        "_updatedAt": 1767676940134,
+        "_deleted": false
+    },
+    {
+        "id": "efe75a03-f6ac-428c-a493-def8df90a3cf",
+        "items": [
+            {
+                "id": "17b6fce2-80f9-4995-9870-9f2e13790d41",
+                "barcode": "8996001350584",
+                "name": "Cal Cheese Wafer 48g",
+                "category": "BISCUITS",
+                "cost_price": 12.3499999999999996447286321199499070644378662109375,
+                "selling_price": 15,
+                "min_stock": 2,
+                "stock_level": -4,
+                "base_unit": "Unit",
+                "supplier_id": "53ecfa8e-3c3e-4daa-9987-2794366cc070",
+                "_version": 5,
+                "_updatedAt": 1767653878731,
+                "_deleted": false,
+                "_hash": "bb8d98094d2f203db805d11d65560af2",
+                "qty": 1
+            },
+            {
+                "id": "fdbbaa2f-9b62-42c8-ab73-c34834e254a0",
+                "barcode": "4807770101533",
+                "name": "Bingo Orange",
+                "category": "TBA",
+                "cost_price": 5.5,
+                "selling_price": 7,
+                "min_stock": 2,
+                "stock_level": 0,
+                "base_unit": "Unit",
+                "supplier_id": "",
+                "_version": 3,
+                "_updatedAt": 1767618769940,
+                "_deleted": false,
+                "_hash": "4a7815779ca3c0397bb7601164120c58",
+                "qty": 1
+            }
+        ],
+        "total_amount": 22,
+        "amount_tendered": 50,
+        "change": 28,
+        "tax_amount": 2.357142857142857650387668400071561336517333984375,
+        "payment_method": "Cash",
+        "user_email": "brad@lp.com",
+        "user_name": "Brad",
+        "customer_id": "Guest",
+        "customer_name": "Guest",
+        "points_earned": 0,
+        "timestamp": "2026-01-06T04:07:02.775Z",
+        "is_voided": false,
+        "_version": 1,
+        "_updatedAt": 1767676940134,
+        "_deleted": false
     },
     {
         "id": "f0181f08-f95a-4f2e-9892-d683e762ca48",
@@ -16149,7 +18075,7 @@
         "timestamp": "2026-01-05T08:42:00.150Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "0c4830bfeea92863d8ce7f6394662f24",
         "item_ids": [
@@ -16157,6 +18083,97 @@
             "acd96205-8515-4a2d-9206-9fc2e7a76c5c",
             "29ff3286-e9ac-4e4a-8c41-d983bbbe4972"
         ]
+    },
+    {
+        "id": "f245f61b-6a74-4f4c-a74c-dfec88e113a8",
+        "items": [
+            {
+                "id": "4a4fc3ad-b556-4cda-bf7d-b389c89c81bf",
+                "barcode": "3118917538",
+                "name": "BENTA | Toys and Candy",
+                "category": "misc",
+                "cost_price": 0.65000000000000002220446049250313080847263336181640625,
+                "selling_price": 1,
+                "min_stock": 2,
+                "stock_level": -837,
+                "base_unit": "Unit",
+                "supplier_id": "",
+                "_version": 36,
+                "_updatedAt": 1767673445478,
+                "_deleted": false,
+                "_hash": "a13672b861017fbbe8d1ed0c664da3be",
+                "qty": 15
+            },
+            {
+                "id": "3866e3b8-f15e-454d-9837-4da5753a5b0a",
+                "barcode": "8359282943",
+                "name": "Yakult pc",
+                "category": "DRINK",
+                "cost_price": 9,
+                "selling_price": 11,
+                "min_stock": 2,
+                "stock_level": -2,
+                "base_unit": "Unit",
+                "supplier_id": "",
+                "_version": 4,
+                "_updatedAt": 1767618755240,
+                "_deleted": false,
+                "_hash": "3a66ddb2f027a315aa539ba6686f13ff",
+                "qty": 1
+            }
+        ],
+        "total_amount": 26,
+        "amount_tendered": 26,
+        "change": 0,
+        "tax_amount": 2.785714285714288251938342000357806682586669921875,
+        "payment_method": "Cash",
+        "user_email": "brad@lp.com",
+        "user_name": "Brad",
+        "customer_id": "Guest",
+        "customer_name": "Guest",
+        "points_earned": 0,
+        "timestamp": "2026-01-06T05:13:36.072Z",
+        "is_voided": false,
+        "_version": 1,
+        "_updatedAt": 1767676940134,
+        "_deleted": false
+    },
+    {
+        "id": "f2bf95b4-45da-4b3c-b177-93eda0b46915",
+        "items": [
+            {
+                "id": "7b6994cc-d96c-44fc-8094-98959a6b47d6",
+                "barcode": "748485150079",
+                "name": "COCO MAMA FRESH GATA  200ml",
+                "category": "MILK",
+                "cost_price": 1,
+                "selling_price": 38,
+                "min_stock": 2,
+                "stock_level": -1,
+                "base_unit": "Unit",
+                "supplier_id": "baea10eb-bd21-4dae-b415-6c2328296322",
+                "_version": 4,
+                "_updatedAt": 1767668658639,
+                "_deleted": false,
+                "_hash": "fd566655670fa48bc07d066d147d113c",
+                "qty": 1
+            }
+        ],
+        "total_amount": 38,
+        "amount_tendered": 100,
+        "change": 62,
+        "tax_amount": 4.07142857142857650387668400071561336517333984375,
+        "payment_method": "Cash",
+        "user_email": "brad@lp.com",
+        "user_name": "Brad",
+        "customer_id": "Guest",
+        "customer_name": "Guest",
+        "points_earned": 0,
+        "timestamp": "2026-01-06T04:35:40.564Z",
+        "is_voided": false,
+        "_version": 1,
+        "_updatedAt": 1767676940134,
+        "_deleted": false
     },
     {
         "id": "f3de6cc9-06f2-41aa-9403-ca6a6a01d9f3",
@@ -16192,7 +18209,7 @@
         "timestamp": "2026-01-06T00:01:38.813Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "c55239e9-dfa8-4a96-b159-df0e8185ccf8"
@@ -16232,7 +18249,7 @@
         "timestamp": "2026-01-06T00:38:44.754Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "1f8b6d93-1569-40c3-b510-608c21ed6e12"
@@ -16274,7 +18291,7 @@
         "timestamp": "2026-01-05T22:52:23.510Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "edde7880-93e6-49e9-888f-f72411ab8626"
@@ -16314,7 +18331,7 @@
         "timestamp": "2026-01-05T07:28:11.237Z",
         "is_voided": false,
         "_version": 2,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "652445d7537071f4ee96e7b794ec4b48",
         "item_ids": [
@@ -16355,7 +18372,7 @@
         "timestamp": "2026-01-05T07:14:38.949Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "df33afc7470ebeb41cfe1d88fcbd4b08",
         "item_ids": [
@@ -16396,7 +18413,7 @@
         "timestamp": "2026-01-05T10:49:51.324Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "191c99844fb9e875cf49a69a4ad64d44",
         "item_ids": [
@@ -16438,7 +18455,7 @@
         "timestamp": "2026-01-05T10:04:16.397Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "622bf6c0838fb74cd62ffa881813f147",
         "item_ids": [
@@ -16479,7 +18496,7 @@
         "timestamp": "2026-01-06T03:25:02.986Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false
     },
     {
@@ -16516,7 +18533,7 @@
         "timestamp": "2026-01-05T08:21:03.129Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "95f26a1665cdba79e4ab10c453279886",
         "item_ids": [
@@ -16557,7 +18574,7 @@
         "timestamp": "2026-01-06T01:18:51.400Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "90891612-93b3-4258-949e-5d9c5a7d7bfa"
@@ -16597,7 +18614,7 @@
         "timestamp": "2026-01-06T00:12:53.847Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "57bb99a5-a276-452a-b139-05adefdf2aef"
@@ -16706,7 +18723,7 @@
         "is_voided": false,
         "voided_at": null,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "9d014227134428401f52ea8d093e3e59",
         "item_ids": [
@@ -16787,7 +18804,7 @@
         "timestamp": "2026-01-06T01:04:11.208Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "aca9e19b-f301-4ad3-889e-200b4816f950",
@@ -16829,7 +18846,7 @@
         "timestamp": "2026-01-05T23:11:30.405Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "item_ids": [
             "30c3d26c-4835-4c16-9eba-8b7ab3dfa0df"
@@ -16870,7 +18887,7 @@
         "timestamp": "2026-01-05T09:42:20.444Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "3024101d50f97cdbd5e5859e99565cdd",
         "item_ids": [
@@ -16951,7 +18968,7 @@
         "sync_status": 1,
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "fc7afef115c7527e51b3dbcfb69d39a9",
         "item_ids": [
@@ -17029,7 +19046,7 @@
         "timestamp": "2026-01-05T09:24:50.795Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "10492644c0a6e71f051f11537df70228",
         "item_ids": [
@@ -17109,7 +19126,7 @@
         "timestamp": "2026-01-05T08:55:41.099Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "4faadab1eeb90cfb34be42c9958a16f6",
         "item_ids": [
@@ -17153,7 +19170,7 @@
         "timestamp": "2026-01-05T10:07:08.983Z",
         "is_voided": false,
         "_version": 1,
-        "_updatedAt": 1767675325377,
+        "_updatedAt": 1767676940134,
         "_deleted": false,
         "_hash": "41cb11a60fbe6217c95d3f8c0e0d2a56",
         "item_ids": [

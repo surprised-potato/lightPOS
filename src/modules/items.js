@@ -536,6 +536,7 @@ async function fetchItems() {
 
 function renderItems(items, totalCount) {
     const tbody = document.getElementById("items-table-body");
+    if (!tbody) return;
     const canWrite = checkPermission("items", "write");
     tbody.innerHTML = "";
 

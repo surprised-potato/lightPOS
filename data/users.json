@@ -189,5 +189,70 @@
         "_updatedAt": 1767669515905,
         "_deleted": false,
         "_hash": "4706e03153de2be443a169f061a446ba"
+    },
+    {
+        "email": "brad@lp.com",
+        "name": "Bradboy",
+        "phone": "",
+        "is_active": true,
+        "permissions": {
+            "pos": {
+                "read": true,
+                "write": true
+            },
+            "customers": {
+                "read": true,
+                "write": true
+            },
+            "shifts": {
+                "read": true,
+                "write": true
+            },
+            "items": {
+                "read": true,
+                "write": true
+            },
+            "suppliers": {
+                "read": true,
+                "write": true
+            },
+            "stockin": {
+                "read": true,
+                "write": true
+            },
+            "stock-count": {
+                "read": true,
+                "write": true
+            },
+            "expenses": {
+                "read": true,
+                "write": true
+            },
+            "reports": {
+                "read": false,
+                "write": false
+            },
+            "users": {
+                "read": false,
+                "write": false
+            },
+            "migrate": {
+                "read": false,
+                "write": false
+            },
+            "returns": {
+                "read": true,
+                "write": true
+            },
+            "settings": {
+                "read": false,
+                "write": false
+            }
+        },
+        "password": "80735228c8e9b43410f2b207f0e54fb0",
+        "_version": 1,
+        "_updatedAt": 1767677388256,
+        "_deleted": false,
+        "_hash": "f86a5ee1e1761817eb3a2dc07ab57176"
     }
 ]

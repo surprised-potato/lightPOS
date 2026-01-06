@@ -6,7 +6,16 @@
 require_once __DIR__ . '/JsonStore.php';
 
 header('Content-Type: application/json');
-$store = new JsonStore();
+
+$dataDir = __DIR__ . '/../data/';
+// Ensure data directory is writable
+if (!is_dir($dataDir) || !is_writable($dataDir)) {
+    http_response_code(500);
+    echo json_encode(["error" => "Server Data Directory is not writable. Please check permissions."]);
+    exit;
+}
+
+$store = new JsonStore($dataDir);
 
 $method = $_SERVER['REQUEST_METHOD'];
 
