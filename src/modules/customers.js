@@ -345,6 +345,8 @@ async function handleSaveCustomer(e) {
         if (!approved) return;
     }
 
+    const existing = id ? await Repository.get('customers', id) : null;
+
     const customerData = {
         id: id || generateUUID(),
         account_number: document.getElementById("cust-account").value,
@@ -353,7 +355,9 @@ async function handleSaveCustomer(e) {
         email: document.getElementById("cust-email").value,
         loyalty_points: newPoints,
         timestamp: new Date(),
-        sync_status: 0
+        sync_status: 'pending',
+        _version: (existing?._version || 0) + 1,
+        _updatedAt: Date.now()
     };
 
     // 1. Save to Repository (Offline First + Outbox)

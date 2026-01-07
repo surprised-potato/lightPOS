@@ -399,6 +399,9 @@ async function processExchange() {
             returned: returnedItems,
             taken: exchangeItems
         });
+        selectedTransaction.sync_status = 'pending';
+        selectedTransaction._updatedAt = Date.now();
+        selectedTransaction._version = (selectedTransaction._version || 0) + 1;
 
         await Repository.upsert('transactions', selectedTransaction);
 
@@ -410,10 +413,16 @@ async function processExchange() {
                 // Only add back to stock if disposition is Restock
                 if (ri.disposition === 'Restock') {
                     master.stock_level += ri.qty;
+                    master.sync_status = 'pending';
+                    master._updatedAt = Date.now();
+                    master._version = (master._version || 0) + 1;
                     await Repository.upsert('items', master);
                     await Repository.upsert('stock_movements', {
                         id: generateUUID(), item_id: ri.id, item_name: ri.name, timestamp,
-                        type: 'Return', qty: ri.qty, user, transaction_id: selectedTransaction.id, reason: `Exchange Return (${ri.disposition})`
+                        type: 'Return', qty: ri.qty, user, transaction_id: selectedTransaction.id, reason: `Exchange Return (${ri.disposition})`,
+                        sync_status: 'pending',
+                        _version: 1,
+                        _updatedAt: Date.now()
                     });
                 }
 
@@ -428,7 +437,10 @@ async function processExchange() {
                     reason: "Exchange",
                     condition: ri.disposition,
                     processed_by: user,
-                    timestamp: timestamp
+                    timestamp: timestamp,
+                    sync_status: 'pending',
+                    _version: 1,
+                    _updatedAt: Date.now()
                 });
             }
         }
@@ -438,10 +450,16 @@ async function processExchange() {
             const master = await Repository.get('items', ei.id);
             if (master) {
                 master.stock_level -= ei.qty;
+                master.sync_status = 'pending';
+                master._updatedAt = Date.now();
+                master._version = (master._version || 0) + 1;
                 await Repository.upsert('items', master);
                 await Repository.upsert('stock_movements', {
                     id: generateUUID(), item_id: ei.id, item_name: ei.name, timestamp,
-                    type: 'Exchange', qty: -ei.qty, user, transaction_id: selectedTransaction.id, reason: "Exchange Taken"
+                    type: 'Exchange', qty: -ei.qty, user, transaction_id: selectedTransaction.id, reason: "Exchange Taken",
+                    sync_status: 'pending',
+                    _version: 1,
+                    _updatedAt: Date.now()
                 });
             }
         }
@@ -452,6 +470,9 @@ async function processExchange() {
             const activeShift = shifts.find(s => s.user_id === user && s.status === 'open');
             if (activeShift) {
                 activeShift.expected_cash = (activeShift.expected_cash || 0) + netDue;
+                activeShift.sync_status = 'pending';
+                activeShift._updatedAt = Date.now();
+                activeShift._version = (activeShift._version || 0) + 1;
                 await Repository.upsert('shifts', activeShift);
             }
         }

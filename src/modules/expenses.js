@@ -144,7 +144,10 @@ async function saveExpense() {
         supplier_name: supplierName,
         date: dateVal, // Store as ISO string for consistent serialization
         user_id: user,
-        created_at: new Date()
+        created_at: new Date(),
+        sync_status: 'pending',
+        _version: 1,
+        _updatedAt: Date.now()
     };
 
     try {

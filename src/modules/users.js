@@ -379,7 +379,10 @@ async function handleUserSubmit(e) {
         name,
         phone,
         is_active: isActive,
-        permissions
+        permissions,
+        sync_status: 'pending',
+        _updatedAt: Date.now(),
+        _version: (existingUser?._version || 0) + 1
     };
     
     // Only update password if provided

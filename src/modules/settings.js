@@ -699,6 +699,7 @@ async function handleSave(e) {
         await Repository.upsert('settings', { 
             id: 'global',
             ...settings,
+            sync_status: 'pending',
             _version: (existing?._version || 0) + 1,
             _updatedAt: Date.now()
         });

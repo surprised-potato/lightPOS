@@ -3,6 +3,7 @@ import { addNotification } from "../services/notification-service.js";
 import { generateUUID } from "../utils.js";
 import { Repository } from "../services/Repository.js";
 import { SyncEngine } from "../services/SyncEngine.js";
+import { loadStockCountMobileView } from "./stock-count-mobile.js";
 
 let itemsData = [];
 let selectedItem = null;
@@ -14,7 +15,14 @@ export async function loadStockCountView() {
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <!-- Left Side: Search and Audit Form -->
             <div class="lg:col-span-2">
-                <h2 class="text-2xl font-bold text-gray-800 mb-6">Stock Count (Audit)</h2>
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800">Stock Count (Audit)</h2>
+                    <button id="btn-mobile-mode" class="p-2 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors" title="Mobile Mode">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        </svg>
+                    </button>
+                </div>
                 
                 <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4 border border-gray-200">
                     <!-- Item Search & Sort -->
@@ -153,6 +161,8 @@ function setupEventListeners() {
     const btnAdjust = document.getElementById("btn-adjust");
     const canWrite = checkPermission("stock-count", "write");
     const btnRefreshLogs = document.getElementById("btn-refresh-logs");
+
+    document.getElementById("btn-mobile-mode")?.addEventListener("click", loadStockCountMobileView);
 
     // Search & Sort Logic
     const performSearch = () => {
@@ -321,6 +331,9 @@ async function processAdjustment(newStock, reason) {
 
         // 1. Update local item stock
         selectedItem.stock_level = newStock;
+        selectedItem.sync_status = 'pending';
+        selectedItem._updatedAt = Date.now();
+        selectedItem._version = (selectedItem._version || 0) + 1;
         await Repository.upsert('items', selectedItem);
 
         // 2. Log to adjustments locally
@@ -333,7 +346,10 @@ async function processAdjustment(newStock, reason) {
             difference: difference,
             reason: reason,
             user: user,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            sync_status: 'pending',
+            _version: 1,
+            _updatedAt: Date.now()
         };
         await Repository.upsert('adjustments', adjustment);
 
@@ -346,7 +362,10 @@ async function processAdjustment(newStock, reason) {
             type: 'Adjustment',
             qty: difference,
             user: user,
-            reason: reason
+            reason: reason,
+            sync_status: 'pending',
+            _version: 1,
+            _updatedAt: Date.now()
         };
         await Repository.upsert('stock_movements', movement);
 

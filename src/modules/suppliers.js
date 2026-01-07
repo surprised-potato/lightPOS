@@ -430,6 +430,9 @@ async function populateCategoryDropdown() {
 async function handleAddSupplier(e) {
     e.preventDefault();
     const id = document.getElementById("sup-id").value;
+    const suppliers = await Repository.getAll('suppliers');
+    const existing = suppliers.find(s => s.id === id);
+
     const name = document.getElementById("sup-name").value;
     const contact = document.getElementById("sup-contact").value;
     const email = document.getElementById("sup-email").value;
@@ -438,7 +441,10 @@ async function handleAddSupplier(e) {
         id: id || generateUUID(),
         name,
         contact,
-        email
+        email,
+        sync_status: 'pending',
+        _updatedAt: Date.now(),
+        _version: (existing?._version || 0) + 1
     };
 
     try {

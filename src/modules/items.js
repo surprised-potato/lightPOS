@@ -2,6 +2,7 @@ import { checkPermission } from "../auth.js";
 import { generateUUID } from "../utils.js";
 import { Repository } from "../services/Repository.js";
 import { db } from "../db.js";
+import { SyncEngine } from "../services/SyncEngine.js";
 
 let itemsData = [];
 let suppliersList = [];
@@ -388,7 +389,14 @@ export async function loadItemsView() {
         }
 
         try {
-            const finalData = itemId ? { ...itemData, id: itemId } : { ...itemData, id: generateUUID() };
+            const existing = itemsData.find(i => i.id === itemId);
+            const finalData = { 
+                ...itemData, 
+                id: itemId || generateUUID(),
+                sync_status: 'pending',
+                _updatedAt: Date.now(),
+                _version: (existing?._version || 0) + 1
+            };
             
             // Use Repository for versioned, offline-first write
             await Repository.upsert('items', finalData);
@@ -403,10 +411,16 @@ export async function loadItemsView() {
                     type: 'Initial Stock',
                     qty: finalData.stock_level,
                     user: JSON.parse(localStorage.getItem('pos_user'))?.email || 'unknown',
-                    reason: 'Initial Inventory'
+                    reason: 'Initial Inventory',
+                    sync_status: 'pending',
+                    _version: 1,
+                    _updatedAt: Date.now()
                 };
                 await Repository.upsert('stock_movements', movement);
             }
+
+            // Trigger Sync
+            SyncEngine.sync();
 
             modal.classList.add("hidden");
             e.target.reset();

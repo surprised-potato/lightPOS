@@ -430,6 +430,9 @@ async function saveStockIn() {
                 if (supplierId && !item.supplier_id) {
                     item.supplier_id = supplierId;
                 }
+                item.sync_status = 'pending';
+                item._updatedAt = Date.now();
+                item._version = (item._version || 0) + 1;
                 await Repository.upsert('items', item);
             }
         }
@@ -449,7 +452,10 @@ async function saveStockIn() {
             })),
             timestamp: new Date().toISOString(),
             item_count: stockInCart.reduce((sum, item) => sum + item.quantity, 0),
-            supplier_id_override: supplierId || null
+            supplier_id_override: supplierId || null,
+            sync_status: 'pending',
+            _version: 1,
+            _updatedAt: Date.now()
         };
         await Repository.upsert('stockins', historyRecord);
 
@@ -463,7 +469,10 @@ async function saveStockIn() {
                 type: 'Stock-In',
                 qty: item.quantity,
                 user: user.name || user.email,
-                reason: 'Supplier Delivery'
+                reason: 'Supplier Delivery',
+                sync_status: 'pending',
+                _version: 1,
+                _updatedAt: Date.now()
             };
             await Repository.upsert('stock_movements', movement);
         }

@@ -1480,18 +1480,29 @@ async function processTransaction() {
         customer_name: selectedCustomer.name,
         points_earned: pointsEarned,
         timestamp: new Date().toISOString(),
-        is_voided: false
+        is_voided: false,
+        sync_status: 'pending',
+        _version: 1,
+        _updatedAt: Date.now()
     };
 
     try {
         // 1. Save to Dexie (Offline First)
+            console.log("Saving transaction to Dexie:", transaction); // ADDED
         await Repository.upsert('transactions', transaction);
 
         // 2. Update Local Dexie Items
         for (const item of transaction.items) {
             const current = await Repository.get('items', item.id);
             if (current) {
-                await Repository.upsert('items', { ...current, stock_level: current.stock_level - item.qty });
+                await Repository.upsert('items', { 
+                    //console.log("Updating item stock level in Dexie:", item.id, item.qty); // ADDED
+                    ...current, 
+                    stock_level: current.stock_level - item.qty,
+                    sync_status: 'pending',
+                    _updatedAt: Date.now(),
+                    _version: (current._version || 0) + 1
+                });
                 
                 // Record Stock Movement
                 await Repository.upsert('stock_movements', {
@@ -1503,15 +1514,23 @@ async function processTransaction() {
                     qty: -item.qty,
                     user: transaction.user_email,
                     transaction_id: transaction.id,
-                    reason: "POS Sale"
+                    reason: "POS Sale",
+                    sync_status: 'pending',
+                    _version: 1,
+                    _updatedAt: Date.now()
                 });
             }
         }
 
         // 3. Update Customer Points
         if (selectedCustomer.id !== "Guest") {
-            const updatedCustomer = { ...selectedCustomer };
-            updatedCustomer.loyalty_points = (updatedCustomer.loyalty_points || 0) + pointsEarned;
+            const updatedCustomer = { 
+                ...selectedCustomer,
+                loyalty_points: (selectedCustomer.loyalty_points || 0) + pointsEarned,
+                sync_status: 'pending',
+                _updatedAt: Date.now(),
+                _version: (selectedCustomer._version || 0) + 1
+            };
             if (paymentMethod === "Points") updatedCustomer.loyalty_points -= total;
             await Repository.upsert('customers', updatedCustomer);
         }
@@ -1545,6 +1564,7 @@ async function processTransaction() {
         // Focus back on search input for next sale
         document.getElementById("pos-search").focus();
     } catch (error) {
+        console.error("Error in processTransaction:", error); // ADDED
         console.error("Error saving transaction:", error);
         showToast("Failed to save transaction.", true);
         btnConfirm.disabled = false;
@@ -1620,14 +1640,23 @@ async function voidTransaction(id) {
             is_voided: true, 
             voided_at: new Date().toISOString(),
             voided_by: user ? user.email : "System",
-            void_reason: reason || "No reason provided"
+            void_reason: reason || "No reason provided",
+            sync_status: 'pending',
+            _updatedAt: Date.now(),
+            _version: (tx._version || 0) + 1
         });
 
         // 2. Reverse Stock in Dexie
         for (const item of tx.items) {
             const current = await Repository.get('items', item.id);
             if (current) {
-                await Repository.upsert('items', { ...current, stock_level: current.stock_level + item.qty });
+                await Repository.upsert('items', { 
+                    ...current, 
+                    stock_level: current.stock_level + item.qty,
+                    sync_status: 'pending',
+                    _updatedAt: Date.now(),
+                    _version: (current._version || 0) + 1
+                });
             }
         }
 
@@ -1658,6 +1687,9 @@ async function suspendCurrentTransaction() {
         user_email: user ? user.email : "Guest",
         timestamp: new Date(),
         total: cart.reduce((sum, item) => sum + (item.selling_price * item.qty), 0),
+        sync_status: 'pending',
+        _version: 1,
+        _updatedAt: Date.now()
     };
 
     try {
