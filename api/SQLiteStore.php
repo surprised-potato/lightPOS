@@ -128,11 +128,17 @@ class SQLiteStore {
 
         $columns = array_keys($dbRecord);
         $placeholders = array_map(fn($c) => ":$c", $columns);
-        $updateSet = array_map(fn($c) => "$c = :$c", $columns);
+        
+        // Use excluded.column syntax to avoid PDO parameter duplication errors
+        // Filter out the ID column from the update set to avoid redundant updates
+        $updateColumns = array_filter($columns, fn($c) => $c !== $idColumn);
+        $updateSet = array_map(fn($c) => "$c = excluded.$c", $updateColumns);
+        
+        $conflictAction = empty($updateSet) ? "DO NOTHING" : "DO UPDATE SET " . implode(', ', $updateSet);
 
         $sql = "INSERT INTO $collection (" . implode(', ', $columns) . ") 
                 VALUES (" . implode(', ', $placeholders) . ")
-                ON CONFLICT($idColumn) DO UPDATE SET " . implode(', ', $updateSet);
+                ON CONFLICT($idColumn) $conflictAction";
 
         error_log("SQLiteStore::upsert SQL: $sql");
         error_log("SQLiteStore::upsert Params: " . json_encode($dbRecord));

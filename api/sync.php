@@ -202,6 +202,12 @@ if ($method === 'POST') {
 
             error_log("Processing change for collection: $collection. Payload keys: " . implode(',', array_keys($payload)));
             
+            // Map 'password' to 'password_hash' for users if needed
+            if ($collection === 'users' && isset($payload['password']) && !isset($payload['password_hash'])) {
+                $payload['password_hash'] = $payload['password'];
+                unset($payload['password']);
+            }
+
             // Auto-hash passwords for users if they look like plain text (Fix for Login Issues)
             if ($collection === 'users' && isset($payload['password_hash'])) {
                 if (strlen($payload['password_hash']) !== 32 || !ctype_xdigit($payload['password_hash'])) {

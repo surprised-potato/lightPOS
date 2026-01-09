@@ -179,6 +179,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!$dryRun) {
             // Helper to process records before insertion
             $processRecord = function(&$record) use ($file) {
+                // Map 'password' to 'password_hash'
+                if ($file === 'users' && isset($record['password']) && !isset($record['password_hash'])) {
+                    $record['password_hash'] = $record['password'];
+                    unset($record['password']);
+                }
+
                 // Auto-hash passwords for users if they look like plain text (legacy migration)
                 if ($file === 'users' && isset($record['password_hash'])) {
                     // MD5 hex is 32 chars. If length differs, or it contains non-hex chars, assume plain text.
