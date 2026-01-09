@@ -21,8 +21,6 @@ if (!is_dir($dataDir) || !is_writable($dataDir)) {
 }
 
 $store = new SQLiteStore();
-// Set a timeout to prevent "database is locked" errors during concurrent syncs
-$store->pdo->exec("PRAGMA busy_timeout = 5000;");
 
 // Ensure Schema exists (Self-Healing)
 function ensureSchema($pdo) {

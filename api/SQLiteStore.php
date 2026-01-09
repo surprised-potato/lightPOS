@@ -9,6 +9,9 @@ class SQLiteStore {
 
     public function __construct() {
         $this->pdo = Database::getInstance()->getConnection();
+        // Enable WAL mode for better concurrency and set timeout for locks
+        $this->pdo->exec("PRAGMA journal_mode=WAL;");
+        $this->pdo->exec("PRAGMA busy_timeout = 5000;");
         $this->collections = [
             'items', 'transactions', 'users', 'customers', 'suppliers',
             'shifts', 'expenses', 'returns', 'stock_movements',

@@ -86,6 +86,14 @@ if [ ! -f "$TARGET_DIR/data/database.sqlite" ]; then
     fi
 fi
 
+# Ensure WAL mode is enabled for better concurrency (Fixes "database is locked")
+if [ -f "$TARGET_DIR/data/database.sqlite" ] && command -v sqlite3 &> /dev/null; then
+    echo "Enabling SQLite WAL mode..."
+    sudo sqlite3 "$TARGET_DIR/data/database.sqlite" "PRAGMA journal_mode=WAL;"
+    # Fix ownership of the DB and the newly created WAL/SHM files
+    sudo chown $XAMPP_USER:$XAMPP_GROUP "$TARGET_DIR/data/database.sqlite"*
+fi
+
 echo "Configuring XAMPP settings..."
 PHP_INI="/opt/lampp/etc/php.ini"
 HTTPD_CONF="/opt/lampp/etc/httpd.conf"
