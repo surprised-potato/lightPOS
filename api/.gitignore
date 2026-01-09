@@ -1,0 +1,5 @@
+# Ignore all files in the data directory
+data/*
+
+# Exception: Keep the .gitkeep file so the directory structure exists
+!data/.gitkeep

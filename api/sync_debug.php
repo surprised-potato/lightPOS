@@ -10,8 +10,13 @@ header('Content-Type: application/json');
 $dataDir = __DIR__ . '/../data/';
 $restoreLockFile = $dataDir . 'restore.lock';
 
+// Ensure data directory exists
+if (!is_dir($dataDir)) {
+    mkdir($dataDir, 0777, true);
+}
+
 // Ensure data directory is writable
-if (!is_dir($dataDir) || !is_writable($dataDir)) {
+if (!is_writable($dataDir)) {
     http_response_code(500);
     echo json_encode(["error" => "Server Data Directory is not writable. Please check permissions."]);
     exit;

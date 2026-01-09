@@ -102,6 +102,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
+// Ensure data directory exists before initializing SQLiteStore
+$dataDir = __DIR__ . '/../data';
+if (!is_dir($dataDir)) {
+    mkdir($dataDir, 0777, true);
+}
+
 $store = new SQLiteStore();
 // Call the schema check after the store is initialized and PDO is available
 ensureSchema($store->pdo);
