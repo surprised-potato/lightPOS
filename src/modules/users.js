@@ -403,18 +403,27 @@ async function handleUserSubmit(e) {
             }
         }
 
-        // Optimistic UI: save locally first
-        await Repository.upsert('users', userData);
-
-        // Let the background sync service handle it
-        try {
-            if (navigator.onLine) {
-                SyncEngine.sync();
-            }
-        } catch (syncErr) {
-            console.warn("Background sync failed, but local save successful:", syncErr);
+        // Log user data before saving (mask sensitive hash)
+        const debugUserData = { ...userData };
+        // If password_hash present, partially mask it for logs
+        if (debugUserData.password_hash) {
+            debugUserData.password_hash = debugUserData.password_hash.slice(0,6) + '...';
         }
-        
+        if (debugUserData.password) {
+            // Password on client is md5(password); mask it as well
+            debugUserData.password = debugUserData.password.slice(0,6) + '...';
+        }
+        console.log("User submit data (masked):", debugUserData);
+
+        // Optimistic UI: save locally first
+        const saved = await Repository.upsert('users', userData);
+        console.log("User saved locally. Outbox queued. Local record:", saved);
+
+        // Trigger background sync, but don't block the UI
+        if (navigator.onLine) {
+            SyncEngine.sync().then(() => console.log("Background sync triggered after user save")).catch(e => console.warn("Background sync failed after user save:", e));
+        }
+
         alert("User saved. Will sync with server.");
         closeUserModal();
         fetchAndRenderUsers();

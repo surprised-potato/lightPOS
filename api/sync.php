@@ -219,6 +219,14 @@ if ($method === 'POST') {
 
             error_log("Processing change for collection: $collection. Payload keys: " . implode(',', array_keys($payload)));
             
+            // Extra logging for users to help debug create/login issues
+            if ($collection === 'users') {
+                $emailForLog = $payload['email'] ?? '[no-email]';
+                $has_pw_hash = isset($payload['password_hash']);
+                $pw_hash_info = $has_pw_hash ? (strlen($payload['password_hash']) . ' chars') : 'none';
+                error_log("SYNC: Incoming user payload for $emailForLog. password_hash: $pw_hash_info; keys: " . implode(',', array_keys($payload)));
+            }
+
             // Map 'password' to 'password_hash' for users if needed
             if ($collection === 'users' && isset($payload['password']) && !isset($payload['password_hash'])) {
                 $payload['password_hash'] = $payload['password'];
@@ -230,6 +238,13 @@ if ($method === 'POST') {
                 if (strlen($payload['password_hash']) !== 32 || !ctype_xdigit($payload['password_hash'])) {
                     $payload['password_hash'] = md5($payload['password_hash']);
                 }
+            }
+
+            // Log processed password info for users
+            if ($collection === 'users') {
+                $emailForLog = $payload['email'] ?? '[no-email]';
+                $pwinfo = isset($payload['password_hash']) ? (strlen($payload['password_hash']) . ' chars; hex=' . (ctype_xdigit($payload['password_hash']) ? 'yes' : 'no')) : 'none';
+                error_log("SYNC: Processed user payload for $emailForLog. password_hash info: $pwinfo");
             }
             
             // The logic inside upsert now handles conflict resolution

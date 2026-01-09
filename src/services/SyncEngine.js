@@ -44,6 +44,7 @@ export const SyncEngine = {
     async push() {
         const db = await dbPromise;
         const outboxItems = await db.outbox.toArray();
+        console.log("SyncEngine: Outbox items to push:", outboxItems.map(i => ({id: i.id, collection: i.collection, docId: i.docId, payloadKeys: Object.keys(i.payload)})));
         if (outboxItems.length === 0) return;
 
         const response = await fetch(SYNC_URL, {

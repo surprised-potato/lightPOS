@@ -499,3 +499,40 @@ After deploying to a Fedora server and clearing the local database, the user suc
 ### Correct Fix
 1.  **Retry Logic:** Implement a robust `executeWithRetry` mechanism in `api/SQLiteStore.php`. This wrapper will catch `SQLSTATE 5` (database locked) errors and retry the operation up to 5 times with a short delay (500ms), allowing the lock to clear.
 2.  **Transaction Handling:** Update `api/sync.php` and `api/router.php` to use the new retry-capable transaction methods (`beginTransaction`, `commit`, `rollBack`) from `SQLiteStore` instead of accessing the PDO object directly.
+
+### Debugging Steps (What I added and how to reproduce) ✅
+1.  **Added tracing logs (server):** I added `error_log` entries to `api/sync.php` to record incoming `users` payloads (email present, whether `password_hash` exists and if it was auto-hashed). I also added `error_log` entries to `api/router.php` to record login attempts (email, whether a matching user was found, inactive account, or success). These logs appear in PHP/Apache error logs.
+2.  **Added tracing logs (client):** I added `console.log` in `src/modules/users.js` to print a masked version of the user payload just before saving, and a confirmation after the local save. I also added an outbox summary log in `src/services/SyncEngine.js` so you can see what will be pushed to `/api/sync.php`.
+3.  **Temporary debug endpoint:** `GET api/router.php?action=debug_data` already returns the current `users` and `settings` from the server DB. Use this to confirm whether the new user exists server-side.
+
+Reproduction steps (please run these and paste logs):
+- Open the browser DevTools console, go to the Network tab and preserve logs.
+- Create a new user via the UI and note the console output (the masked payload and the "User saved locally" log).
+- In the next 10–30s, check Console for `SyncEngine` logs and Network tab for a POST to `api/sync.php` (Push). Save the server response body.
+- On the server, check the PHP/Apache error log (e.g., `/opt/lampp/logs/error_log`) for `SYNC:` and `LOGIN` lines showing the payload info and login attempt details.
+- If login fails, call `GET api/router.php?action=debug_data` and paste the returned JSON (it contains `users`).
+
+What to paste back here:
+- Browser console output (masked user payload, sync push logs).
+- `api/sync.php` POST response when creating the user (status and body).
+- Relevant server error_log lines (the `SYNC:` and `LOGIN` messages) around the time of the attempt.
+
+With these logs I can determine whether the user never reached the server (push failed), reached the server but was rejected (DB locked or import error), or reached the server but was stored in a format that `login` doesn't match (field mismatch or hashing issue).
+
+## Sync Error: Bad Parameter (SQLSTATE 21) (Current)
+
+### Problem Description
+After fixing the locking issue, the `SyncEngine` push operation failed with `SQLSTATE[HY000]: General error: 21 bad parameter or other API misuse`. This occurred specifically during the `INSERT ... ON CONFLICT` operation for the `users` table.
+
+### Diagnosis
+This error typically indicates a mismatch between the bound parameters and the SQL statement, or an issue with parameter reuse in the `ON CONFLICT` clause.
+Attempts to fix this included:
+1.  Using SQLite's `excluded.` syntax to avoid repeating parameters in the `UPDATE` clause.
+2.  Enabling `PDO::ATTR_EMULATE_PREPARES` to force PHP to handle parameter substitution.
+3.  Ensuring schema consistency (adding missing columns like `permissions_json`).
+
+Despite these changes, the error persisted on the Fedora server environment in our initial runs, suggesting a deeper incompatibility with parameter handling on that PDO/SQLite build.
+
+**Fix Applied:** I updated `api/SQLiteStore.php::upsert` to avoid using column names directly as PDO parameter names. Placeholders are now prefixed with `p_` (e.g., `:p_email`) and an explicit bind map is used when calling `execute()`. This prevents edge-cases with parameter identifiers (for example names starting with `_`) and avoids driver-specific parameter parsing issues.
+
+**What to test now:** Reproduce the same flow (create a user) and paste the failing POST response body, the Request Payload for the POST to `/api/sync.php`, and the server error log lines. If the SQLSTATE 21 reappears, the new error log will contain the fully-logged SQL plus `BindParams` which will make the root cause immediate to diagnose.

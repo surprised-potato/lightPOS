@@ -253,6 +253,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $users = [$defaultAdmin];
         }
 
+        error_log("LOGIN attempt for $email. Users in DB: " . count($users));
+
         $foundUser = null;
         foreach ($users as $u) {
             if ($u['email'] === $email && $u['password_hash'] === md5($password)) {
@@ -263,9 +265,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($foundUser) {
             if (isset($foundUser['is_active']) && !$foundUser['is_active']) {
+                error_log("LOGIN failed for $email: account inactive");
                 http_response_code(403);
                 echo json_encode(["error" => "Account inactive"]);
             } else {
+                error_log("LOGIN success for $email");
                 unset($foundUser['password_hash']); // Don't send hash back
                 if (isset($foundUser['permissions_json']) && is_string($foundUser['permissions_json'])) {
                     $foundUser['permissions'] = json_decode($foundUser['permissions_json'], true);
@@ -273,6 +277,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 echo json_encode(["success" => true, "user" => $foundUser]);
             }
         } else {
+            error_log("LOGIN failed for $email: invalid credentials");
             http_response_code(401);
             echo json_encode(["error" => "Invalid credentials"]);
         }
