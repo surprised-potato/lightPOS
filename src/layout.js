@@ -81,6 +81,7 @@ export function renderSidebar() {
         { section: "Inventory" },
         { label: "Items", icon: "📦", hash: "#items", permission: "items", type: "read" },
         { label: "Suppliers", icon: "🏭", hash: "#suppliers", permission: "suppliers", type: "read" },
+        { label: "Purchase Orders", icon: "🧾", hash: "#purchase-orders", permission: "purchase_orders", type: "read" },
         { label: "Stock In", icon: "🚛", hash: "#stockin", permission: "stockin", type: "read" },
         { label: "Stock Count", icon: "📋", hash: "#stock-count", permission: "stock-count", type: "read" },
         

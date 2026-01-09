@@ -4,7 +4,6 @@ import { initRouter } from "./router.js";
 import { SyncEngine } from "./services/SyncEngine.js";
 import { dbPromise } from "./db.js";
 import { dbRepository as Repository } from "./db.js";
-import { connect as sqliteConnect } from "./db_sqlite.js";
 import { ROLES } from "./modules/users.js";
 
 // DOM Elements
@@ -35,15 +34,16 @@ function showLogin() {
 
 // 1. Check Initialization State before Auth
 async function checkAppInitialization() {
-    console.log('main.js: checkAppInitialization called.');
     try {
-        await sqliteConnect('data/database.sqlite');
-        const db = await dbPromise;
+        // await sqliteConnect('data/database.sqlite'); // No longer needed as we use Dexie.js
+        // const db = await dbPromise; // No longer needed as we use get/run directly
+        // console.log('main.js: db object in checkAppInitialization (after sqliteConnect):', sqliteDb); // ADDED LOG
         // Check Local Data
-        const localUserCount = await db.users.count();
+        const users = await Repository.getAll('users');
+        const localUserCount = users.length;
         if (localUserCount > 0) {
             // Auto-fix: Check if admin password was saved as plain text due to missing MD5 previously
-            const admin = await db.users.get('admin@lightpos.com');
+            const admin = await Repository.get('users', 'admin@lightpos.com');
             if (admin && admin.password === 'admin123' && typeof md5 === 'function') {
                 console.log("Auto-repairing admin password...");
                 admin.password = md5('admin123');
@@ -112,7 +112,7 @@ async function initializeApplication() {
     try {
         const defaultUser = {
             email: 'admin@lightpos.com',
-            id: 'admin@lightpos.com',
+            // id: 'admin@lightpos.com', // Not a column in users table
             name: 'Administrator',
             password: md5('admin123'), 
             is_active: true,

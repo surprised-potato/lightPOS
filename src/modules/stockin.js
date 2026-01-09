@@ -27,6 +27,44 @@ export async function loadStockInView() {
     attachEventListeners();
     populateSupplierDropdown();
     await loadStockInHistory();
+    await loadPoToReceive();
+}
+
+async function loadPoToReceive() {
+    const poJson = sessionStorage.getItem('poToReceive');
+    if (poJson) {
+        try {
+            const po = JSON.parse(poJson);
+            const poItems = JSON.parse(po.items_json || '[]');
+
+            const cartItems = [];
+            for (const poItem of poItems) {
+                const dbItem = allItems.find(i => i.name.toLowerCase() === poItem.name.toLowerCase());
+                if (dbItem) {
+                    cartItems.push({
+                        id: dbItem.id,
+                        name: dbItem.name,
+                        quantity: poItem.qty,
+                        cost_price: poItem.cost
+                    });
+                } else {
+                    alert(`Item "${poItem.name}" from the PO was not found in the database and will be skipped.`);
+                }
+            }
+
+            stockInCart = cartItems;
+
+            document.getElementById('source-po-id').value = po.id;
+            if (po.supplier_id) {
+                document.getElementById('stockin-supplier').value = po.supplier_id;
+            }
+
+            renderStockInCart();
+            sessionStorage.removeItem('poToReceive');
+        } catch (error) {
+            console.error("Error loading PO to receive:", error);
+        }
+    }
 }
 
 async function loadAllItems() {
@@ -66,6 +104,7 @@ function render() {
                     <div class="bg-white p-6 rounded-lg shadow-md mb-6">
                         <h3 class="text-lg font-semibold text-gray-700 mb-4">Add Item to Stock</h3>
                         <form id="stockin-form" class="flex flex-col sm:flex-row items-start sm:items-end gap-4">
+                            <input type="hidden" id="source-po-id">
                             <div class="flex-grow w-full relative">
                                 <label for="item-search" class="block text-sm font-medium text-gray-700">Search Item (Name or Barcode)</label>
                                 <input type="text" id="item-search" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm py-2" placeholder="e.g., 'Coffee' or '123456789'" autocomplete="off">
@@ -470,6 +509,16 @@ async function saveStockIn() {
 
         // 3. Trigger Background Sync
         SyncEngine.sync();
+
+        const poId = document.getElementById('source-po-id').value;
+        if (poId) {
+            const po = await Repository.get('purchase_orders', poId);
+            if (po) {
+                po.status = 'received';
+                await Repository.upsert('purchase_orders', po);
+            }
+            document.getElementById('source-po-id').value = '';
+        }
 
         alert('Stock-in successful! Data is saved locally and will sync with the server.');
         

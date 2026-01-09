@@ -17,13 +17,56 @@ if (isset($_GET['action']) && $_GET['action'] === 'clear_opcache') {
 
 require_once __DIR__ . '/SQLiteStore.php';
 
+// --- START Schema Initialization Logic ---
+function ensureSchema($pdo) {
+    // Check if the 'settings' table exists
+    $stmt = $pdo->prepare("PRAGMA table_info(settings)");
+    $stmt->execute();
+    $tableInfo = $stmt->fetchAll();
+
+    if (empty($tableInfo)) {
+        // If 'settings' table does not exist, execute the full schema
+        $schemaSql = file_get_contents(__DIR__ . '/../schema.sql');
+        if ($schemaSql === false) {
+            error_log("Error: Could not read schema.sql file.");
+            // Depending on desired behavior, you might want to throw an exception or die here
+            return; 
+        }
+        $pdo->exec($schemaSql);
+        error_log("SQLite database schema initialized successfully.");
+    }
+
+    // Check if 'inventory_metrics' (PO module) exists
+    $stmt1 = $pdo->prepare("PRAGMA table_info(inventory_metrics)");
+    $stmt1->execute();
+    $stmt2 = $pdo->prepare("PRAGMA table_info(purchase_orders)");
+    $stmt2->execute();
+    if (empty($stmt1->fetchAll()) || empty($stmt2->fetchAll())) {
+        $schemaPo = file_get_contents(__DIR__ . '/schema_po.sql');
+        if ($schemaPo) {
+            $pdo->exec($schemaPo);
+            error_log("PO Module schema initialized successfully.");
+        }
+    }
+
+    // V1.1 Migration: Add is_active to users table
+    $userCols = $pdo->query("PRAGMA table_info(users)")->fetchAll(PDO::FETCH_COLUMN, 1);
+    if (!in_array('is_active', $userCols)) {
+        $pdo->exec("ALTER TABLE users ADD COLUMN is_active INTEGER DEFAULT 1");
+        error_log("DB Migration: Added is_active column to users table.");
+    }
+}
+// --- END Schema Initialization Logic ---
+
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit;
 }
 
 $store = new SQLiteStore();
-$allowedFiles = ['items', 'users', 'suppliers', 'customers', 'transactions', 'shifts', 'expenses', 'stock_in_history', 'stockins', 'adjustments', 'suspended_transactions', 'returns', 'sync_metadata', 'last_sync', 'stock_movements', 'valuation_history', 'stock_logs', 'notifications', 'settings'];
+// Call the schema check after the store is initialized and PDO is available
+ensureSchema($store->pdo);
+$allowedFiles = ['items', 'users', 'suppliers', 'customers', 'transactions', 'shifts', 'expenses', 'stock_in_history', 'stockins', 'adjustments', 'suspended_transactions', 'returns', 'sync_metadata', 'last_sync', 'stock_movements', 'valuation_history', 'stock_logs', 'notifications', 'settings', 'inventory_metrics', 'supplier_config', 'purchase_orders'];
 
 $action = $_GET['action'] ?? null;
 $file = $_GET['file'] ?? null;
@@ -38,7 +81,41 @@ if ($file && !in_array($file, $allowedFiles)) {
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     if ($file) {
-        echo json_encode($store->getAll($file));
+        $data = $store->getAll($file);
+        // Decode permissions_json for the frontend
+        if ($file === 'users') {
+            foreach ($data as &$row) {
+                if (isset($row['permissions_json']) && is_string($row['permissions_json'])) {
+                    $row['permissions'] = json_decode($row['permissions_json'], true);
+                }
+            }
+        }
+        echo json_encode($data);
+    } elseif ($action === 'debug_data') { // Temporary debug endpoint
+        $usersData = $store->getAll('users');
+        $settingsData = $store->getAll('settings');
+        echo json_encode(["users" => $usersData, "settings" => $settingsData]);
+    } elseif ($action === 'fix_admin') {
+        $defaultAdmin = [
+            "email" => "admin@lightpos.com",
+            "name" => "Super Admin",
+            "password_hash" => md5("admin123"),
+            "is_active" => true,
+            "_version" => 1,
+            "_updatedAt" => round(microtime(true) * 1000),
+            "_deleted" => false,
+            "permissions_json" => json_encode([
+                "pos" => ["read" => true, "write" => true], "customers" => ["read" => true, "write" => true],
+                "items" => ["read" => true, "write" => true], "suppliers" => ["read" => true, "write" => true],
+                "stockin" => ["read" => true, "write" => true], "stock-count" => ["read" => true, "write" => true],
+                "reports" => ["read" => true, "write" => true], "expenses" => ["read" => true, "write" => true],
+                "users" => ["read" => true, "write" => true], "shifts" => ["read" => true, "write" => true],
+                "migrate" => ["read" => true, "write" => true], "returns" => ["read" => true, "write" => true],
+                "settings" => ["read" => true, "write" => true]
+            ])
+        ];
+        $store->upsert('users', $defaultAdmin);
+        echo json_encode(["success" => true, "message" => "Admin user reset to default (admin@lightpos.com / admin123) with full permissions."]);
     } else {
         echo json_encode(["message" => "API Ready"]);
     }
@@ -79,7 +156,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $defaultAdmin = [
                 "email" => "admin@lightpos.com",
                 "name" => "Super Admin",
-                "password_hash" => md5("admin"),
+                "password_hash" => md5("admin123"),
                 "is_active" => true,
                 "_version" => 1,
                 "_updatedAt" => round(microtime(true) * 1000),
@@ -112,6 +189,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 echo json_encode(["error" => "Account inactive"]);
             } else {
                 unset($foundUser['password_hash']); // Don't send hash back
+                if (isset($foundUser['permissions_json']) && is_string($foundUser['permissions_json'])) {
+                    $foundUser['permissions'] = json_decode($foundUser['permissions_json'], true);
+                }
                 echo json_encode(["success" => true, "user" => $foundUser]);
             }
         } else {
@@ -122,15 +202,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $toWipe = [
             'items', 'transactions', 'shifts', 'expenses', 'stock_movements', 
             'adjustments', 'customers', 'suppliers', 'stockins', 
-            'suspended_transactions', 'returns', 'notifications', 'stock_logs', 'settings'
+            'suspended_transactions', 'returns', 'notifications', 'stock_logs', 'settings',
+            'users', 'sync_metadata'
         ];
         try {
             $store->pdo->beginTransaction();
             foreach ($toWipe as $col) {
                 $store->wipe($col);
             }
+
+            // Re-seed Admin
+            $defaultAdmin = [
+                "email" => "admin@lightpos.com",
+                "name" => "Super Admin",
+                "password_hash" => md5("admin123"),
+                "is_active" => true,
+                "_version" => 1,
+                "_updatedAt" => round(microtime(true) * 1000),
+                "_deleted" => false,
+                "permissions_json" => json_encode([
+                    "pos" => ["read" => true, "write" => true], "customers" => ["read" => true, "write" => true],
+                    "items" => ["read" => true, "write" => true], "suppliers" => ["read" => true, "write" => true],
+                    "stockin" => ["read" => true, "write" => true], "stock-count" => ["read" => true, "write" => true],
+                    "reports" => ["read" => true, "write" => true], "expenses" => ["read" => true, "write" => true],
+                    "users" => ["read" => true, "write" => true], "shifts" => ["read" => true, "write" => true],
+                    "migrate" => ["read" => true, "write" => true], "returns" => ["read" => true, "write" => true],
+                    "settings" => ["read" => true, "write" => true]
+                ])
+            ];
+            $store->upsert('users', $defaultAdmin);
+            $store->upsert('sync_metadata', ['key' => 'db_initialized', 'value' => '1']);
+
             $store->pdo->commit();
-            echo json_encode(['status' => 'success', 'message' => 'Data wiped successfully']);
+            echo json_encode(['status' => 'success', 'message' => 'System fully reset to factory defaults.']);
         } catch (Exception $e) {
             $store->pdo->rollBack();
             http_response_code(500);

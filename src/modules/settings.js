@@ -256,6 +256,42 @@ export async function loadSettingsView() {
                                 </div>
                             </div>
                         </div>
+                        
+                        <div class="bg-white p-6 rounded-lg shadow-sm border">
+                            <h3 class="text-lg font-bold mb-4">Procurement Settings</h3>
+                            <div class="max-w-xs">
+                                <label class="block text-sm font-bold text-gray-700 mb-2">K-Factor (Sales Projection %)</label>
+                                <div class="flex items-center gap-2">
+                                    <input type="number" id="set-procurement-k-factor" min="100" step="1" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="110">
+                                    <span class="text-sm text-gray-500">%</span>
+                                </div>
+                                <p class="text-[10px] text-gray-500 mt-1">Multiplier for OTB sales projection (e.g., 110% = 1.1x). Min 100.</p>
+                            </div>
+                            <div class="max-w-xs mt-4">
+                                <label class="block text-sm font-bold text-gray-700 mb-2">OTB Calculation Mode</label>
+                                <select id="set-procurement-otb-mode" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                                    <option value="standard">Standard (Audit Based)</option>
+                                    <option value="replenishment">Replenishment (Sales Based)</option>
+                                </select>
+                                <p class="text-[10px] text-gray-500 mt-1">Standard considers current stock levels. Replenishment ignores stock gaps.</p>
+                            </div>
+                            <div class="max-w-xs mt-4">
+                                <label class="block text-sm font-bold text-gray-700 mb-2">Ordering Cost (S)</label>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-sm text-gray-500">₱</span>
+                                    <input type="number" id="set-procurement-ordering-cost" min="0" step="0.01" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="50.00">
+                                </div>
+                                <p class="text-[10px] text-gray-500 mt-1">Fixed cost per order (Shipping, Admin, etc).</p>
+                            </div>
+                            <div class="max-w-xs mt-4">
+                                <label class="block text-sm font-bold text-gray-700 mb-2">Holding Cost Rate (H)</label>
+                                <div class="flex items-center gap-2">
+                                    <input type="number" id="set-procurement-holding-cost" min="0" max="100" step="0.1" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="20">
+                                    <span class="text-sm text-gray-500">%</span>
+                                </div>
+                                <p class="text-[10px] text-gray-500 mt-1">Annual holding cost as % of unit cost.</p>
+                            </div>
+                        </div>
 
                         <div class="space-y-6">
                             <div class="bg-white p-6 rounded-lg shadow-sm border">
@@ -540,9 +576,10 @@ function setupEventListeners() {
     document.getElementById("form-settings").addEventListener("submit", handleSave);
 
     document.getElementById("btn-run-tests")?.addEventListener("click", async () => {
-        const { TestRunner } = await import("../services/TestRunner.js");
-        await TestRunner.runAll();
-        alert("Architecture tests completed. Please check the browser console (F12) for detailed logs.");
+        // Cache-bust the import to ensure we always run the latest test code
+        const { TestRunner } = await import(`../services/TestRunner.js?t=${Date.now()}`);
+        const tests = TestRunner.getTests();
+        displayTestRunnerModal(tests);
     });
 
     document.getElementById("btn-diagnostic-export")?.addEventListener("click", runDiagnosticExport);
@@ -550,6 +587,100 @@ function setupEventListeners() {
     if (checkPermission("migrate", "write")) {
         setupMigrationEventListeners();
     }
+}
+
+function displayTestRunnerModal(tests) {
+    let modal = document.getElementById('modal-test-runner');
+    if (modal) modal.remove();
+
+    modal = document.createElement('div');
+    modal.id = 'modal-test-runner';
+    modal.className = 'fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-[100]';
+    
+    const testsHtml = tests.map((test, index) => `
+        <div class="p-4 border-b last:border-0 bg-white" id="test-row-${index}">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h4 class="font-bold text-gray-800">${test.name}</h4>
+                    <p class="text-xs text-gray-600 mt-1">${test.description}</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="status-badge px-2 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-600">Pending</span>
+                    <button class="btn-run-single bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-1 px-3 rounded" data-index="${index}">Run</button>
+                </div>
+            </div>
+            <div class="error-output hidden mt-2 text-xs text-red-700 bg-red-100 p-2 rounded font-mono whitespace-pre-wrap"></div>
+        </div>
+    `).join('');
+
+    modal.innerHTML = `
+        <div class="bg-white rounded-lg shadow-2xl w-full max-w-3xl max-h-[80vh] flex flex-col">
+            <div class="p-4 border-b flex justify-between items-center">
+                <h3 class="text-xl font-bold text-gray-800">Sync Architecture Tests</h3>
+                <button id="btn-run-all-tests" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded text-sm shadow">
+                    Run All Tests
+                </button>
+            </div>
+            <div class="flex-1 overflow-y-auto">
+                ${testsHtml}
+            </div>
+            <div class="p-4 bg-gray-50 border-t flex justify-end">
+                <button id="btn-close-test-results" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded">Close</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    const updateRowUI = (index, status, error = null) => {
+        const row = document.getElementById(`test-row-${index}`);
+        const badge = row.querySelector('.status-badge');
+        const errorDiv = row.querySelector('.error-output');
+        const btn = row.querySelector('.btn-run-single');
+
+        if (status === 'running') {
+            badge.className = 'status-badge px-2 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800 animate-pulse';
+            badge.textContent = 'Running...';
+            btn.disabled = true;
+            btn.classList.add('opacity-50');
+            errorDiv.classList.add('hidden');
+            row.classList.remove('bg-green-50', 'bg-red-50');
+        } else if (status === 'pass') {
+            badge.className = 'status-badge px-2 py-0.5 rounded-full text-xs font-bold bg-green-200 text-green-800';
+            badge.textContent = 'PASS';
+            btn.disabled = false;
+            btn.classList.remove('opacity-50');
+            row.classList.add('bg-green-50');
+        } else if (status === 'fail') {
+            badge.className = 'status-badge px-2 py-0.5 rounded-full text-xs font-bold bg-red-200 text-red-800';
+            badge.textContent = 'FAIL';
+            btn.disabled = false;
+            btn.classList.remove('opacity-50');
+            row.classList.add('bg-red-50');
+            if (error) {
+                errorDiv.textContent = error.stack || error.message || String(error);
+                errorDiv.classList.remove('hidden');
+            }
+        }
+    };
+
+    const runTest = async (index) => {
+        updateRowUI(index, 'running');
+        const result = await tests[index].run();
+        updateRowUI(index, result.success ? 'pass' : 'fail', result.error);
+    };
+
+    modal.querySelectorAll('.btn-run-single').forEach(btn => {
+        btn.addEventListener('click', () => runTest(parseInt(btn.dataset.index)));
+    });
+
+    modal.querySelector('#btn-run-all-tests').addEventListener('click', async () => {
+        for (let i = 0; i < tests.length; i++) {
+            await runTest(i);
+        }
+    });
+
+    modal.querySelector('#btn-close-test-results').addEventListener('click', () => modal.remove());
 }
 
 async function loadSettings() {
@@ -607,6 +738,12 @@ async function loadSettings() {
                 document.getElementById("set-print-footer-bold").checked = p.footer?.bold || false;
                 document.getElementById("set-print-footer-italic").checked = p.footer?.italic || false;
             }
+            if (settings.procurement) {
+                document.getElementById("set-procurement-k-factor").value = settings.procurement.k_factor || 110;
+                document.getElementById("set-procurement-otb-mode").value = settings.procurement.otb_mode || 'standard';
+                document.getElementById("set-procurement-ordering-cost").value = settings.procurement.ordering_cost || 50;
+                document.getElementById("set-procurement-holding-cost").value = settings.procurement.holding_cost_rate || 20;
+            }
             await renderSyncHistory();
             renderHeader(); // Ensure branding in header matches loaded settings
         }
@@ -656,6 +793,12 @@ async function handleSave(e) {
         },
         shift: {
             threshold: parseFloat(document.getElementById("set-shift-threshold").value) || 0
+        },
+        procurement: {
+            k_factor: parseFloat(document.getElementById("set-procurement-k-factor").value) || 110,
+            otb_mode: document.getElementById("set-procurement-otb-mode").value,
+            ordering_cost: parseFloat(document.getElementById("set-procurement-ordering-cost").value) || 50,
+            holding_cost_rate: parseFloat(document.getElementById("set-procurement-holding-cost").value) || 20
         },
         pos: {
             auto_print: document.getElementById("set-auto-print").checked
@@ -928,6 +1071,14 @@ async function setupMigrationEventListeners() {
                 await db.transaction('rw', [db[collection], db.outbox], async () => {
                     for (const item of items) {
                         if (!item || typeof item !== 'object' || !item[idField]) continue;
+                        
+                        // Fix for "toFixed" errors: Ensure numeric fields are valid numbers
+                        if (collection === 'items') {
+                            item.cost_price = parseFloat(item.cost_price) || 0;
+                            item.selling_price = parseFloat(item.selling_price) || 0;
+                            item.stock_level = parseFloat(item.stock_level) || 0;
+                        }
+
                         const existing = await db[collection].get(item[idField]);
                         const shouldUpdate = !existing || (item._version || 0) > (existing._version || 0) || ((item._version || 0) === (existing._version || 0) && (item._updatedAt || 0) > (existing._updatedAt || 0));
                         if (shouldUpdate) {
@@ -1555,7 +1706,16 @@ async function handleRestoreBackup(e) {
             
             // Update timestamps to ensure the sync engine sees this as "new" data
             data.forEach(item => {
-                if (item && typeof item === 'object') item._updatedAt = serverTime;
+                if (item && typeof item === 'object') {
+                    item._updatedAt = serverTime;
+                    
+                    // Fix for "toFixed" errors: Ensure numeric fields are valid numbers
+                    if (fileName === 'items') {
+                        item.cost_price = parseFloat(item.cost_price) || 0;
+                        item.selling_price = parseFloat(item.selling_price) || 0;
+                        item.stock_level = parseFloat(item.stock_level) || 0;
+                    }
+                }
             });
 
             const totalItems = data.length;
@@ -1587,6 +1747,15 @@ async function handleRestoreBackup(e) {
                     throw new Error(`Failed to restore ${fileName} (chunk ${i}): ${errText}`);
                 }
             }
+        }
+
+        // Ensure the server knows it is initialized, even if the backup file missed this key
+        if (!isDryRun) {
+            await fetch(`${ADMIN_API_URL}?file=sync_metadata&mode=append`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify([{ key: 'db_initialized', value: '1', _version: 1, _updatedAt: Date.now() }])
+            });
         }
 
         if (isDryRun) {

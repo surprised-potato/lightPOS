@@ -6,7 +6,7 @@ import { dbPromise } from '../db.js';
  * a mismatch between server settings and local settings.
  */
 export async function testSettingsMismatchDetection() {
-    console.group("Unit Test: runDiagnosticExport - Settings Mismatch");
+    const description = "Verifies that the diagnostic tool correctly identifies a mismatch between server settings and local settings.";
     const db = await dbPromise;
     
     // 1. Mock Data: Different store names to trigger a mismatch
@@ -20,6 +20,7 @@ export async function testSettingsMismatchDetection() {
     const originalOutboxToArray = db.outbox.toArray;
     const originalCreateObjectURL = URL.createObjectURL;
     const originalRevokeObjectURL = URL.revokeObjectURL;
+    const originalCreateElement = document.createElement;
 
     try {
         // 3. Apply Mocks
@@ -44,6 +45,15 @@ export async function testSettingsMismatchDetection() {
         URL.createObjectURL = () => "blob:test-diagnostic-report";
         URL.revokeObjectURL = () => {};
 
+        // Mock document.createElement to prevent actual download click which causes Security Error with fake blob
+        document.createElement = function(tagName) {
+            const element = originalCreateElement.call(document, tagName);
+            if (tagName.toLowerCase() === 'a') {
+                element.click = () => {}; // No-op
+            }
+            return element;
+        };
+
         // 4. Execute the diagnostic tool
         const report = await runDiagnosticExport();
 
@@ -51,15 +61,14 @@ export async function testSettingsMismatchDetection() {
         const expectedMessage = "Mismatch between server settings.json and local sync_metadata['settings']";
         
         if (report.discrepancies.settings === expectedMessage) {
-            console.log("✅ PASS: Settings mismatch correctly identified.");
+            return { name: "Settings Mismatch Detection", description, success: true, error: null };
         } else {
-            console.error("❌ FAIL: Settings mismatch not detected or incorrect message.");
-            console.log("Expected:", expectedMessage);
-            console.log("Actual:", report.discrepancies.settings);
+            const error = new Error("Settings mismatch not detected or incorrect message.");
+            return { name: "Settings Mismatch Detection", description, success: false, error };
         }
 
     } catch (error) {
-        console.error("❌ TEST ERROR:", error);
+        return { name: "Settings Mismatch Detection", description, success: false, error };
     } finally {
         // 6. Restore original implementations
         window.fetch = originalFetch;
@@ -68,6 +77,6 @@ export async function testSettingsMismatchDetection() {
         db.outbox.toArray = originalOutboxToArray;
         URL.createObjectURL = originalCreateObjectURL;
         URL.revokeObjectURL = originalRevokeObjectURL;
-        console.groupEnd();
+        document.createElement = originalCreateElement;
     }
 }

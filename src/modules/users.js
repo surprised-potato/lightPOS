@@ -1,8 +1,9 @@
-import { checkPermission } from "../auth.js";
+import { checkPermission, getUserProfile, updateLocalProfile } from "../auth.js";
+import { renderSidebar } from "../layout.js";
 import { dbRepository as Repository } from "../db.js";
 import { SyncEngine } from "../services/SyncEngine.js";
 
-export const MODULES = ['pos', 'customers', 'shifts', 'items', 'suppliers', 'stockin', 'stock-count', 'expenses', 'reports', 'users', 'migrate', 'returns', 'settings'];
+export const MODULES = ['pos', 'customers', 'shifts', 'items', 'suppliers', 'purchase_orders', 'stockin', 'stock-count', 'expenses', 'reports', 'users', 'migrate', 'returns', 'settings'];
 
 export const ROLES = {
     admin: {
@@ -17,6 +18,7 @@ export const ROLES = {
             shifts: { read: true, write: true },
             items: { read: true, write: true },
             suppliers: { read: true, write: true },
+            purchase_orders: { read: true, write: true },
             stockin: { read: true, write: true },
             'stock-count': { read: true, write: true },
             expenses: { read: true, write: true },
@@ -212,12 +214,15 @@ async function fetchAndRenderUsers(filter = "all") {
                 });
             }
             
+            // Normalize is_active to handle 1/0, "1"/"0", true/false
+            const isActive = user.is_active === undefined ? true : (user.is_active === true || user.is_active === 1 || user.is_active === '1');
+
             tr.innerHTML = `
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${user.name || 'N/A'}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${user.email}</td>
                 <td class="px-6 py-4 whitespace-nowrap">
-                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
-                        ${user.is_active ? 'Active' : 'Inactive'}
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                        ${isActive ? 'Active' : 'Inactive'}
                     </span>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -272,7 +277,7 @@ function openUserModal(user = null) {
         emailInput.disabled = true; // Cannot change ID
         nameInput.value = user.name;
         phoneInput.value = user.phone || "";
-        activeInput.checked = user.is_active;
+        activeInput.checked = user.is_active === true || user.is_active === 1 || user.is_active === '1';
         passwordContainer.classList.add("hidden");
 
         // Determine Role based on permissions
@@ -344,6 +349,11 @@ function closeUserModal() {
 async function handleUserSubmit(e) {
     e.preventDefault();
     
+    const btnSave = e.target.querySelector('button[type="submit"]');
+    const originalBtnText = btnSave.textContent;
+    btnSave.disabled = true;
+    btnSave.textContent = "Saving...";
+
     const email = document.getElementById("user-email").value.trim();
     const name = document.getElementById("user-name").value.trim();
     const phone = document.getElementById("user-phone").value.trim();
@@ -351,62 +361,73 @@ async function handleUserSubmit(e) {
     const isActive = document.getElementById("user-active").checked;
     const isEdit = document.getElementById("user-email").disabled;
 
-    if (!isEdit && (!password || password.length < 6)) {
-        alert("Password is required and must be at least 6 characters.");
-        return;
-    }
-    
-    // Harvest permissions
-    const permissions = {};
-    document.querySelectorAll(".perm-check").forEach(chk => {
-        const mod = chk.dataset.module;
-        const type = chk.dataset.type;
-        if (!permissions[mod]) permissions[mod] = { read: false, write: false };
-        permissions[mod][type] = chk.checked;
-    });
-
-    // To preserve existing password if not changed during edit, we need the full user list
-    const existingUser = await Repository.get('users', email);
-
-    if (!isEdit && existingUser) {
-        alert("User already exists.");
-        return;
-    }
-
-    const userData = {
-        ...existingUser,
-        email,
-        name,
-        phone,
-        is_active: isActive,
-        permissions
-    };
-    
-    // Only update password if provided
-    if (password) {
-        if (typeof md5 === 'function') {
-            userData.password = md5(password);
-        } else {
-            console.error("MD5 function not found. Password not updated.");
-            alert("Error: Security library missing. Password could not be set.");
-            return;
-        }
-    }
-
     try {
+        if (!isEdit && (!password || password.length < 6)) {
+            throw new Error("Password is required and must be at least 6 characters.");
+        }
+        
+        // Harvest permissions
+        const permissions = {};
+        document.querySelectorAll(".perm-check").forEach(chk => {
+            const mod = chk.dataset.module;
+            const type = chk.dataset.type;
+            if (!permissions[mod]) permissions[mod] = { read: false, write: false };
+            permissions[mod][type] = chk.checked;
+        });
+
+        // To preserve existing password if not changed during edit, we need the full user list
+        const existingUser = await Repository.get('users', email);
+
+        if (!isEdit && existingUser) {
+            throw new Error("User already exists.");
+        }
+
+        const userData = {
+            ...existingUser,
+            email,
+            name,
+            phone,
+            is_active: isActive ? 1 : 0, // Store as 1/0 for SQLite compatibility
+            permissions
+        };
+        
+        // Only update password if provided
+        if (password) {
+            if (typeof md5 === 'function') {
+                userData.password = md5(password);
+            } else {
+                console.error("MD5 function not found. Password not updated.");
+                throw new Error("Security library missing. Password could not be set.");
+            }
+        }
+
         // Optimistic UI: save locally first
         await Repository.upsert('users', userData);
 
         // Let the background sync service handle it
-        if (navigator.onLine) {
-            SyncEngine.sync();
+        try {
+            if (navigator.onLine) {
+                SyncEngine.sync();
+            }
+        } catch (syncErr) {
+            console.warn("Background sync failed, but local save successful:", syncErr);
         }
         
         alert("User saved. Will sync with server.");
         closeUserModal();
         fetchAndRenderUsers();
+
+        // If the edited user is the current user, update their session
+        const currentUser = getUserProfile();
+        if (currentUser && currentUser.email === userData.email) {
+            updateLocalProfile(userData);
+            renderSidebar();
+        }
     } catch (error) {
         console.error("Error saving user:", error);
         alert("Failed to save user: " + error.message);
+    } finally {
+        btnSave.disabled = false;
+        btnSave.textContent = originalBtnText;
     }
 }

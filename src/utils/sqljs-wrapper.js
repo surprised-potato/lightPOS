@@ -2,4 +2,3 @@
 
 // Re-export initSqlJs from the global scope
 export const initSqlJs = window.initSqlJs;
-console.log('sqljs-wrapper.js: initSqlJs exported', initSqlJs);

@@ -20,6 +20,7 @@ export async function login(email, password) {
         
         if (response.ok && data.success) {
             currentUserProfile = data.user;
+            console.log("Logged in user profile:", currentUserProfile); // Added for debugging
             localStorage.setItem('pos_user', JSON.stringify(currentUserProfile));
             return { success: true, user: currentUserProfile };
         } else {
@@ -55,10 +56,16 @@ export function monitorAuthState(callback) {
 }
 
 export function checkPermission(module, type) {
-    if (!currentUserProfile || !currentUserProfile.is_active) return false;
-    const perms = currentUserProfile.permissions || {};
-    return perms[module]?.[type] === true;
+    return permissionManager.check(module, type);
 }
+
+export const permissionManager = {
+    check: function(module, type) {
+        if (!currentUserProfile || !currentUserProfile.is_active) return false;
+        const perms = currentUserProfile.permissions || {};
+        return perms[module]?.[type] === true;
+    }
+};
 
 export function getUserProfile() {
     return currentUserProfile;

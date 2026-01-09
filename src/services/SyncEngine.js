@@ -15,8 +15,9 @@ export const SyncEngine = {
         const performSync = async () => {
             window.dispatchEvent(new CustomEvent('sync-started'));
             console.log("Sync started...");
+            console.log('SyncEngine: db object before db.open():', db); // ADDED LOG
             try {
-                await db.open();
+                // await db.open(); // Not needed for SQLite
                 console.log("SyncEngine: --- Pushing changes... ---");
                 await this.push();
                 console.log("SyncEngine: --- Pushing complete. Pulling changes... ---");
@@ -55,7 +56,9 @@ export const SyncEngine = {
             const ids = outboxItems.map(i => i.id);
             await db.outbox.bulkDelete(ids);
         } else {
-            throw new Error("Push failed");
+            const errorText = await response.text();
+            console.error("SyncEngine: Push failed. Status:", response.status, "Response:", errorText);
+            throw new Error(`Push failed: ${response.status} ${errorText}`);
         }
     },
 
@@ -66,9 +69,12 @@ export const SyncEngine = {
         const since = lastSyncMeta ? lastSyncMeta.value : 0;
         console.log(`SyncEngine: Pulling changes since timestamp: ${since}`);
 
-        const SYNC_DEBUG_URL = 'api/sync_debug.php';
-        const response = await fetch(`${SYNC_DEBUG_URL}?since=${since}`);
-        if (!response.ok) throw new Error("Pull failed");
+        const response = await fetch(`${SYNC_URL}?since=${since}`);
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error("SyncEngine: Pull failed. Status:", response.status, "Response:", errorText);
+            throw new Error(`Pull failed: ${response.status} ${errorText}`);
+        }
 
         const data = await response.json();
 

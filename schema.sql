@@ -42,6 +42,7 @@ CREATE TABLE users (
     name TEXT,
     password_hash TEXT,
     role TEXT,
+    is_active INTEGER DEFAULT 1,
     permissions_json TEXT, -- JSON for flexible permissions
     _version INTEGER,
     _updatedAt INTEGER,

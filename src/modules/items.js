@@ -646,6 +646,7 @@ async function selectItem(item) {
 }
 
 async function refreshItemInsights() {
+    const db = await dbPromise;
     const item = itemsData.find(i => i.id === selectedItemId);
     if (!item) return;
 
@@ -781,6 +782,7 @@ function renderItemSalesChart(transactions, itemId, days) {
 }
 
 async function openComparisonModal() {
+    const db = await dbPromise;
     const modal = document.getElementById("modal-compare-items");
     const container = document.getElementById("comparison-container");
     container.innerHTML = `<div class="col-span-2 text-center py-20 text-gray-500 italic">Analyzing data...</div>`;

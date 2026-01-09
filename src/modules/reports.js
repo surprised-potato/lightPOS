@@ -1454,11 +1454,21 @@ async function generateReport() {
         
         // Supplier Data
         reportData.vendorPerf = suppliers.map(s => {
-            const bought = stockInHistory.reduce((sum, entry) => sum + entry.items.filter(i => allItems.find(m => m.id === i.item_id)?.supplier_id === s.id).reduce((s2, i) => s2 + (i.quantity || 0), 0), 0);
-            const sold = transactions.reduce((sum, tx) => sum + tx.items.filter(i => allItems.find(m => m.id === i.id)?.supplier_id === s.id).reduce((s2, i) => s2 + (i.qty || 0), 0), 0);
+            const bought = stockInHistory.reduce((sum, entry) => {
+                if (!entry.items || !Array.isArray(entry.items)) return sum;
+                return sum + entry.items.filter(i => allItems.find(m => m.id === i.item_id)?.supplier_id === s.id).reduce((s2, i) => s2 + (i.quantity || 0), 0);
+            }, 0);
+            const sold = transactions.reduce((sum, tx) => {
+                if (!tx.items || !Array.isArray(tx.items)) return sum;
+                return sum + tx.items.filter(i => allItems.find(m => m.id === i.id)?.supplier_id === s.id).reduce((s2, i) => s2 + (i.qty || 0), 0);
+            }, 0);
             return { name: s.name, bought, sold, pct: bought > 0 ? (sold / bought * 100) : 0 };
         });
-        reportData.purchaseHistory = stockInHistory.map(h => ({ ...h, vendorName: h.supplier_id_override ? (suppliers.find(s => s.id === h.supplier_id_override)?.name || 'Unknown') : 'Mixed', total: h.items.reduce((sum, i) => sum + ((i.quantity || 0) * (i.cost_price || 0)), 0) })).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        reportData.purchaseHistory = stockInHistory.map(h => ({ 
+            ...h, 
+            vendorName: h.supplier_id_override ? (suppliers.find(s => s.id === h.supplier_id_override)?.name || 'Unknown') : 'Mixed', 
+            total: (h.items && Array.isArray(h.items)) ? h.items.reduce((sum, i) => sum + ((i.quantity || 0) * (i.cost_price || 0)), 0) : 0 
+        })).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
         reportData.landedCost = allItems.filter(i => i.supplier_id).map(i => ({ ...i, vendorName: suppliers.find(s => s.id === i.supplier_id)?.name || '-' }));
 
         // Daily Cashflow Aggregation

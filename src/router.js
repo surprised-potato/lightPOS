@@ -12,6 +12,7 @@ import { loadProfileView } from "./modules/profile.js";
 import { loadShiftsView } from "./modules/shift.js";
 import { loadSettingsView } from "./modules/settings.js";
 import { loadReturnsView } from "./modules/returns.js";
+import { loadPurchaseOrdersView } from "./modules/purchase_orders.js";
 import { checkPermission } from "./auth.js";
 import { renderSidebar } from "./layout.js";
 
@@ -56,7 +57,8 @@ async function handleRoute() {
         "#users": { module: "users", type: "read" },
         "#shifts": { module: "shifts", type: "read" },
         "#returns": { module: "returns", type: "read" },
-        "#settings": { module: "settings", type: "read" }
+        "#settings": { module: "settings", type: "read" },
+        "#purchase-orders": { module: "purchase_orders", type: "read" }
     };
 
     const guard = routeGuards[hash];
@@ -95,6 +97,7 @@ async function handleRoute() {
         case "#shifts": await loadShiftsView(); break;
         case "#returns": await loadReturnsView(); break;
         case "#settings": await loadSettingsView(); break;
+        case "#purchase-orders": await loadPurchaseOrdersView(); break;
         default:
             content.innerHTML = `<div class="p-6"><h2>404 - Page Not Found</h2></div>`;
     }

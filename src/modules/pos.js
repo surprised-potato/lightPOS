@@ -1146,7 +1146,7 @@ function renderGrid(items) {
             </div>
             <div class="${footerClass}">
                 <div class="${stockClass} ${stockColor}">Stock: ${item.stock_level}</div>
-                <div class="${priceClass}">₱${item.selling_price.toFixed(2)}</div>
+                <div class="${priceClass}">₱${(item.selling_price || 0).toFixed(2)}</div>
             </div>
             <!-- Hover Effect Overlay -->
             <div class="absolute inset-0 bg-blue-600 bg-opacity-0 group-hover:bg-opacity-5 transition duration-150"></div>
@@ -1307,7 +1307,7 @@ function renderCart() {
         const row = document.createElement("div");
         const isHighlighted = index === activeCartIndex;
         const displayQty = isHighlighted ? qtyBuffer : item.qty;
-        const itemTotal = item.selling_price * (isHighlighted && qtyBuffer !== "" ? parseInt(qtyBuffer) || 0 : item.qty);
+        const itemTotal = (item.selling_price || 0) * (isHighlighted && qtyBuffer !== "" ? parseInt(qtyBuffer) || 0 : item.qty);
         
         total += itemTotal;
 
@@ -1315,7 +1315,7 @@ function renderCart() {
         row.innerHTML = ` 
             <div class="flex-1 overflow-hidden mr-2">
                 <div class="font-bold truncate text-gray-800">${item.name}</div>
-                <div class="text-gray-500 text-xs">₱${item.selling_price.toFixed(2)} x ${displayQty}</div>
+                <div class="text-gray-500 text-xs">₱${(item.selling_price || 0).toFixed(2)} x ${displayQty}</div>
             </div>
             <div class="flex items-center gap-2">
                 <div class="font-bold text-blue-600 mr-2">₱${itemTotal.toFixed(2)}</div>
@@ -2019,8 +2019,8 @@ async function printReceipt(tx, isReprint = false) {
             <td colspan="2" style="padding-top: 5px;">${item.name}</td>
         </tr>
         <tr style="${itemsStyle}">
-            <td style="font-size: 0.9em; opacity: 0.8;">${item.qty} x ${item.selling_price.toFixed(2)}</td>
-            <td style="text-align: right;">${(item.qty * item.selling_price).toFixed(2)}</td>
+            <td style="font-size: 0.9em; opacity: 0.8;">${item.qty} x ${(item.selling_price || 0).toFixed(2)}</td>
+            <td style="text-align: right;">${(item.qty * (item.selling_price || 0)).toFixed(2)}</td>
         </tr>
     `).join('');
 

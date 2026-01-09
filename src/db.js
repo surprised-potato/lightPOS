@@ -6,7 +6,7 @@ import { connect } from './db_sqlite.js';
 
 import { connect as sqliteConnect, db as sqliteDb } from './db_sqlite.js';
 
-const use_sqlite = true;
+const use_sqlite = false;
 
 // Dynamically set database name based on the URL directory (e.g., /lightPOS/ -> lightPOS_DB)
 // This ensures that copies of the app in different folders use separate local databases.
@@ -24,7 +24,7 @@ if (use_sqlite) {
     })();
 } else {
     const dexieDb = new Dexie(dbName);
-    dexieDb.version(34).stores({
+    dexieDb.version(36).stores({
         items: '++id, name, barcode, category, updatedAt, sync_status, _version, _updatedAt, _deleted',
         transactions: '++id, timestamp, customer_id, *item_ids, sync_status, _version, _updatedAt, _deleted',
         stock_movements: '++id, item_id, timestamp, sync_status, _version, _updatedAt, _deleted',
@@ -41,7 +41,10 @@ if (use_sqlite) {
         suppliers: '++id, name, sync_status, _version, _updatedAt, _deleted',
         users: 'email, name, is_active, sync_status, _version, _updatedAt, _deleted',
         settings: 'id, sync_status, _version, _updatedAt, _deleted',
-        outbox: '++id, collection, docId, type, [collection+docId]'
+        outbox: '++id, collection, docId, type, [collection+docId]',
+        supplier_config: 'supplier_id, delivery_cadence, sync_status, _version, _updatedAt, _deleted',
+        purchase_orders: 'id, supplier_id, status, sync_status, _version, _updatedAt, _deleted',
+        inventory_metrics: 'sku_id, abc_class, rop_trigger, sync_status, _version, _updatedAt, _deleted'
     }).upgrade(tx => {
         return tx.transactions.toCollection().modify(transaction => {
             if (transaction.items && Array.isArray(transaction.items)) {
@@ -50,6 +53,9 @@ if (use_sqlite) {
                 transaction.item_ids = [];
             }
         });
+    });
+    dexieDb.version(37).stores({
+        supplier_config: 'supplier_id, delivery_cadence, lead_time_days, monthly_otb, sync_status, _version, _updatedAt, _deleted'
     });
     repository = DexieRepository;
     dbPromise = Promise.resolve(dexieDb); // Resolve with the Dexie instance
@@ -93,3 +99,4 @@ if (!use_sqlite) {
 
 export const dbRepository = repository;
 export { dbPromise };
+export default dbPromise;

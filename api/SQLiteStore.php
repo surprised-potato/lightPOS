@@ -13,7 +13,8 @@ class SQLiteStore {
             'items', 'transactions', 'users', 'customers', 'suppliers',
             'shifts', 'expenses', 'returns', 'stock_movements',
             'adjustments', 'stockins', 'suspended_transactions', 'sync_metadata',
-            'stock_logs', 'settings', 'notifications'
+            'stock_logs', 'settings', 'notifications',
+            'purchase_orders', 'supplier_config', 'inventory_metrics'
         ];
     }
 
@@ -94,7 +95,10 @@ class SQLiteStore {
             if (!isset($dbRecord['_version'])) {
                 $dbRecord['_version'] = 1;
             }
-            if (!isset($dbRecord['_deleted'])) {
+            // Force _deleted to be a boolean 0 or 1 to prevent bad data from sync
+            if (isset($dbRecord['_deleted'])) {
+                $dbRecord['_deleted'] = $dbRecord['_deleted'] ? 1 : 0;
+            } else {
                 $dbRecord['_deleted'] = 0;
             }
         }
@@ -104,6 +108,10 @@ class SQLiteStore {
             $idColumn = 'email';
         } elseif ($collection === 'sync_metadata') {
             $idColumn = 'key';
+        } elseif ($collection === 'supplier_config') {
+            $idColumn = 'supplier_id';
+        } elseif ($collection === 'inventory_metrics') {
+            $idColumn = 'sku_id';
         }
 
         if (empty($dbRecord[$idColumn])) {
@@ -137,6 +145,10 @@ class SQLiteStore {
             $idColumn = 'email';
         } elseif ($collection === 'sync_metadata') {
             $idColumn = 'key';
+        } elseif ($collection === 'supplier_config') {
+            $idColumn = 'supplier_id';
+        } elseif ($collection === 'inventory_metrics') {
+            $idColumn = 'sku_id';
         }
         
         $stmt = $this->pdo->prepare("UPDATE $collection SET _deleted = 1, _updatedAt = ?, _version = COALESCE(_version, 0) + 1 WHERE $idColumn = ?");

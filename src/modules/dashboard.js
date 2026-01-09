@@ -191,15 +191,15 @@ function renderManagerDashboard(content) {
                         </div>
 
                         <!-- Overdue POs -->
-                        <div class="group cursor-pointer p-3 rounded-lg bg-orange-50 border border-orange-100 hover:bg-orange-100 transition">
+                        <div class="group cursor-pointer p-3 rounded-lg bg-orange-50 border border-orange-100 hover:bg-orange-100 transition" onclick="location.hash='#purchase_orders'">
                             <div class="flex justify-between items-start">
                                 <div class="flex gap-3">
                                     <div class="bg-orange-200 p-2 rounded-lg text-orange-700">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                                     </div>
                                     <div>
-                                        <div class="text-sm font-bold text-orange-900" id="alert-po-count">0 POs Overdue</div>
-                                        <div class="text-[10px] text-orange-700">Supplier shipments delayed</div>
+                                        <div class="text-sm font-bold text-orange-900" id="alert-po-count">0 POs Pending</div>
+                                        <div class="text-[10px] text-orange-700">Drafts & Approved Orders</div>
                                     </div>
                                 </div>
                                 <svg class="w-4 h-4 text-orange-400 group-hover:translate-x-1 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
@@ -306,13 +306,14 @@ async function refreshDashboard() {
         await checkActiveShift();
 
         // 1. Fetch Data
-        const [allTxs, allItems, allReturns, allShifts, allCustomers, allUsers] = await Promise.all([
+        const [allTxs, allItems, allReturns, allShifts, allCustomers, allUsers, allPOs] = await Promise.all([
             db.transactions.toArray(),
             db.items.toArray(),
             db.returns.toArray(),
             db.shifts.toArray(),
             db.customers.toArray(),
-            fetch('api/router.php?file=users').then(r => r.json()).catch(() => [])
+            fetch('api/router.php?file=users').then(r => r.json()).catch(() => []),
+            db.purchase_orders.toArray()
         ]);
 
         // 2. Filter Data
@@ -383,6 +384,10 @@ async function refreshDashboard() {
         // 5. Action Center
         const lowStockItems = allItems.filter(i => i.stock_level <= (i.min_stock || 10));
         document.getElementById("alert-low-stock-count").textContent = `${lowStockItems.length} Items Low Stock`;
+
+        // Pending POs
+        const pendingPOs = allPOs.filter(po => po.status === 'draft' || po.status === 'approved');
+        document.getElementById("alert-po-count").textContent = `${pendingPOs.length} POs Pending`;
         
         // Security Alerts
         const securityCount = todayVoids.length + todayReturns.length;

@@ -88,6 +88,7 @@ export async function loadSuppliersView() {
                     <h3 id="supplier-modal-title" class="text-lg leading-6 font-medium text-gray-900 text-center mb-4">Add New Supplier</h3>
                     <form id="form-add-supplier">
                         <input type="hidden" id="sup-id">
+                        <input type="hidden" id="supplier-modal-version" value="2">
                         <div class="mb-4">
                             <label class="block text-gray-700 text-sm font-bold mb-2">Supplier Name</label>
                             <input type="text" id="sup-name" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500" required>
@@ -100,6 +101,25 @@ export async function loadSuppliersView() {
                             <label class="block text-gray-700 text-sm font-bold mb-2">Email or Phone</label>
                             <input type="text" id="sup-email" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
+
+                        <div class="border-t mt-6 pt-4">
+                            <h4 class="text-sm font-bold text-gray-500 uppercase mb-3">Procurement Settings</h4>
+                            <div class="grid grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-600 mb-1">Delivery Cadence</label>
+                                    <input type="number" id="sup-config-cadence" class="w-full border rounded p-2 text-sm" placeholder="e.g., 7">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-600 mb-1">Lead Time</label>
+                                    <input type="number" id="sup-config-leadtime" class="w-full border rounded p-2 text-sm" placeholder="e.g., 3">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-600 mb-1">Budget (OTB)</label>
+                                    <input type="number" id="sup-config-otb" class="w-full border rounded p-2 text-sm" placeholder="e.g., 50000">
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="flex items-center justify-between mt-6">
                             <button type="button" id="btn-cancel-supplier" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded focus:outline-none">Cancel</button>
                             <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none">Save</button>
@@ -247,13 +267,21 @@ async function fetchSuppliers() {
             });
 
             if (canWrite) {
-                row.querySelector(".edit-btn").addEventListener("click", (e) => {
+                row.querySelector(".edit-btn").addEventListener("click", async (e) => {
                     e.stopPropagation();
+                    const db = await dbPromise;
+                    const config = await db.supplier_config.get(sup.id);
+
                     document.getElementById("supplier-modal-title").textContent = "Edit Supplier";
                     document.getElementById("sup-id").value = sup.id;
                     document.getElementById("sup-name").value = sup.name;
                     document.getElementById("sup-contact").value = sup.contact || "";
                     document.getElementById("sup-email").value = sup.email || "";
+                    
+                    document.getElementById("sup-config-cadence").value = config?.delivery_cadence || "";
+                    document.getElementById("sup-config-leadtime").value = config?.lead_time_days || "";
+                    document.getElementById("sup-config-otb").value = config?.monthly_otb || "";
+
                     document.getElementById("modal-add-supplier").classList.remove("hidden");
                 });
                 row.querySelector(".delete-btn").addEventListener("click", () => deleteSupplier(sup.id));
@@ -435,15 +463,28 @@ async function handleAddSupplier(e) {
     const contact = document.getElementById("sup-contact").value;
     const email = document.getElementById("sup-email").value;
 
+    const supplierId = id || generateUUID();
+
     const supplierData = {
-        id: id || generateUUID(),
+        id: supplierId,
         name,
         contact,
         email
     };
 
+    const configData = {
+        supplier_id: supplierId,
+        delivery_cadence: parseInt(document.getElementById("sup-config-cadence").value) || null,
+        lead_time_days: parseInt(document.getElementById("sup-config-leadtime").value) || null,
+        monthly_otb: parseFloat(document.getElementById("sup-config-otb").value) || null,
+        _version: 1,
+        _updatedAt: Date.now(),
+        _deleted: 0
+    };
+
     try {
         await Repository.upsert('suppliers', supplierData);
+        await Repository.upsert('supplier_config', configData);
         SyncEngine.sync();
 
         document.getElementById("modal-add-supplier").classList.add("hidden");
