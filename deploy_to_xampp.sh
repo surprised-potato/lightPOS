@@ -61,6 +61,24 @@ if [ "$RESTORE_DB" = true ]; then
     sudo chmod 777 "$TARGET_DIR/data/database.sqlite"
 fi
 
+echo "Configuring XAMPP settings..."
+PHP_INI="/opt/lampp/etc/php.ini"
+HTTPD_CONF="/opt/lampp/etc/httpd.conf"
+
+# Enable SQLite in php.ini if it exists and is commented out
+if [ -f "$PHP_INI" ]; then
+    # Uncomment extension=pdo_sqlite if it starts with a semicolon
+    sudo sed -i 's/^;extension=pdo_sqlite/extension=pdo_sqlite/' "$PHP_INI"
+    echo "Checked pdo_sqlite in php.ini"
+fi
+
+# Add WebAssembly MIME type to httpd.conf if missing
+if [ -f "$HTTPD_CONF" ] && ! grep -q "application/wasm" "$HTTPD_CONF"; then
+    echo "Adding WASM MIME type to httpd.conf..."
+    echo "" | sudo tee -a "$HTTPD_CONF" > /dev/null
+    echo "AddType application/wasm .wasm" | sudo tee -a "$HTTPD_CONF" > /dev/null
+fi
+
 echo "Restarting XAMPP services..."
 if [ -f "/opt/lampp/lampp" ]; then
     sudo /opt/lampp/lampp restart

@@ -186,3 +186,31 @@ We are fixing our application this is a collaborative effort. you cant run comma
 We are in debugging mode add console logs to get new information as we go.
 
 Modify this document to record our progress
+
+## Deployment Inquiry: New Server Requirements
+
+### Problem Description
+The user asked if additional installations are required to deploy the current SQLite-based version to a new server running XAMPP, noting that previous versions did not use SQLite.
+
+### Diagnosis
+XAMPP typically includes SQLite binaries, so no external *installation* is usually required. However, *configuration* is necessary because the default XAMPP installation might not have the SQLite PDO extension enabled, or the specific Apache configurations for WebAssembly.
+
+### Resolution / Instructions provided
+1.  **Enable `pdo_sqlite`:** In `php.ini`, ensure `extension=pdo_sqlite` is uncommented.
+2.  **Configure MIME Types:** In `httpd.conf`, ensure `AddType application/wasm .wasm` is present (to prevent MIME type errors if WASM is loaded).
+3.  **Permissions:** Ensure the `data` directory is writable (`chmod 777` or `chown daemon:daemon`) so the PHP script can create `database.sqlite`.
+
+*Update:* These steps have been automated in `deploy_to_xampp.sh`.
+
+## Deployment Inquiry: Cleanup Requirements
+
+### Problem Description
+User asked if they should delete the previous server instance and clear client-side IndexedDB when deploying the new SQLite version over an older non-SQLite version.
+
+### Diagnosis
+1.  **Server-side:** The `deploy_to_xampp.sh` script uses `rsync --delete`, which automatically removes files on the server that are not present in the source. This effectively performs a "clean" deployment of the code. However, old data files (JSON) will be deleted if not backed up.
+2.  **Client-side:** The database architecture has shifted from JSON/LocalStorage to SQLite/IndexedDB (Dexie). The schema is likely incompatible. Retaining old IndexedDB data will cause application errors.
+
+### Resolution / Instructions provided
+1.  **Client:** **Yes**, clearing IndexedDB is mandatory to prevent schema conflicts.
+2.  **Server:** Manual deletion is not strictly necessary because the script cleans up, but **backing up old data** is recommended before running the script if preservation is required.

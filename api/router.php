@@ -72,6 +72,28 @@ function ensureSchema($pdo) {
 
     // Auto-repair Admin if password_hash is missing
     $pdo->exec("UPDATE users SET password_hash = '" . md5('admin123') . "' WHERE email = 'admin@lightpos.com' AND (password_hash IS NULL OR password_hash = '')");
+
+    // Seed Default Admin if users table is empty (Deployment Initialization)
+    $stmt = $pdo->query("SELECT COUNT(*) FROM users");
+    if ($stmt && $stmt->fetchColumn() == 0) {
+        $defaultPermissions = json_encode([
+            "pos" => ["read" => true, "write" => true], "customers" => ["read" => true, "write" => true],
+            "items" => ["read" => true, "write" => true], "suppliers" => ["read" => true, "write" => true],
+            "stockin" => ["read" => true, "write" => true], "stock-count" => ["read" => true, "write" => true],
+            "reports" => ["read" => true, "write" => true], "expenses" => ["read" => true, "write" => true],
+            "users" => ["read" => true, "write" => true], "shifts" => ["read" => true, "write" => true],
+            "migrate" => ["read" => true, "write" => true], "returns" => ["read" => true, "write" => true],
+            "settings" => ["read" => true, "write" => true], "purchase_orders" => ["read" => true, "write" => true]
+        ]);
+        $passwordHash = md5('admin123');
+        $now = round(microtime(true) * 1000);
+        
+        $sql = "INSERT INTO users (email, name, password_hash, is_active, permissions_json, _version, _updatedAt, _deleted) 
+                VALUES ('admin@lightpos.com', 'Administrator', '$passwordHash', 1, '$defaultPermissions', 1, $now, 0)";
+        $pdo->exec($sql);
+        $pdo->exec("INSERT OR IGNORE INTO sync_metadata (key, value, _updatedAt) VALUES ('db_initialized', '1', $now)");
+        error_log("Seeded default admin user via router.php");
+    }
 }
 // --- END Schema Initialization Logic ---
 
