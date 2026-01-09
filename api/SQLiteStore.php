@@ -130,15 +130,12 @@ class SQLiteStore {
         }
 
         $columns = array_keys($dbRecord);
-        // Use safe placeholder names (prefix with p_) to avoid edge-cases in some PDO drivers
-        $placeholders = array_map(fn($c) => ":p_$c", $columns);
+        // Use positional placeholders to avoid named-parameter edge cases across PDO drivers
+        $placeholders = array_fill(0, count($columns), '?');
 
-        // Prepare an explicit bind map so we don't rely on original column names being valid param identifiers
-        $bindParams = [];
-        foreach ($columns as $c) {
-            $bindParams["p_$c"] = $dbRecord[$c];
-        }
-        
+        // Bind params in the exact order of $columns
+        $bindParams = array_values($dbRecord);
+
         // Use excluded.column syntax to avoid PDO parameter duplication errors
         // Filter out the ID column from the update set to avoid redundant updates
         $updateColumns = array_filter($columns, fn($c) => $c !== $idColumn);
@@ -151,7 +148,7 @@ class SQLiteStore {
                 ON CONFLICT($idColumn) $conflictAction";
 
         error_log("SQLiteStore::upsert SQL: $sql");
-        error_log("SQLiteStore::upsert BindParams: " . json_encode($bindParams));
+        error_log("SQLiteStore::upsert BindParams (positional): " . json_encode($bindParams));
 
         $stmt = $this->pdo->prepare($sql);
         $this->executeWithRetry($stmt, $bindParams);
