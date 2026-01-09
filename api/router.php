@@ -171,16 +171,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($file) {
         if (!$dryRun) {
+            // Helper to process records before insertion
+            $processRecord = function(&$record) use ($file) {
+                // Auto-hash passwords for users if they look like plain text (legacy migration)
+                if ($file === 'users' && isset($record['password_hash'])) {
+                    // MD5 hex is 32 chars. If length differs, or it contains non-hex chars, assume plain text.
+                    if (strlen($record['password_hash']) !== 32 || !ctype_xdigit($record['password_hash'])) {
+                        $record['password_hash'] = md5($record['password_hash']);
+                    }
+                }
+            };
+
             if ($mode === 'append') {
                 $currentData = $store->getAll($file);
                 if (is_array($input)) {
                     foreach($input as $record) {
+                        $processRecord($record);
                         $store->upsert($file, $record);
                     }
                 }
             } else {
                 $store->wipe($file);
                 foreach($input as $record) {
+                    $processRecord($record);
                     $store->upsert($file, $record);
                 }
             }

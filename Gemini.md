@@ -253,3 +253,15 @@ Schema mismatch between legacy JSON backups (`password`) and SQLite schema (`pas
 
 ### Resolution
 Updated `src/modules/settings.js` in both `handleRestoreBackup` (Full Restore) and `btnSyncBackup` (Manual Sync) to explicitly check for `users` collection items. If `password` exists but `password_hash` is missing, the value is mapped to `password_hash` and the old `password` field is removed to prevent "no such column" errors.
+
+## Data Migration: Plain Text Passwords
+
+### Problem Description
+After restoring legacy data, users could not log in. While `settings.js` correctly renamed `password` to `password_hash`, it sent the plain-text password to the server. The server expects an MD5 hash, so the login comparison (`md5(input) === stored_value`) failed.
+
+### Diagnosis
+Legacy backups contain plain-text passwords. The new system stores MD5 hashes.
+
+### Resolution
+1.  **Server-Side Hashing:** Updated `api/router.php` to inspect incoming `users` records. If `password_hash` is not a valid 32-character hex string (MD5 format), it assumes the value is plain text and hashes it before saving to SQLite.
+2.  **Deployment Fix:** Updated `deploy_to_xampp.sh` to insert the `db_initialized` key into `sync_metadata` immediately after creating the database. This prevents `sync.php` from falsely detecting an uninitialized DB and throwing 503 errors on fresh installs.

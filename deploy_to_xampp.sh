@@ -70,6 +70,8 @@ if [ ! -f "$TARGET_DIR/data/database.sqlite" ]; then
     echo "Initializing new SQLite database..."
     if command -v sqlite3 &> /dev/null && [ -f "$TARGET_DIR/schema.sql" ]; then
         sudo sqlite3 "$TARGET_DIR/data/database.sqlite" < "$TARGET_DIR/schema.sql"
+        # Mark DB as initialized to prevent 503 Restore Mode
+        sudo sqlite3 "$TARGET_DIR/data/database.sqlite" "INSERT OR IGNORE INTO sync_metadata (key, value, _updatedAt) VALUES ('db_initialized', '1', $(date +%s)000);"
         sudo chown $XAMPP_USER:$XAMPP_GROUP "$TARGET_DIR/data/database.sqlite"
         sudo chmod 777 "$TARGET_DIR/data/database.sqlite"
         echo "Database initialized from schema.sql"
