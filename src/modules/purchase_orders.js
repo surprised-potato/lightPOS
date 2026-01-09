@@ -534,8 +534,8 @@ async function refreshProcurementData() {
             const rawStock = item ? (parseFloat(item.stock_level) || 0) : 0;
             let currentStock = Math.max(0, rawStock);
 
-            if (assumedStockEnabled && isYoungStore && rawStock <= 0) {
-                currentStock = 0.5 * velocity * cadenceDays;
+            if (assumedStockEnabled && isYoungStore) {
+                currentStock = Math.max(currentStock, 0.5 * velocity * cadenceDays);
             }
 
             // OTB Calculation Components
@@ -886,9 +886,9 @@ async function renderAlerts() {
         alertsBody.innerHTML = alerts.map(a => `
             <tr class="border-b border-red-100 last:border-0">
                 <td class="py-2 font-medium text-red-900 pl-2">${a.name}</td>
-                <td class="py-2 text-right font-bold text-red-600">${a.stock_level}</td>
-                <td class="py-2 text-right text-red-800">${a.rop_trigger}</td>
-                <td class="py-2 text-right text-red-800">${a.eoq_qty}</td>
+                <td class="py-2 text-right font-bold text-red-600">${a.stock_level.toLocaleString()}</td>
+                <td class="py-2 text-right text-red-800">${a.rop_trigger.toLocaleString()}</td>
+                <td class="py-2 text-right text-red-800">${a.eoq_qty.toLocaleString()}</td>
                 <td class="py-2 text-center pr-2">
                     <button class="text-xs bg-red-100 hover:bg-red-200 text-red-800 px-2 py-1 rounded border border-red-300" onclick="window.createPoForItem('${a.id}')">Order</button>
                 </td>
@@ -916,7 +916,7 @@ async function showSalesData() {
         return `<tr>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${new Date(t.timestamp).toLocaleString()}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${t.id}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">₱${(t.total_amount || 0).toFixed(2)}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">₱${(t.total_amount || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
             <td class="px-6 py-4 text-sm text-gray-500 truncate max-w-xs" title="${itemSummary}">${itemSummary}</td>
         </tr>`;
     }).join('');
@@ -931,10 +931,10 @@ async function showSalesData() {
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${row.name}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${row.firstSale}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">${row.effectiveDays}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">${row.totalQty}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900 font-bold">${row.velocity.toFixed(2)}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">${row.projMonthly.toFixed(2)}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">${row.projNext.toFixed(2)}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">${row.totalQty.toLocaleString()}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900 font-bold">${row.velocity.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">${row.projMonthly.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">${row.projNext.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
         </tr>
     `).join('');
 
@@ -944,8 +944,8 @@ async function showSalesData() {
         <tr>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${s.name}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">${s.itemCount}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">₱${s.projMonthly.toFixed(2)}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">₱${s.projNext.toFixed(2)}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">₱${s.projMonthly.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">₱${s.projNext.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
         </tr>
     `).join('');
 
@@ -955,10 +955,10 @@ async function showSalesData() {
         <tr>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${s.name}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500 capitalize">${s.cadence}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">₱${s.plannedSales.toFixed(2)}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">₱${s.targetEndStock.toFixed(2)}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">₱${s.currentStock.toFixed(2)}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-bold text-blue-600">₱${s.otb.toFixed(2)}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">₱${s.plannedSales.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">₱${s.targetEndStock.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">₱${s.currentStock.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-bold text-blue-600">₱${s.otb.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
         </tr>
     `).join('');
 
@@ -975,9 +975,9 @@ async function showSalesData() {
 
         return `<tr>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${row.name}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">₱${row.annualUsage.toFixed(2)}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">₱${row.annualUsage.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-center ${abcColor}">${row.abc}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">${row.cv.toFixed(2)}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">${row.cv.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-center ${xyzColor}">${row.xyz}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-center font-bold border-l">${row.abc}${row.xyz}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500 text-xs">EOQ: ${row.eoq} / ROP: ${row.rop}</td>
@@ -1016,8 +1016,8 @@ async function showCreatePOModal() {
                     <td class="py-1 text-right text-gray-500">${Math.ceil(i.netRequirement)}</td>
                     <td class="py-1 text-right text-gray-500">${i.eoq}</td>
                     <td class="py-1 text-right font-bold text-blue-600">${i.orderQty}</td>
-                    <td class="py-1 text-right text-gray-500">₱${i.cost_price.toFixed(2)}</td>
-                    <td class="py-1 text-right pr-4 font-medium">₱${(i.orderQty * i.cost_price).toFixed(2)}</td>
+                    <td class="py-1 text-right text-gray-500">₱${i.cost_price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                    <td class="py-1 text-right pr-4 font-medium">₱${(i.orderQty * i.cost_price).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                 </tr>
             `).join('');
 
@@ -1034,8 +1034,8 @@ async function showCreatePOModal() {
                             <option value="twice_a_week" ${s.cadence === 'twice_a_week' ? 'selected' : ''}>Twice a Week</option>
                         </select>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">₱${s.otb.toFixed(2)}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-bold text-blue-600">₱${s.suggestedValue.toFixed(2)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">₱${s.otb.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-bold text-blue-600">₱${s.suggestedValue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-center font-bold ${statusColor}">${statusText}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
                         <button onclick="window.togglePoDetails('${s.id}')" class="text-xs text-gray-500 hover:text-blue-600 underline mr-3">Details</button>
@@ -1106,7 +1106,7 @@ window.calculateOtb = async (supplierId) => {
     const res = await fetch(`api/procurement.php?action=calculate-otb&supplier_id=${supplierId}`);
     const data = await res.json();
     if (data.new_otb !== undefined) {
-        alert(`OTB Recalculated: ${data.new_otb.toFixed(2)}`);
+        alert(`OTB Recalculated: ${data.new_otb.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`);
         SyncEngine.sync(); // Pull new config
         // Invalidate cache to force refresh next time
         procurementData = null;
@@ -1171,6 +1171,7 @@ window.approvePO = async (poId) => {
         po.status = 'approved';
         await Repository.upsert('purchase_orders', po);
         await renderPOList();
+        await window.selectPO(poId);
     }
 };
 
@@ -1240,7 +1241,7 @@ window.selectPO = async (poId) => {
         btnAdd.classList.add('hidden');
     }
 
-    if (po.status === 'approved' || po.status === 'partially_received') {
+    if (po.status === 'approved') {
         const btnReceive = document.createElement('button');
         btnReceive.className = "bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-xs font-bold shadow";
         btnReceive.textContent = "Receive Stock";
@@ -1258,9 +1259,9 @@ window.selectPO = async (poId) => {
     const orderedAmount = parseFloat(po.total_amount) || 0;
     const variance = actualAmount - orderedAmount;
     
-    document.getElementById('po-detail-actual').textContent = (po.status === 'received' || po.status === 'partially_received') ? `₱${actualAmount.toFixed(2)}` : '-';
+    document.getElementById('po-detail-actual').textContent = (po.status === 'received' || po.status === 'partially_received') ? `₱${actualAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : '-';
     const varEl = document.getElementById('po-detail-variance');
-    varEl.textContent = (po.status === 'received' || po.status === 'partially_received') ? `₱${variance.toFixed(2)}` : '-';
+    varEl.textContent = (po.status === 'received' || po.status === 'partially_received') ? `₱${variance.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : '-';
     varEl.className = `font-bold text-lg ${variance < -0.01 ? 'text-green-600' : (variance > 0.01 ? 'text-red-600' : 'text-gray-800')}`;
 
     tbody.innerHTML = items.map(item => {
@@ -1291,13 +1292,13 @@ window.selectPO = async (poId) => {
                 </div>
             </td>
             <td class="px-4 py-2 whitespace-nowrap text-sm text-right text-gray-500">${qtyDisplay}</td>
-            <td class="px-4 py-2 whitespace-nowrap text-sm text-right text-gray-500">${(item.cost || 0).toFixed(2)}</td>
-            <td class="px-4 py-2 whitespace-nowrap text-sm text-right text-gray-500">${(item.total || 0).toFixed(2)}</td>
+            <td class="px-4 py-2 whitespace-nowrap text-sm text-right text-gray-500">${(item.cost || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+            <td class="px-4 py-2 whitespace-nowrap text-sm text-right text-gray-500">${(item.total || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
             <td class="px-4 py-2 whitespace-nowrap text-sm text-right">${deleteBtn}</td>
         </tr>
     `}).join('');
 
-    document.getElementById('po-view-total').textContent = `₱${(po.total_amount || 0).toFixed(2)}`;
+    document.getElementById('po-view-total').textContent = `₱${(po.total_amount || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
 };
 
 window.deletePO = async (poId) => {
@@ -1319,7 +1320,7 @@ window.deletePO = async (poId) => {
 
 window.receivePO = async (poId) => {
     const po = await Repository.get('purchase_orders', poId);
-    if (!po || (po.status !== 'approved' && po.status !== 'partially_received')) return;
+    if (!po || po.status !== 'approved') return;
 
     const modal = document.getElementById('po-receive-modal');
     const title = document.getElementById('po-receive-title');
@@ -1464,6 +1465,7 @@ window.confirmReceivePO = async () => {
         SyncEngine.sync();
         await renderPOList();
         document.getElementById('po-receive-modal').classList.add('hidden');
+        await window.selectPO(poId);
 
     } catch (error) {
         console.error("Error confirming PO reception:", error);
@@ -1487,8 +1489,8 @@ window.printPO = async (poId) => {
         <tr>
             <td style="padding:5px; border-bottom:1px solid #ddd;">${i.name}</td>
             <td style="padding:5px; border-bottom:1px solid #ddd; text-align:right;">${i.qty}</td>
-            <td style="padding:5px; border-bottom:1px solid #ddd; text-align:right;">${(i.cost || 0).toFixed(2)}</td>
-            <td style="padding:5px; border-bottom:1px solid #ddd; text-align:right;">${(i.total || 0).toFixed(2)}</td>
+            <td style="padding:5px; border-bottom:1px solid #ddd; text-align:right;">${(i.cost || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+            <td style="padding:5px; border-bottom:1px solid #ddd; text-align:right;">${(i.total || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
         </tr>
     `).join('');
 
@@ -1502,7 +1504,7 @@ window.printPO = async (poId) => {
             <table style="width:100%; border-collapse: collapse; margin-top: 20px;">
                 <thead><tr style="background:#eee; text-align:left;"><th>Item</th><th style="text-align:right">Qty</th><th style="text-align:right">Cost</th><th style="text-align:right">Total</th></tr></thead>
                 <tbody>${itemsHtml}</tbody>
-                <tfoot><tr><td colspan="3" style="text-align:right; font-weight:bold; padding-top:10px;">Total:</td><td style="text-align:right; font-weight:bold; padding-top:10px;">${(po.total_amount || 0).toFixed(2)}</td></tr></tfoot>
+                <tfoot><tr><td colspan="3" style="text-align:right; font-weight:bold; padding-top:10px;">Total:</td><td style="text-align:right; font-weight:bold; padding-top:10px;">${(po.total_amount || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td></tr></tfoot>
             </table>
         </body></html>
     `);

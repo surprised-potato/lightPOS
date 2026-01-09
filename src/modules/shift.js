@@ -26,6 +26,35 @@ export async function checkActiveShift() {
         const active = shifts.find(s => s.user_id === user.email && s.status === "open");
 
         if (active) {
+            // Check if shift was opened on a previous day
+            const startDate = new Date(active.start_time);
+            const now = new Date();
+            const isSameDay = startDate.getDate() === now.getDate() &&
+                              startDate.getMonth() === now.getMonth() &&
+                              startDate.getFullYear() === now.getFullYear();
+
+            if (!isSameDay && startDate < now) {
+                // Force close stale shift
+                const expected = await calculateExpectedCash(active);
+                const closedShift = {
+                    ...active,
+                    end_time: new Date().toISOString(),
+                    status: 'closed',
+                    closing_cash: 0, // Zero turnover as requested
+                    total_closing_amount: (active.cashout || 0) + (active.closing_receipts?.reduce((s, r) => s + r.amount, 0) || 0),
+                    expected_cash: expected,
+                    variance: ((active.cashout || 0) + (active.closing_receipts?.reduce((s, r) => s + r.amount, 0) || 0)) - expected,
+                    forced_closed: true
+                };
+
+                await Repository.upsert('shifts', closedShift);
+                await SyncEngine.sync();
+
+                alert(`Your previous shift from ${startDate.toLocaleDateString()} was automatically closed with 0 turnover.`);
+                currentShift = null;
+                return null;
+            }
+
             currentShift = active;
             return currentShift;
         } else {
@@ -322,7 +351,10 @@ async function fetchShifts() {
             const row = document.createElement("tr");
             row.className = `border-b border-gray-200 hover:bg-blue-50 cursor-pointer transition-colors ${selectedShiftId === data.id ? 'bg-blue-50' : ''}`;
             row.innerHTML = `
-                <td class="py-3 px-4 text-left whitespace-nowrap font-medium">${start}</td>
+                <td class="py-3 px-4 text-left whitespace-nowrap font-medium">
+                    ${start}
+                    ${data.forced_closed ? '<span class="ml-2 text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded border border-red-200" title="Automatically closed by system">FORCED</span>' : ''}
+                </td>
                 <td class="py-3 px-4 text-center">
                     <span class="${data.status === 'open' ? 'bg-green-200 text-green-700' : 'bg-gray-200 text-gray-700'} py-1 px-3 rounded-full text-xs uppercase">${data.status}</span>
                 </td>
@@ -373,7 +405,10 @@ async function selectShift(shift) {
     
     const varianceClass = variance < 0 ? "text-red-600 bg-red-50" : (variance > 0 ? "text-green-600 bg-green-50" : "text-gray-600 bg-gray-50");
     
-    statusHeader.innerHTML = `<span class="${shift.status === 'open' ? 'bg-green-200 text-green-800' : 'bg-gray-200 text-gray-800'} px-3 py-1 rounded-full text-xs uppercase font-bold tracking-wide">${shift.status}</span>`;
+    statusHeader.innerHTML = `
+        <span class="${shift.status === 'open' ? 'bg-green-200 text-green-800' : 'bg-gray-200 text-gray-800'} px-3 py-1 rounded-full text-xs uppercase font-bold tracking-wide">${shift.status}</span>
+        ${shift.forced_closed ? '<span class="ml-2 bg-red-100 text-red-600 px-2 py-1 rounded-full text-xs uppercase font-bold border border-red-200">Forced</span>' : ''}
+    `;
 
     const canAdjust = checkPermission("shifts", "write");
 
@@ -1025,13 +1060,85 @@ async function printTransaction(tx, isReprint = false) {
     const settings = await getSystemSettings();
     const store = settings.store || { name: "LightPOS", data: "" };
     
+    const defaultPrint = {
+        paper_width: 76, 
+        show_dividers: true,
+        header: { text: "", font_size: 14, font_family: "'Courier New', Courier, monospace", bold: true, italic: false },
+        items: { font_size: 12, font_family: "'Courier New', Courier, monospace", bold: false, italic: false },
+        body: { font_size: 12, font_family: "'Courier New', Courier, monospace", bold: false, italic: false },
+        footer: { text: "Thank you for shopping!", font_size: 10, font_family: "'Courier New', Courier, monospace", bold: false, italic: true }
+    };
+
+    const p = {
+        ...defaultPrint,
+        ...(settings.print || {}),
+        header: { ...defaultPrint.header, ...(settings.print?.header || {}) },
+        items: { ...defaultPrint.items, ...(settings.print?.items || {}) },
+        body: { ...defaultPrint.body, ...(settings.print?.body || {}) },
+        footer: { ...defaultPrint.footer, ...(settings.print?.footer || {}) }
+    };
+    
+    const pWidth = p.paper_width || 76;
+    const showHR = p.show_dividers !== false;
+
+    const getStyle = (s) => `
+        font-size: ${s.font_size}px; 
+        font-family: ${s.font_family}; 
+        font-weight: ${s.bold ? 'bold' : 'normal'}; 
+        font-style: ${s.italic ? 'italic' : 'normal'};
+    `;
+
+    const headerText = p.header?.text || `${store.name}\n${store.data}`;
+    
     // Simplified print logic for history
     const printWindow = window.open('', '_blank', 'width=300,height=600');
-    const itemsHtml = tx.items.map(item => `<tr><td style="font-size:12px;">${item.name}</td></tr><tr><td style="font-size:12px;text-align:right;">${item.qty} x ${item.selling_price.toFixed(2)} = ${(item.qty * item.selling_price).toFixed(2)}</td></tr>`).join('');
+    const itemsStyle = p.items ? getStyle(p.items) : getStyle(p.body);
     
-    printWindow.document.write(`<html><body onload="window.print();window.close();" style="font-family:monospace;width:76mm;font-size:12px;">
-        <div style="text-align:center;font-weight:bold;">${store.name}</div><br>Tx: ${tx.id.slice(-6)}<br>${isReprint?'<br>*** REPRINT ***<br>':''}
-        <table>${itemsHtml}</table><br><div style="text-align:right;font-weight:bold;">Total: ${tx.total_amount.toFixed(2)}</div>
+    const itemsHtml = tx.items.map(item => `
+        <tr style="${itemsStyle}">
+            <td colspan="2" style="padding-top: 5px;">${item.name}</td>
+        </tr>
+        <tr style="${itemsStyle}">
+            <td style="font-size: 0.9em; opacity: 0.8;">${item.qty} x ${item.selling_price.toFixed(2)}</td>
+            <td style="text-align: right;">${(item.qty * item.selling_price).toFixed(2)}</td>
+        </tr>
+    `).join('');
+    
+    printWindow.document.write(`<html>
+    <head>
+        <style>
+            @page { margin: 0; }
+            body { 
+                width: ${pWidth}mm;
+                ${getStyle(p.body)}
+                padding: 5mm;
+                margin: 0;
+                color: #000;
+            }
+            .text-center { text-align: center; }
+            .text-right { text-align: right; }
+            .bold { font-weight: bold; }
+            .hr { border-bottom: 1px dashed #000; margin: 5px 0; }
+            table { width: 100%; border-collapse: collapse; }
+            .header-sec { ${getStyle(p.header)} }
+            .body-sec { ${getStyle(p.body)} }
+            .footer-sec { margin-top: 20px; ${getStyle(p.footer)} }
+        </style>
+    </head>
+    <body onload="window.print();window.close();">
+        <div class="text-center header-sec">
+            ${store.logo ? `<img src="${store.logo}" style="max-width: 40mm; max-height: 20mm; margin-bottom: 5px; filter: grayscale(1);"><br>` : ''}
+            <div style="white-space: pre-wrap;">${headerText}</div>
+        </div>
+        ${showHR ? '<div class="hr"></div>' : ''}
+        <div class="body-sec">
+            Tx: ${tx.id.slice(-6)}<br>
+            ${isReprint?'*** REPRINT ***<br>':''}
+        </div>
+        ${showHR ? '<div class="hr"></div>' : ''}
+        <table>${itemsHtml}</table>
+        ${showHR ? '<div class="hr"></div>' : ''}
+        <div style="text-align:right;font-weight:bold;">Total: ${tx.total_amount.toFixed(2)}</div>
     </body></html>`);
     printWindow.document.close();
 }

@@ -85,6 +85,85 @@ test.describe('POS System E2E', () => {
     await expect(page.locator('#expenses-table-body')).toContainText(desc);
   });
 
+  test('Shift: should correctly compute expected cash on close', async ({ page }) => {
+    await page.click('text=POS');
+
+    // 1. Handle existing shift (Close it if open to start fresh)
+    if (await page.locator('#btn-pos-close-shift').isVisible()) {
+      await page.click('#btn-pos-close-shift');
+      await page.fill('#precounted-bills', '0'); // Just close with 0
+      
+      // Handle dialogs
+      page.once('dialog', dialog => dialog.accept());
+      
+      // Close shift and handle potential report popup
+      const [popup] = await Promise.all([
+        page.waitForEvent('popup').catch(() => null),
+        page.click('#btn-confirm-close-shift')
+      ]);
+      if (popup) await popup.close();
+      
+      // Wait for UI reset
+      await page.waitForTimeout(1000);
+    }
+
+    // 2. Open new shift
+    await expect(page.locator('#modal-open-shift')).toBeVisible();
+    const openingCash = 500;
+    await page.fill('#shift-opening-cash', openingCash.toString());
+    await page.click('text=Open Register');
+
+    // 3. Create Item
+    await page.click('text=Items');
+    await page.click('#btn-add-item');
+    const itemName = `Shift Item ${Date.now()}`;
+    const itemPrice = 200;
+    await page.fill('#item-name', itemName);
+    await page.fill('#item-barcode', `SHIFT-${Date.now()}`);
+    await page.fill('#item-cost', '100');
+    await page.fill('#item-price', itemPrice.toString());
+    await page.fill('#item-stock', '100');
+    await page.click('button:has-text("Save Item")');
+
+    // 4. Sell Item (Cash)
+    await page.click('text=POS');
+    await page.fill('#pos-search', itemName);
+    await page.keyboard.press('Enter');
+    await expect(page.locator('#pos-cart-items')).toContainText(itemName);
+    
+    await page.click('#btn-checkout');
+    await expect(page.locator('#select-payment-method')).toHaveValue('Cash');
+    await page.fill('#input-tendered', itemPrice.toString());
+    await page.click('#btn-confirm-pay');
+    await expect(page.locator('#last-transaction')).toBeVisible();
+
+    // 5. Close Shift & Verify
+    await page.click('#btn-pos-close-shift');
+    await expect(page.locator('#modal-close-shift')).toBeVisible();
+
+    // Expected = Opening (500) + Sales (200) = 700
+    const expectedTotal = openingCash + itemPrice;
+    
+    // Enter matching physical cash to ensure 0 variance
+    await page.fill('#precounted-bills', expectedTotal.toString());
+    
+    // Confirm and check report
+    page.once('dialog', dialog => dialog.accept());
+    const [reportPage] = await Promise.all([
+        page.waitForEvent('popup'),
+        page.click('#btn-confirm-close-shift')
+    ]);
+
+    await expect(reportPage.locator('body')).toContainText('SHIFT CLOSING REPORT');
+    // Verify Expected Cash matches calculation
+    await expect(reportPage.locator('body')).toContainText(`₱${expectedTotal.toFixed(2)}`);
+    // Verify Variance is 0
+    await expect(reportPage.locator('body')).toContainText('VARIANCE');
+    await expect(reportPage.locator('body')).toContainText('₱0.00');
+
+    await reportPage.close();
+  });
+
   test('Reports: should generate a report', async ({ page }) => {
     await page.click('text=Reports');
     // Wait for default 30 days range to be set

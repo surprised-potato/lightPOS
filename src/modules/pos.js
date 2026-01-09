@@ -365,6 +365,13 @@ async function renderPosInterface(content) {
                     <div class="absolute inset-0 border-2 border-red-500 opacity-50 pointer-events-none">
                         <div class="absolute top-1/2 left-0 right-0 h-0.5 bg-red-600 shadow-[0_0_10px_rgba(255,0,0,0.8)]"></div>
                     </div>
+                    <div id="pos-scan-success" class="absolute inset-0 bg-green-500 opacity-0 z-30 pointer-events-none transition-opacity duration-300 flex items-center justify-center">
+                        <svg class="w-24 h-24 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    </div>
+                    <div id="pos-scan-error" class="absolute inset-0 bg-red-500 opacity-0 z-30 pointer-events-none transition-opacity duration-300 flex items-center justify-center flex-col">
+                        <svg class="w-24 h-24 text-white mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        <span class="text-white font-bold text-xl">Not Found</span>
+                    </div>
                     <button id="btn-pos-toggle-flash" class="absolute top-4 left-4 bg-gray-800 bg-opacity-50 text-white p-2 rounded-full z-20 hidden">
                         <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
                     </button>
@@ -375,6 +382,50 @@ async function renderPosInterface(content) {
                 <div class="p-4 bg-black text-white text-center">
                     <p class="text-sm font-bold">Point camera at barcode</p>
                 </div>
+            </div>
+
+            <!-- Mobile Payment Overlay -->
+            <div id="mobile-payment-overlay" class="fixed inset-0 bg-white z-[65] hidden flex flex-col">
+                <div class="bg-blue-700 p-4 text-white shadow-md shrink-0 flex justify-between items-center">
+                    <h2 class="font-bold text-xl">Payment</h2>
+                    <button id="btn-close-mobile-payment" class="text-white hover:bg-blue-600 p-2 rounded-full">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                <div class="flex-1 flex flex-col items-center justify-center p-6 space-y-6">
+                    <div class="text-center">
+                        <div class="text-gray-500 text-sm uppercase font-bold">Total Due</div>
+                        <div id="mobile-payment-total" class="text-5xl font-black text-gray-800">₱0.00</div>
+                    </div>
+                    <div class="w-full max-w-xs">
+                        <label class="block text-gray-700 text-sm font-bold mb-2">Amount Tendered</label>
+                        <input type="number" id="mobile-input-tendered" class="w-full p-4 text-3xl text-center border-2 border-blue-500 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-200 transition-all" placeholder="0.00" step="0.01">
+                    </div>
+                    <div class="grid grid-cols-3 gap-3 w-full max-w-xs">
+                        <button class="mobile-quick-cash bg-gray-100 hover:bg-gray-200 py-3 rounded-lg font-bold text-gray-700" data-amount="100">100</button>
+                        <button class="mobile-quick-cash bg-gray-100 hover:bg-gray-200 py-3 rounded-lg font-bold text-gray-700" data-amount="500">500</button>
+                        <button class="mobile-quick-cash bg-gray-100 hover:bg-gray-200 py-3 rounded-lg font-bold text-gray-700" data-amount="1000">1000</button>
+                        <button class="mobile-quick-cash bg-gray-100 hover:bg-gray-200 py-3 rounded-lg font-bold text-gray-700" data-amount="exact">Exact</button>
+                    </div>
+                    <button id="btn-mobile-confirm-pay" class="w-full max-w-xs bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl text-xl shadow-lg transition transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                        Pay Now
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mobile Change Overlay -->
+            <div id="mobile-change-overlay" class="fixed inset-0 bg-green-600 z-[66] hidden flex flex-col items-center justify-center text-white p-6">
+                <div class="text-center mb-8">
+                    <div class="w-24 h-24 bg-white rounded-full flex items-center justify-center mx-auto mb-6 text-green-600 shadow-xl">
+                        <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                    </div>
+                    <h2 class="text-3xl font-bold mb-2">Payment Successful!</h2>
+                    <p class="opacity-90">Change Due</p>
+                    <div id="mobile-change-amount" class="text-6xl font-black mt-2">₱0.00</div>
+                </div>
+                <button id="btn-mobile-new-sale" class="w-full max-w-xs bg-white text-green-700 font-bold py-4 rounded-xl text-xl shadow-lg transition transform active:scale-95">
+                    New Sale
+                </button>
             </div>
         </div>
 
@@ -943,9 +994,15 @@ async function renderPosInterface(content) {
                 activeShift.precounted_coins = parseFloat(document.getElementById("precounted-coins").value) || 0;
                 
                 await Repository.upsert('shifts', activeShift);
-                await SyncEngine.sync();
                 
                 modal.classList.add("hidden");
+
+                // Attempt sync but don't block UI if it fails
+                try {
+                    await SyncEngine.sync();
+                } catch (syncErr) {
+                    console.warn("Sync failed during shift close (saved locally):", syncErr);
+                }
 
                 if (confirm("Shift closed successfully. Would you like to print the closing report?")) {
                     printShiftReport(activeShift);
@@ -963,11 +1020,41 @@ async function renderPosInterface(content) {
         const settings = await getSystemSettings();
         const store = settings.store || { name: "LightPOS", data: "" };
         
+        const defaultPrint = {
+            paper_width: 76, 
+            show_dividers: true,
+            header: { text: "", font_size: 14, font_family: "'Courier New', Courier, monospace", bold: true, italic: false },
+            items: { font_size: 12, font_family: "'Courier New', Courier, monospace", bold: false, italic: false },
+            body: { font_size: 12, font_family: "'Courier New', Courier, monospace", bold: false, italic: false },
+            footer: { text: "Thank you for shopping!", font_size: 10, font_family: "'Courier New', Courier, monospace", bold: false, italic: true }
+        };
+
+        const p = {
+            ...defaultPrint,
+            ...(settings.print || {}),
+            header: { ...defaultPrint.header, ...(settings.print?.header || {}) },
+            items: { ...defaultPrint.items, ...(settings.print?.items || {}) },
+            body: { ...defaultPrint.body, ...(settings.print?.body || {}) },
+            footer: { ...defaultPrint.footer, ...(settings.print?.footer || {}) }
+        };
+        
+        const pWidth = p.paper_width || 76;
+        const showHR = p.show_dividers !== false;
+
+        const getStyle = (s) => `
+            font-size: ${s.font_size}px; 
+            font-family: ${s.font_family}; 
+            font-weight: ${s.bold ? 'bold' : 'normal'}; 
+            font-style: ${s.italic ? 'italic' : 'normal'};
+        `;
+
+        const headerText = p.header?.text || `${store.name}\n${store.data}`;
+        
         const printWindow = window.open('', '_blank', 'width=300,height=600');
         
         const receiptsHtml = (shift.closing_receipts || []).map(r => `
             <tr>
-                <td style="font-size: 10px;">${r.description}</td>
+                <td style="font-size: 0.9em;">${r.description}</td>
                 <td style="text-align: right;">${r.amount.toFixed(2)}</td>
             </tr>
         `).join('');
@@ -979,9 +1066,8 @@ async function renderPosInterface(content) {
                 <style>
                     @page { margin: 0; }
                     body { 
-                        width: 76mm; 
-                        font-family: 'Courier New', Courier, monospace; 
-                        font-size: 12px; 
+                        width: ${pWidth}mm;
+                        ${getStyle(p.body)}
                         padding: 5mm;
                         margin: 0;
                         color: #000;
@@ -991,42 +1077,45 @@ async function renderPosInterface(content) {
                     .bold { font-weight: bold; }
                     .hr { border-bottom: 1px dashed #000; margin: 5px 0; }
                     table { width: 100%; border-collapse: collapse; }
+                    .header-sec { ${getStyle(p.header)} }
+                    .body-sec { ${getStyle(p.body)} }
                 </style>
             </head>
             <body onload="window.print(); window.close();">
-                <div class="text-center">
-                    <div class="bold" style="font-size: 16px;">SHIFT CLOSING REPORT</div>
-                    <div class="bold">${store.name}</div>
+                <div class="text-center header-sec">
+                    <div class="bold" style="font-size: 1.2em;">SHIFT CLOSING REPORT</div>
+                    ${store.logo ? `<img src="${store.logo}" style="max-width: 40mm; max-height: 20mm; margin-bottom: 5px; filter: grayscale(1);"><br>` : ''}
+                    <div style="white-space: pre-wrap;">${headerText}</div>
                 </div>
-                <div class="hr"></div>
-                <div style="font-size: 10px;">
+                ${showHR ? '<div class="hr"></div>' : ''}
+                <div class="body-sec">
                     User: ${shift.user_id}<br>
                     Opened: ${new Date(shift.start_time).toLocaleString()}<br>
                     Closed: ${new Date(shift.end_time).toLocaleString()}
                 </div>
-                <div class="hr"></div>
+                ${showHR ? '<div class="hr"></div>' : ''}
                 <table>
                     <tr><td>Opening Cash</td><td class="text-right">₱${(shift.opening_cash || 0).toFixed(2)}</td></tr>
                     <tr><td>Expected Cash</td><td class="text-right">₱${(shift.expected_cash || 0).toFixed(2)}</td></tr>
                     <tr class="bold"><td>Physical Cash</td><td class="text-right">₱${(shift.closing_cash || 0).toFixed(2)}</td></tr>
                     ${shift.precounted_bills ? `
-                        <tr><td style="font-size: 10px; padding-left: 10px;">- Precounted Bills</td><td class="text-right" style="font-size: 10px;">₱${shift.precounted_bills.toFixed(2)}</td></tr>
+                        <tr><td style="font-size: 0.9em; padding-left: 10px;">- Precounted Bills</td><td class="text-right" style="font-size: 0.9em;">₱${shift.precounted_bills.toFixed(2)}</td></tr>
                     ` : ''}
                     ${shift.precounted_coins ? `
-                        <tr><td style="font-size: 10px; padding-left: 10px;">- Precounted Coins</td><td class="text-right" style="font-size: 10px;">₱${shift.precounted_coins.toFixed(2)}</td></tr>
+                        <tr><td style="font-size: 0.9em; padding-left: 10px;">- Precounted Coins</td><td class="text-right" style="font-size: 0.9em;">₱${shift.precounted_coins.toFixed(2)}</td></tr>
                     ` : ''}
                     ${shift.cashout ? `
                         <tr><td>Cashout</td><td class="text-right">₱${shift.cashout.toFixed(2)}</td></tr>
                     ` : ''}
                 </table>
                 ${receiptsHtml ? `
-                    <div class="hr"></div>
-                    <div class="bold" style="font-size: 10px;">EXPENSE RECEIPTS</div>
+                    ${showHR ? '<div class="hr"></div>' : ''}
+                    <div class="bold" style="font-size: 0.9em;">EXPENSE RECEIPTS</div>
                     <table>${receiptsHtml}</table>
                 ` : ''}
-                <div class="hr"></div>
+                ${showHR ? '<div class="hr"></div>' : ''}
                 <table>
-                    <tr class="bold" style="font-size: 14px;">
+                    <tr class="bold" style="font-size: 1.1em;">
                         <td>TOTAL TURNOVER</td>
                         <td class="text-right">₱${(shift.total_closing_amount || shift.closing_cash || 0).toFixed(2)}</td>
                     </tr>
@@ -1035,8 +1124,8 @@ async function renderPosInterface(content) {
                         <td class="text-right">₱${((shift.total_closing_amount || shift.closing_cash || 0) - (shift.expected_cash || 0)).toFixed(2)}</td>
                     </tr>
                 </table>
-                <div class="hr" style="margin-top: 20px;"></div>
-                <div class="text-center" style="font-size: 10px; margin-top: 10px;">
+                ${showHR ? '<div class="hr" style="margin-top: 20px;"></div>' : ''}
+                <div class="text-center" style="font-size: 0.8em; margin-top: 10px;">
                     End of Report
                 </div>
             </body>
@@ -1139,6 +1228,12 @@ function setupMobilePosListeners() {
     const btnToggleFlash = document.getElementById("btn-pos-toggle-flash");
     const mobileSearch = document.getElementById("mobile-pos-search");
     const mobileResults = document.getElementById("mobile-pos-search-results");
+    const mobilePaymentOverlay = document.getElementById("mobile-payment-overlay");
+    const mobileChangeOverlay = document.getElementById("mobile-change-overlay");
+    const btnClosePayment = document.getElementById("btn-close-mobile-payment");
+    const btnConfirmPay = document.getElementById("btn-mobile-confirm-pay");
+    const inputTendered = document.getElementById("mobile-input-tendered");
+    const btnNewSale = document.getElementById("btn-mobile-new-sale");
 
     btnMobileMode?.addEventListener("click", () => {
         mobileUI.classList.remove("hidden");
@@ -1201,7 +1296,44 @@ function setupMobilePosListeners() {
             showToast("Cart is empty", true);
             return;
         }
-        openCheckout();
+        // Open Mobile Payment Overlay
+        const total = cart.reduce((sum, item) => sum + (item.selling_price * item.qty), 0);
+        document.getElementById("mobile-payment-total").textContent = `₱${total.toFixed(2)}`;
+        inputTendered.value = "";
+        btnConfirmPay.disabled = true;
+        mobilePaymentOverlay.classList.remove("hidden");
+        inputTendered.focus();
+    });
+
+    btnClosePayment?.addEventListener("click", () => {
+        mobilePaymentOverlay.classList.add("hidden");
+    });
+
+    inputTendered?.addEventListener("input", (e) => {
+        const total = cart.reduce((sum, item) => sum + (item.selling_price * item.qty), 0);
+        const val = parseFloat(e.target.value) || 0;
+        btnConfirmPay.disabled = val < total;
+    });
+
+    document.querySelectorAll(".mobile-quick-cash").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const total = cart.reduce((sum, item) => sum + (item.selling_price * item.qty), 0);
+            if (btn.dataset.amount === "exact") {
+                inputTendered.value = total;
+            } else {
+                inputTendered.value = btn.dataset.amount;
+            }
+            inputTendered.dispatchEvent(new Event('input'));
+        });
+    });
+
+    btnConfirmPay?.addEventListener("click", async () => {
+        await processMobileTransaction();
+    });
+
+    btnNewSale?.addEventListener("click", () => {
+        mobileChangeOverlay.classList.add("hidden");
+        mobilePaymentOverlay.classList.add("hidden");
     });
 }
 
@@ -1302,13 +1434,119 @@ async function handlePosScan(code) {
     const item = barcodeMap.get(code) || allItems.find(i => i.barcode === code);
     if (item) {
         playBeep(880, 0.1);
+        
+        const overlay = document.getElementById("pos-scan-success");
+        if (overlay) {
+            overlay.classList.remove("opacity-0");
+            overlay.classList.add("opacity-75");
+        }
+
         await addToCart(item, 1);
         showToast(`Added ${item.name}`);
-        setTimeout(() => { posScanDebounce = false; }, 1500); // Delay before next scan
+        setTimeout(() => { 
+            if (overlay) {
+                overlay.classList.remove("opacity-75");
+                overlay.classList.add("opacity-0");
+            }
+            posScanDebounce = false; 
+        }, 1000); // Delay before next scan
     } else {
         playBeep(200, 0.3, 'sawtooth');
+        const overlay = document.getElementById("pos-scan-error");
+        if (overlay) {
+            overlay.classList.remove("opacity-0");
+            overlay.classList.add("opacity-75");
+        }
         showToast(`Item not found: ${code}`, true);
-        setTimeout(() => { posScanDebounce = false; }, 2000);
+        setTimeout(() => { 
+            if (overlay) {
+                overlay.classList.remove("opacity-75");
+                overlay.classList.add("opacity-0");
+            }
+            posScanDebounce = false; 
+        }, 1500);
+    }
+}
+
+async function processMobileTransaction() {
+    const btnConfirm = document.getElementById("btn-mobile-confirm-pay");
+    const inputTendered = document.getElementById("mobile-input-tendered");
+    
+    if (btnConfirm.hasAttribute("data-processing")) return;
+    btnConfirm.setAttribute("data-processing", "true");
+    btnConfirm.disabled = true;
+    inputTendered.disabled = true;
+    const originalText = btnConfirm.textContent;
+    btnConfirm.textContent = "Processing...";
+
+    const settings = await getSystemSettings();
+    const total = cart.reduce((sum, item) => sum + (item.selling_price * item.qty), 0);
+    const tendered = parseFloat(inputTendered.value) || 0;
+
+    if (tendered < total) {
+        showToast("Amount tendered is insufficient.", true);
+        btnConfirm.removeAttribute("data-processing");
+        btnConfirm.disabled = false;
+        inputTendered.disabled = false;
+        btnConfirm.textContent = originalText;
+        return;
+    }
+
+    const user = JSON.parse(localStorage.getItem('pos_user'));
+    const taxRate = (settings.tax?.rate || 0) / 100;
+    const taxAmount = total - (total / (1 + taxRate));
+    const rewardRatio = settings.rewards?.ratio || 100;
+    const pointsEarned = Math.floor(total / rewardRatio);
+    const change = tendered - total;
+
+    const transaction = {
+        id: generateUUID(),
+        items: JSON.parse(JSON.stringify(cart)),
+        total_amount: total,
+        amount_tendered: tendered,
+        change: change,
+        tax_amount: taxAmount,
+        payment_method: "Cash",
+        user_email: user ? user.email : "Guest",
+        user_name: user ? user.name : "Guest",
+        customer_id: selectedCustomer.id,
+        customer_name: selectedCustomer.name,
+        points_earned: pointsEarned,
+        timestamp: new Date().toISOString(),
+        is_voided: false
+    };
+
+    try {
+        await Repository.upsert('transactions', transaction);
+        for (const item of transaction.items) {
+            const current = await Repository.get('items', item.id);
+            if (current) {
+                await Repository.upsert('items', { ...current, stock_level: current.stock_level - item.qty });
+                await Repository.upsert('stock_movements', { id: generateUUID(), item_id: item.id, item_name: item.name, timestamp: transaction.timestamp, type: 'Sale', qty: -item.qty, user: transaction.user_email, transaction_id: transaction.id, reason: "POS Sale (Mobile)" });
+            }
+        }
+        if (selectedCustomer.id !== "Guest") {
+            const updatedCustomer = { ...selectedCustomer };
+            updatedCustomer.loyalty_points = (updatedCustomer.loyalty_points || 0) + pointsEarned;
+            await Repository.upsert('customers', updatedCustomer);
+        }
+        SyncEngine.sync();
+        lastTransactionData = transaction;
+        cart = [];
+        currentSuspendedId = null;
+        renderCart();
+        selectCustomer({ id: "Guest", name: "Guest" });
+        document.getElementById("pos-customer-search").value = "";
+        document.getElementById("mobile-change-amount").textContent = `₱${change.toFixed(2)}`;
+        document.getElementById("mobile-change-overlay").classList.remove("hidden");
+    } catch (error) {
+        console.error("Error saving transaction:", error);
+        showToast("Failed to save transaction.", true);
+    } finally {
+        btnConfirm.removeAttribute("data-processing");
+        inputTendered.disabled = false;
+        btnConfirm.disabled = false;
+        btnConfirm.textContent = originalText;
     }
 }
 

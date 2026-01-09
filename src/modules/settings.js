@@ -310,7 +310,7 @@ export async function loadSettingsView() {
                                     <input type="checkbox" id="set-procurement-assumed-stock" class="form-checkbox h-5 w-5 text-blue-600">
                                     <span class="ml-2 text-sm font-bold text-gray-700">Assumed Stock for New Stores</span>
                                 </label>
-                                <p class="text-[10px] text-gray-500 mt-1 ml-7">If store data is < 30 days old, assume stock = 0.5 * Velocity * Cadence for items with ≤ 0 stock.</p>
+                                <p class="text-[10px] text-gray-500 mt-1 ml-7">If store data is < 30 days old, use MAX(Current Stock, 0.5 * Velocity * Cadence).</p>
                             </div>
                         </div>
 

@@ -153,6 +153,11 @@ export async function loadStockCountView() {
                     <div class="absolute top-1/2 left-0 right-0 h-0.5 bg-red-600 shadow-[0_0_10px_rgba(255,0,0,0.8)]"></div>
                 </div>
 
+                <!-- Success Overlay -->
+                <div id="scan-success-overlay" class="absolute inset-0 bg-green-500 opacity-0 z-30 pointer-events-none transition-opacity duration-300 flex items-center justify-center">
+                    <svg class="w-24 h-24 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                </div>
+
                 <!-- Start Camera Button (Large & Prominent) -->
                 <button id="btn-start-camera" class="z-10 bg-blue-600 hover:bg-blue-700 text-white rounded-full p-6 shadow-2xl flex flex-col items-center justify-center transition transform active:scale-95">
                     <svg class="w-12 h-12 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 16h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg>
@@ -622,7 +627,7 @@ async function scanLoop() {
     }
 }
 
-function handleScannedCode(code) {
+async function handleScannedCode(code) {
     if (scanDebounce) return;
     scanDebounce = true;
     
@@ -631,6 +636,19 @@ function handleScannedCode(code) {
     const item = safeItems.find(i => i.barcode === code);
     
     if (item) {
+        playBeep();
+        const overlay = document.getElementById("scan-success-overlay");
+        if (overlay) {
+            overlay.classList.remove("opacity-0");
+            overlay.classList.add("opacity-75");
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        if (overlay) {
+            overlay.classList.remove("opacity-75");
+            overlay.classList.add("opacity-0");
+        }
         openMobileModal(item);
     } else {
         showMobileNotification('error', `Item Not Found: ${code}`);
@@ -813,4 +831,22 @@ async function fetchAdjustmentLogs() {
         console.error("Error fetching logs:", error);
         tbody.innerHTML = `<tr><td colspan="2" class="py-3 px-6 text-center text-red-500">Error loading history.</td></tr>`;
     }
+}
+
+let audioCtx = null;
+function playBeep(freq = 880, dur = 0.1, type = 'sine') {
+    try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + dur);
+        osc.start();
+        osc.stop(audioCtx.currentTime + dur);
+    } catch (e) { console.warn("Audio feedback failed", e); }
 }
