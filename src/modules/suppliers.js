@@ -64,7 +64,7 @@ export async function loadSuppliersView() {
                                 <tr class="bg-gray-100 text-gray-600 uppercase text-xs leading-normal">
                                     <th class="py-3 px-4 text-left cursor-pointer hover:bg-gray-200 transition-colors" data-sort="name">Product Name</th>
                                     <th class="py-3 px-4 text-right cursor-pointer hover:bg-gray-200 transition-colors" data-sort="stock_level">In Stock</th>
-                                    <th class="py-3 px-4 text-right">Rec. Order</th>
+                                    <th class="py-3 px-4 text-right">Forecasted Monthly</th>
                                 </tr>
                             </thead>
                             <tbody id="supplier-products-body" class="text-gray-600 text-sm font-light">
@@ -107,7 +107,14 @@ export async function loadSuppliersView() {
                             <div class="grid grid-cols-3 gap-4">
                                 <div>
                                     <label class="block text-xs font-bold text-gray-600 mb-1">Delivery Cadence</label>
-                                    <input type="number" id="sup-config-cadence" class="w-full border rounded p-2 text-sm" placeholder="e.g., 7">
+                                    <select id="sup-config-cadence" class="w-full border rounded p-2 text-sm">
+                                        <option value="weekly">Weekly</option>
+                                        <option value="biweekly">Biweekly</option>
+                                        <option value="monthly">Monthly</option>
+                                        <option value="every_2_days">Every 2 Days</option>
+                                        <option value="twice_a_week">Twice a Week</option>
+                                        <option value="on_order">On Order (Triggered)</option>
+                                    </select>
                                 </div>
                                 <div>
                                     <label class="block text-xs font-bold text-gray-600 mb-1">Lead Time</label>
@@ -144,7 +151,7 @@ export async function loadSuppliersView() {
                                 <th class="py-3 px-4 text-left">Barcode</th>
                                 <th class="py-3 px-4 text-left">Category</th>
                                 <th class="py-3 px-4 text-right">Stock Level</th>
-                                <th class="py-3 px-4 text-right">Rec. Order</th>
+                                <th class="py-3 px-4 text-right">Forecasted Monthly</th>
                                 <th class="py-3 px-4 text-right">Selling Price</th>
                             </tr>
                         </thead>
@@ -278,7 +285,7 @@ async function fetchSuppliers() {
                     document.getElementById("sup-contact").value = sup.contact || "";
                     document.getElementById("sup-email").value = sup.email || "";
                     
-                    document.getElementById("sup-config-cadence").value = config?.delivery_cadence || "";
+                    document.getElementById("sup-config-cadence").value = config?.delivery_cadence || "weekly";
                     document.getElementById("sup-config-leadtime").value = config?.lead_time_days || "";
                     document.getElementById("sup-config-otb").value = config?.monthly_otb || "";
 
@@ -324,10 +331,7 @@ async function fetchSupplierProducts() {
         startDate.setDate(startDate.getDate() - chartDays);
         const startStr = startDate.toISOString();
 
-        const [txs, movements] = await Promise.all([
-            db.transactions.where('timestamp').aboveOrEqual(startStr).and(t => !t._deleted && !t.is_voided).toArray(),
-            db.stock_movements.where('item_id').anyOf(itemIds).toArray()
-        ]);
+        const txs = await db.transactions.where('timestamp').aboveOrEqual(startStr).and(t => !t._deleted && !t.is_voided).toArray();
 
         supplierProductStats = {};
         supplierProducts.forEach(p => {
@@ -336,22 +340,8 @@ async function fetchSupplierProducts() {
             const totalQty = itemSales.reduce((sum, t) => sum + t.items.find(it => it.id === p.id).qty, 0);
             const avgDaily = totalQty / chartDays;
 
-            // 2. Stock-in Frequency (Lead Time)
-            const itemMovements = movements.filter(m => m.item_id === p.id && (m.type === 'Stock-In' || m.type === 'Initial Stock'))
-                .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-            
-            let avgInterval = 14; // Default 2 weeks
-            if (itemMovements.length > 1) {
-                const first = new Date(itemMovements[0].timestamp);
-                const last = new Date(itemMovements[itemMovements.length - 1].timestamp);
-                const daysDiff = (last - first) / (1000 * 60 * 60 * 24);
-                if (daysDiff > 0) {
-                    avgInterval = daysDiff / (itemMovements.length - 1);
-                }
-            }
-
-            // 3. Recommended Quantity
-            supplierProductStats[p.id] = Math.ceil(avgDaily * Math.max(7, avgInterval));
+            // 2. Forecasted Monthly Sales
+            supplierProductStats[p.id] = Math.ceil(avgDaily * 30);
         });
 
         renderSupplierProducts();
@@ -474,7 +464,7 @@ async function handleAddSupplier(e) {
 
     const configData = {
         supplier_id: supplierId,
-        delivery_cadence: parseInt(document.getElementById("sup-config-cadence").value) || null,
+        delivery_cadence: document.getElementById("sup-config-cadence").value || 'weekly',
         lead_time_days: parseInt(document.getElementById("sup-config-leadtime").value) || null,
         monthly_otb: parseFloat(document.getElementById("sup-config-otb").value) || null,
         _version: 1,

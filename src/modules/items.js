@@ -661,13 +661,21 @@ async function refreshItemInsights() {
         .filter(t => !t._deleted && !t.is_voided && t.items.some(it => it.id === item.id))
         .toArray();
 
-    // 1b. Fetch Total Sold All Time
+    // 1b. Fetch Total Sold All Time & First Sale Date
     let totalSoldAllTime = 0;
+    let firstSaleDate = null;
+
     await db.transactions
         .filter(t => !t._deleted && !t.is_voided && t.items.some(it => it.id === item.id))
         .each(t => {
             const entry = t.items.find(it => it.id === item.id);
-            if (entry) totalSoldAllTime += entry.qty;
+            if (entry) {
+                totalSoldAllTime += entry.qty;
+                const tDate = new Date(t.timestamp);
+                if (!firstSaleDate || tDate < firstSaleDate) {
+                    firstSaleDate = tDate;
+                }
+            }
         });
     
     // 2. Render Chart
@@ -675,19 +683,21 @@ async function refreshItemInsights() {
 
     // 3. Calculate Stats
     const totalQty = itemSales.reduce((sum, t) => sum + (t.items.find(i => i.id === item.id)?.qty || 0), 0);
-    const avgDaily = totalQty / chartDays;
+    
+    let effectiveDays = chartDays;
+    if (firstSaleDate) {
+        const now = new Date();
+        const daysSinceFirstSale = (now - firstSaleDate) / (1000 * 60 * 60 * 24);
+        if (daysSinceFirstSale < chartDays) {
+            effectiveDays = Math.max(1, Math.ceil(daysSinceFirstSale));
+        }
+    }
+
+    const avgDaily = totalQty / effectiveDays;
     const duration = avgDaily > 0 ? Math.floor(item.stock_level / avgDaily) : Infinity;
 
-    // Recommended Purchase (based on stock-in frequency)
-    const movements = await db.stock_movements.where('item_id').equals(item.id).toArray();
-    const stockIns = movements.filter(m => m.type === 'Stock-In' || m.type === 'Initial Stock').sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-    let avgInterval = 14; // Default 2 weeks
-    if (stockIns.length > 1) {
-        const first = new Date(stockIns[0].timestamp);
-        const last = new Date(stockIns[stockIns.length - 1].timestamp);
-        avgInterval = ((last - first) / (1000 * 60 * 60 * 24)) / (stockIns.length - 1);
-    }
-    const recPurchase = Math.ceil(avgDaily * Math.max(7, avgInterval));
+    // Forecasted Monthly Sales
+    const forecastedMonthly = Math.ceil(avgDaily * 30);
 
     // Last Stock Count
     const lastAudit = await db.adjustments.where('item_id').equals(item.id).last();
@@ -714,7 +724,7 @@ async function refreshItemInsights() {
         <tr><td class="py-2 text-gray-500">Total Sold (All Time)</td><td class="py-2 text-right font-bold">${totalSoldAllTime} units</td></tr>
         <tr><td class="py-2 text-gray-500">Avg. Daily Sales</td><td class="py-2 text-right font-bold">${avgDaily.toFixed(2)} units</td></tr>
         <tr><td class="py-2 text-gray-500">Stock Duration</td><td class="py-2 text-right font-bold ${duration < 7 ? 'text-red-600' : ''}">${duration === Infinity ? 'N/A' : duration + ' days'}</td></tr>
-        <tr><td class="py-2 text-gray-500">Recommended Purchase</td><td class="py-2 text-right font-bold text-blue-600">${recPurchase} units</td></tr>
+        <tr><td class="py-2 text-gray-500">Forecasted Monthly Sales</td><td class="py-2 text-right font-bold text-blue-600">${forecastedMonthly} units</td></tr>
         <tr><td class="py-2 text-gray-500">Last Stock Count</td><td class="py-2 text-right font-bold">${lastAudit ? new Date(lastAudit.timestamp).toLocaleDateString() : 'Never'}</td></tr>
     `;
 
@@ -782,7 +792,6 @@ function renderItemSalesChart(transactions, itemId, days) {
 }
 
 async function openComparisonModal() {
-    const db = await dbPromise;
     const modal = document.getElementById("modal-compare-items");
     const container = document.getElementById("comparison-container");
     container.innerHTML = `<div class="col-span-2 text-center py-20 text-gray-500 italic">Analyzing data...</div>`;
@@ -792,6 +801,7 @@ async function openComparisonModal() {
     startDate.setDate(startDate.getDate() - chartDays);
     const startStr = startDate.toISOString();
 
+    const db = await dbPromise;
     const [txs, allMovements, allAdjustments] = await Promise.all([
         db.transactions.where('timestamp').aboveOrEqual(startStr).and(t => !t._deleted && !t.is_voided).toArray(),
         db.stock_movements.toArray(),

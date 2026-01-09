@@ -291,6 +291,20 @@ export async function loadSettingsView() {
                                 </div>
                                 <p class="text-[10px] text-gray-500 mt-1">Annual holding cost as % of unit cost.</p>
                             </div>
+                            <div class="max-w-xs mt-4">
+                                <label class="block text-sm font-bold text-gray-700 mb-2">Stock Availability Target</label>
+                                <select id="set-procurement-service-level" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                                    <option value="1.28">90% (Low Safety Stock)</option>
+                                    <option value="1.65">95% (Standard Retail)</option>
+                                    <option value="2.33">99% (High Availability)</option>
+                                </select>
+                                <p class="text-[10px] text-gray-500 mt-1">Higher targets require holding more safety stock to prevent running out.</p>
+                            </div>
+                            <div class="max-w-xs mt-4">
+                                <label class="block text-sm font-bold text-gray-700 mb-2">Default Lead Time (Risk Period)</label>
+                                <input type="number" id="set-procurement-lead-time" step="1" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="7">
+                                <p class="text-[10px] text-gray-500 mt-1">Used if supplier specific lead time is missing.</p>
+                            </div>
                         </div>
 
                         <div class="space-y-6">
@@ -743,6 +757,9 @@ async function loadSettings() {
                 document.getElementById("set-procurement-otb-mode").value = settings.procurement.otb_mode || 'standard';
                 document.getElementById("set-procurement-ordering-cost").value = settings.procurement.ordering_cost || 50;
                 document.getElementById("set-procurement-holding-cost").value = settings.procurement.holding_cost_rate || 20;
+                document.getElementById("set-procurement-service-level").value = settings.procurement.service_level || 1.65;
+                const lt = settings.procurement.default_lead_time;
+                document.getElementById("set-procurement-lead-time").value = (lt !== undefined && lt !== null) ? lt : 7;
             }
             await renderSyncHistory();
             renderHeader(); // Ensure branding in header matches loaded settings
@@ -798,7 +815,9 @@ async function handleSave(e) {
             k_factor: parseFloat(document.getElementById("set-procurement-k-factor").value) || 110,
             otb_mode: document.getElementById("set-procurement-otb-mode").value,
             ordering_cost: parseFloat(document.getElementById("set-procurement-ordering-cost").value) || 50,
-            holding_cost_rate: parseFloat(document.getElementById("set-procurement-holding-cost").value) || 20
+            holding_cost_rate: parseFloat(document.getElementById("set-procurement-holding-cost").value) || 20,
+            service_level: parseFloat(document.getElementById("set-procurement-service-level").value) || 1.65,
+            default_lead_time: document.getElementById("set-procurement-lead-time").value !== "" ? parseInt(document.getElementById("set-procurement-lead-time").value) : 7
         },
         pos: {
             auto_print: document.getElementById("set-auto-print").checked

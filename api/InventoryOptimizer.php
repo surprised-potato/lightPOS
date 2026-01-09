@@ -8,6 +8,7 @@ class InventoryOptimizer {
     private $orderingCost = 50.0; // 'S'
     private $holdingCostRate = 0.20; // 'H' (20% of unit cost)
     private $serviceLevelZ = 1.65; // 95% Service Level
+    private $defaultLeadTime = 7;
 
     public function __construct($pdo = null) {
         if ($pdo) {
@@ -33,6 +34,7 @@ class InventoryOptimizer {
             
             $this->orderingCost = floatval($settings['procurement']['ordering_cost'] ?? 50.0);
             $this->holdingCostRate = floatval($settings['procurement']['holding_cost_rate'] ?? 20) / 100;
+            $this->defaultLeadTime = intval($settings['procurement']['default_lead_time'] ?? 7);
 
             // 1. Fetch all active items
             $stmt = $this->pdo->prepare("SELECT id, cost_price, supplier_id, selling_price FROM items WHERE _deleted = 0");
@@ -174,8 +176,8 @@ class InventoryOptimizer {
                 $supplierId = $m['item']['supplier_id'];
                 $config = $supplierConfigs[$supplierId] ?? ['lead_time_days' => 3, 'delivery_cadence' => 'weekly'];
                 
-                $leadTime = $config['lead_time_days'] ?: 3;
-                $cadenceMap = ['weekly' => 7, 'biweekly' => 14, 'monthly' => 30, 'on_order' => 0];
+                $leadTime = isset($config['lead_time_days']) ? $config['lead_time_days'] : $this->defaultLeadTime;
+                $cadenceMap = ['weekly' => 7, 'biweekly' => 14, 'monthly' => 30, 'on_order' => 0, 'every_2_days' => 2, 'twice_a_week' => 3.5];
                 $reviewPeriod = $cadenceMap[$config['delivery_cadence'] ?? 'weekly'] ?? 7;
 
                 // Safety Stock = Z * StdDev * Sqrt(LeadTime + ReviewPeriod)
@@ -183,7 +185,7 @@ class InventoryOptimizer {
                 $safetyStock = ceil($this->serviceLevelZ * $m['std_dev'] * sqrt($riskPeriod));
 
                 // ROP
-                $rop = ceil(($m['velocity'] * $riskPeriod) + $safetyStock);
+                $rop = ceil(($m['velocity'] * $leadTime) + $safetyStock);
 
                 // EOQ
                 $eoq = 0;
