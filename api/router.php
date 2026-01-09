@@ -19,6 +19,10 @@ require_once __DIR__ . '/SQLiteStore.php';
 
 // --- START Schema Initialization Logic ---
 function ensureSchema($pdo) {
+    // Enable WAL mode for better concurrency
+    $pdo->exec("PRAGMA journal_mode=WAL;");
+    $pdo->exec("PRAGMA busy_timeout = 5000;");
+
     // Check if the 'settings' table exists
     $stmt = $pdo->prepare("PRAGMA table_info(settings)");
     $stmt->execute();
