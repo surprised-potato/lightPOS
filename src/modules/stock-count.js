@@ -212,6 +212,15 @@ export async function loadStockCountView() {
     setupMobileEventListeners();
     // Auto-focus search on load
     setTimeout(() => document.getElementById("audit-search")?.focus(), 100);
+
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    if (isMobile) {
+        const mobileContainer = document.getElementById("mobile-view-container");
+        if (mobileContainer) {
+            mobileContainer.classList.remove("hidden");
+            document.getElementById("mobile-search-input")?.focus();
+        }
+    }
 }
 
 async function fetchItems() {

@@ -1205,6 +1205,14 @@ async function renderPosInterface(content) {
 
     updateGridColumns(savedCols);
     setupMobilePosListeners();
+
+    if (isMobile) {
+        const mobileUI = document.getElementById("mobile-pos-ui");
+        if (mobileUI) {
+            mobileUI.classList.remove("hidden");
+            renderCart();
+        }
+    }
 }
 
 function initResizer() {

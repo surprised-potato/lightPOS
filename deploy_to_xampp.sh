@@ -1,18 +1,29 @@
 #!/bin/bash
 
-echo "Removing old lightPOS deployment from XAMPP htdocs..."
-sudo rm -rf /opt/lampp/htdocs/lightposDev
+# Accept target directory as argument, default to standard dev path
+TARGET_DIR=${1:-/opt/lampp/htdocs/lightposDev}
 
-echo "Copying current lightPOS project to XAMPP htdocs (excluding database.sqlite)..."
-sudo rsync -av --exclude 'data/database.sqlite' /home/daniel/Documents/GitHub/lightPOS/ /opt/lampp/htdocs/lightposDev/
+echo "Deploying to: $TARGET_DIR"
 
-echo "Copying and renaming sql.wasm to sql-wasm.wasm..."
-sudo cp /opt/lampp/htdocs/lightposDev/src/libs/sql.wasm /opt/lampp/htdocs/lightposDev/src/libs/sql-wasm.wasm
+echo "Removing old deployment..."
+sudo rm -rf "$TARGET_DIR"
+
+echo "Copying project files..."
+sudo mkdir -p "$TARGET_DIR"
+sudo rsync -av --exclude 'data/database.sqlite' --exclude '.git' --exclude 'node_modules' ./ "$TARGET_DIR/"
+
+echo "Setting up WebAssembly..."
+sudo cp "$TARGET_DIR/src/libs/sql.wasm" "$TARGET_DIR/src/libs/sql-wasm.wasm"
+
+echo "Setting permissions..."
+sudo mkdir -p "$TARGET_DIR/data"
+sudo chmod -R 777 "$TARGET_DIR/data"
 
 echo "Restarting XAMPP services..."
-sudo /opt/lampp/lampp restart
+if [ -f "/opt/lampp/lampp" ]; then
+    sudo /opt/lampp/lampp restart
+else
+    echo "XAMPP not found at /opt/lampp/lampp, skipping restart."
+fi
 
-echo "Setting permissions for the data directory..."
-sudo chmod -R 777 /opt/lampp/htdocs/lightposDev/data
-
-echo "Deployment to XAMPP complete."
+echo "Deployment complete."
