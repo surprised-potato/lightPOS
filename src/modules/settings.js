@@ -1,8 +1,8 @@
 import { checkPermission } from "../auth.js";
 import { renderHeader } from "../layout.js";
-import { db } from "../db.js";
+import { dbPromise } from "../db.js";
 import { generateUUID } from "../utils.js";
-import { Repository } from "../services/Repository.js";
+import { dbRepository as Repository } from "../db.js";
 import { SyncEngine } from "../services/SyncEngine.js";
 import { addNotification } from "../services/notification-service.js";
 
@@ -616,6 +616,7 @@ async function loadSettings() {
 }
 
 async function renderSyncHistory() {
+    const db = await dbPromise;
     const tbody = document.getElementById("sync-history-body");
     if (!tbody) return;
 
@@ -746,7 +747,8 @@ export async function checkShiftDiscrepancy(expected, actual) {
 /**
  * Migration Logic (Moved from migrate.js)
  */
-function setupMigrationEventListeners() {
+async function setupMigrationEventListeners() {
+    const db = await dbPromise;
     const dropZone = document.getElementById("drop-zone");
     const fileInput = document.getElementById("import-file");
     const btnImport = document.getElementById("btn-start-import");
@@ -1104,6 +1106,7 @@ async function processImport(items) {
 }
 
 async function analyzeSync() {
+    const db = await dbPromise;
     const resultsDiv = document.getElementById("sync-results");
     const tbody = document.getElementById("sync-diff-body");
     const btnAnalyze = document.getElementById("btn-analyze-sync");
@@ -1279,6 +1282,7 @@ async function analyzeSync() {
 }
 
 async function syncAllDiffs() {
+    const db = await dbPromise;
     const btn = document.getElementById("btn-sync-all-diffs");
     const originalText = btn.textContent;
     btn.disabled = true;
@@ -1450,6 +1454,7 @@ async function downloadLocalBackup() {
 }
 
 async function handleRestoreBackup(e) {
+    const db = await dbPromise;
     const file = e.target.files[0];
     if (!file) return;
 
@@ -1626,6 +1631,7 @@ function downloadSample(type) {
 }
 
 export async function runDiagnosticExport() {
+    const db = await dbPromise;
     const btn = document.getElementById("btn-diagnostic-export");
     const originalText = btn ? btn.innerHTML : "";
     if (btn) {

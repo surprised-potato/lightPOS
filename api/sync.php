@@ -3,11 +3,13 @@
  * Sync Endpoint for the Self-Healing Architecture.
  * Handles Push (mutations) and Pull (deltas).
  */
-require_once __DIR__ . '/JsonStore.php';
+require_once __DIR__ . '/SQLiteStore.php';
 
 header('Content-Type: application/json');
 
 $dataDir = __DIR__ . '/../data/';
+$restoreLockFile = $dataDir . 'restore.lock';
+
 // Ensure data directory is writable
 if (!is_dir($dataDir) || !is_writable($dataDir)) {
     http_response_code(500);
@@ -15,23 +17,37 @@ if (!is_dir($dataDir) || !is_writable($dataDir)) {
     exit;
 }
 
-$store = new JsonStore($dataDir);
+// If a restore is in progress, tell other clients to wait.
+if (file_exists($restoreLockFile)) {
+    http_response_code(503);
+    echo json_encode(["error" => "Server is currently restoring, please try again later."]);
+    exit;
+}
+
+$store = new SQLiteStore();
 
 $method = $_SERVER['REQUEST_METHOD'];
 
 if ($method === 'POST') {
     // Handle Nuclear Reset
     if (isset($_GET['action']) && $_GET['action'] === 'reset_all') {
-        // List of collections to wipe (excluding users as per UI requirements)
         $toWipe = [
             'items', 'transactions', 'shifts', 'expenses', 'stock_movements', 
             'adjustments', 'customers', 'suppliers', 'stockins', 
             'suspended_transactions', 'returns', 'notifications', 'stock_logs', 'settings'
         ];
-        foreach ($toWipe as $col) {
-            $store->write($col, []);
+        try {
+            $store->pdo->beginTransaction();
+            foreach ($toWipe as $col) {
+                $store->wipe($col);
+            }
+            $store->pdo->commit();
+            echo json_encode(['status' => 'success', 'message' => 'Data wiped successfully']);
+        } catch (Exception $e) {
+            $store->pdo->rollBack();
+            http_response_code(500);
+            echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
         }
-        echo json_encode(['status' => 'success', 'message' => 'Data wiped successfully']);
         exit;
     }
 
@@ -39,59 +55,50 @@ if ($method === 'POST') {
     $input = json_decode(file_get_contents('php://input'), true);
     $outbox = $input['outbox'] ?? [];
 
-    // Group by collection to minimize I/O
-    $collectionsToUpdate = [];
-    foreach ($outbox as $change) {
-        $col = $change['collection'];
-        if (!isset($collectionsToUpdate[$col])) {
-            $collectionsToUpdate[$col] = [
-                'data' => $store->read($col),
-                'changes' => []
-            ];
-        }
-        $collectionsToUpdate[$col]['changes'][] = $change;
-    }
+    try {
+        $store->pdo->beginTransaction();
 
-    foreach ($collectionsToUpdate as $col => $group) {
-        $data = $group['data'];
-        $idField = ($col === 'users') ? 'email' : 'id';
-
-        foreach ($group['changes'] as $change) {
+        foreach ($outbox as $change) {
+            $collection = $change['collection'];
             $payload = $change['payload'];
-            $idx = -1;
-            foreach ($data as $i => $item) {
-                if ($item[$idField] === $payload[$idField]) {
-                    $idx = $i;
-                    break;
-                }
-            }
-
-            if ($idx !== -1) {
-                // Conflict Resolution: Last Write Wins (LWW)
-                // Logic: Higher _version wins. If versions are equal, higher _updatedAt wins.
-                $clientVersion = $payload['_version'] ?? 0;
-                $serverVersion = $data[$idx]['_version'] ?? 0;
-                $clientUpdated = $payload['_updatedAt'] ?? 0;
-                $serverUpdated = $data[$idx]['_updatedAt'] ?? 0;
-
-                if ($clientVersion > $serverVersion || ($clientVersion === $serverVersion && $clientUpdated > $serverUpdated)) {
-                    $data[$idx] = $payload;
-                    $data[$idx]['_hash'] = md5(json_encode($payload));
-                }
-            } else {
-                $payload['_hash'] = md5(json_encode($payload));
-                $data[] = $payload;
-            }
-            $store->appendLog($change);
+            
+            // The logic inside upsert now handles conflict resolution
+            $store->upsert($collection, $payload);
         }
-        $store->write($col, $data);
+
+        $store->pdo->commit();
+        echo json_encode(['status' => 'success']);
+
+    } catch (Exception $e) {
+        $store->pdo->rollBack();
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
     }
     
-    echo json_encode(['status' => 'success']);
     exit;
 }
 
 if ($method === 'GET') {
+    // Health Check: See if the database is initialized.
+    try {
+        $stmt = $store->pdo->prepare("SELECT value FROM sync_metadata WHERE key = 'db_initialized'");
+        $stmt->execute();
+        $initialized = $stmt->fetchColumn();
+
+        if ($initialized === false) {
+            // Database is not initialized. Enter restore mode.
+            file_put_contents($restoreLockFile, '1');
+            echo json_encode(['status' => 'needs_restore', 'serverTime' => round(microtime(true) * 1000)]);
+            exit;
+        }
+    } catch (Exception $e) {
+        // This can happen if the table doesn't exist.
+        file_put_contents($restoreLockFile, '1');
+        echo json_encode(['status' => 'needs_restore', 'serverTime' => round(microtime(true) * 1000)]);
+        exit;
+    }
+
+
     // PULL: Return deltas based on timestamp
     $since = isset($_GET['since']) ? (int)$_GET['since'] : 0;
     $collections = [
@@ -100,20 +107,23 @@ if ($method === 'GET') {
         'returns', 'notifications', 'stock_logs', 'settings'
     ];
     $response = [];
+    $debug_info = [
+        'received_since' => $since,
+        'queries' => []
+    ];
 
     foreach ($collections as $col) {
-        $data = $store->read($col);
-        $deltas = array_filter($data, function($item) use ($since) {
-            return ($item['_updatedAt'] ?? 0) > $since;
-        });
+        $debug_info['queries'][$col] = "SELECT * FROM $col WHERE _updatedAt > $since";
+        $deltas = $store->getChanges($col, $since);
         if (!empty($deltas)) {
-            $response[$col] = array_values($deltas);
+            $response[$col] = $deltas;
         }
     }
 
     echo json_encode([
         'deltas' => $response,
-        'serverTime' => round(microtime(true) * 1000) // Use milliseconds to match JS Date.now()
+        'serverTime' => round(microtime(true) * 1000),
+        'debug' => $debug_info
     ]);
     exit;
 }

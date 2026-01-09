@@ -1,0 +1,258 @@
+[
+    {
+        "email": "JohnRoss@LP.com",
+        "name": "John",
+        "password": "f2298b93a26088513a4484131da2dffa",
+        "is_active": true,
+        "permissions": {
+            "pos": {
+                "read": true,
+                "write": true
+            },
+            "customers": {
+                "read": true,
+                "write": true
+            },
+            "shifts": {
+                "read": true,
+                "write": true
+            },
+            "items": {
+                "read": true,
+                "write": true
+            },
+            "suppliers": {
+                "read": true,
+                "write": true
+            },
+            "stockin": {
+                "read": true,
+                "write": true
+            },
+            "stock-count": {
+                "read": true,
+                "write": true
+            },
+            "expenses": {
+                "read": true,
+                "write": true
+            },
+            "reports": {
+                "read": true,
+                "write": true
+            },
+            "users": {
+                "read": true,
+                "write": true
+            },
+            "migrate": {
+                "read": true,
+                "write": true
+            },
+            "returns": {
+                "read": true,
+                "write": true
+            },
+            "settings": {
+                "read": true,
+                "write": true
+            }
+        },
+        "phone": "",
+        "_version": 1,
+        "_updatedAt": 1767694396235,
+        "_deleted": false,
+        "_hash": "cba27cd7ab5c1d1f9e409d5ecb876769"
+    },
+    {
+        "email": "admin@lightpos.com",
+        "name": "Super Admin",
+        "password": "21232f297a57a5a743894a0e4a801fc3",
+        "is_active": true,
+        "permissions": {
+            "pos": {
+                "read": true,
+                "write": true
+            },
+            "customers": {
+                "read": true,
+                "write": true
+            },
+            "shifts": {
+                "read": true,
+                "write": true
+            },
+            "items": {
+                "read": true,
+                "write": true
+            },
+            "suppliers": {
+                "read": true,
+                "write": true
+            },
+            "stockin": {
+                "read": true,
+                "write": true
+            },
+            "stock-count": {
+                "read": true,
+                "write": true
+            },
+            "expenses": {
+                "read": true,
+                "write": true
+            },
+            "reports": {
+                "read": true,
+                "write": true
+            },
+            "users": {
+                "read": true,
+                "write": true
+            },
+            "migrate": {
+                "read": true,
+                "write": true
+            },
+            "returns": {
+                "read": true,
+                "write": true
+            },
+            "settings": {
+                "read": true,
+                "write": true
+            }
+        },
+        "phone": "",
+        "_version": 1,
+        "_updatedAt": 1767694396235,
+        "_deleted": false,
+        "_hash": "b0fe9635bf105c7aa5e4ed9c548c7766"
+    },
+    {
+        "email": "brad@lp.com",
+        "name": "Bradboy",
+        "phone": "",
+        "is_active": true,
+        "permissions": {
+            "pos": {
+                "read": true,
+                "write": true
+            },
+            "customers": {
+                "read": true,
+                "write": true
+            },
+            "shifts": {
+                "read": true,
+                "write": true
+            },
+            "items": {
+                "read": true,
+                "write": true
+            },
+            "suppliers": {
+                "read": true,
+                "write": true
+            },
+            "stockin": {
+                "read": true,
+                "write": true
+            },
+            "stock-count": {
+                "read": true,
+                "write": true
+            },
+            "expenses": {
+                "read": true,
+                "write": true
+            },
+            "reports": {
+                "read": false,
+                "write": false
+            },
+            "users": {
+                "read": false,
+                "write": false
+            },
+            "migrate": {
+                "read": false,
+                "write": false
+            },
+            "returns": {
+                "read": true,
+                "write": true
+            },
+            "settings": {
+                "read": false,
+                "write": false
+            }
+        },
+        "password": "80735228c8e9b43410f2b207f0e54fb0",
+        "_version": 1,
+        "_updatedAt": 1767694396235,
+        "_deleted": false,
+        "_hash": "f86a5ee1e1761817eb3a2dc07ab57176"
+    },
+    {
+        "email": "cashier@lp.com",
+        "name": "default cashier",
+        "phone": "",
+        "password": "5f4dcc3b5aa765d61d8327deb882cf99",
+        "is_active": true,
+        "permissions": {
+            "pos": {
+                "read": true,
+                "write": true
+            },
+            "customers": {
+                "read": true,
+                "write": true
+            },
+            "shifts": {
+                "read": true,
+                "write": true
+            },
+            "items": {
+                "read": false,
+                "write": false
+            },
+            "suppliers": {
+                "read": false,
+                "write": false
+            },
+            "stockin": {
+                "read": false,
+                "write": false
+            },
+            "stock-count": {
+                "read": false,
+                "write": false
+            },
+            "expenses": {
+                "read": false,
+                "write": false
+            },
+            "reports": {
+                "read": false,
+                "write": false
+            },
+            "users": {
+                "read": false,
+                "write": false
+            },
+            "migrate": {
+                "read": false,
+                "write": false
+            },
+            "returns": {
+                "read": true,
+                "write": true
+            }
+        },
+        "_version": 1,
+        "_updatedAt": 1767694396235,
+        "_deleted": false,
+        "_hash": "4706e03153de2be443a169f061a446ba"
+    }
+]

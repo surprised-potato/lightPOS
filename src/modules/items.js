@@ -1,7 +1,7 @@
 import { checkPermission } from "../auth.js";
 import { generateUUID } from "../utils.js";
-import { Repository } from "../services/Repository.js";
-import { db } from "../db.js";
+import { dbRepository as Repository } from "../db.js";
+import { dbPromise } from "../db.js";
 
 let itemsData = [];
 let suppliersList = [];
@@ -15,6 +15,7 @@ let selectedForCompare = [];
 let comparisonCharts = [];
 
 export async function loadItemsView() {
+    const db = await dbPromise;
     const content = document.getElementById("main-content");
     const canWrite = checkPermission("items", "write");
     
@@ -335,6 +336,7 @@ export async function loadItemsView() {
     // Form Submit
     document.getElementById("form-add-item")?.addEventListener("submit", async (e) => {
         e.preventDefault();
+        const db = await dbPromise;
         
         const itemId = document.getElementById("item-id").value;
         const barcode = document.getElementById("item-barcode").value.trim();

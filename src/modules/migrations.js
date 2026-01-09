@@ -1,4 +1,4 @@
-import { Repository } from "../services/Repository.js";
+import { dbRepository as Repository } from "../db.js";
 import { generateUUID } from "../utils.js";
 import { SyncEngine } from "../services/SyncEngine.js";
 

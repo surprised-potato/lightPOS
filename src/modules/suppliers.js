@@ -1,8 +1,8 @@
 import { checkPermission } from "../auth.js";
 import { generateUUID } from "../utils.js";
-import { Repository } from "../services/Repository.js";
+import { dbRepository as Repository } from "../db.js";
 import { SyncEngine } from "../services/SyncEngine.js";
-import { db } from "../db.js";
+import { dbPromise } from "../db.js";
 
 let selectedSupplierId = null;
 let supplierProducts = [];
@@ -284,6 +284,7 @@ async function selectSupplier(sup) {
 }
 
 async function fetchSupplierProducts() {
+    const db = await dbPromise;
     try {
         const allItems = await Repository.getAll('items');
         supplierProducts = allItems.filter(item => item.supplier_id === selectedSupplierId && !item._deleted);

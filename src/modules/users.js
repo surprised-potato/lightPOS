@@ -1,5 +1,5 @@
 import { checkPermission } from "../auth.js";
-import { Repository } from "../services/Repository.js";
+import { dbRepository as Repository } from "../db.js";
 import { SyncEngine } from "../services/SyncEngine.js";
 
 export const MODULES = ['pos', 'customers', 'shifts', 'items', 'suppliers', 'stockin', 'stock-count', 'expenses', 'reports', 'users', 'migrate', 'returns', 'settings'];

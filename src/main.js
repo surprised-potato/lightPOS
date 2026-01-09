@@ -2,8 +2,9 @@ import { login, logout, monitorAuthState } from "./auth.js";
 import { renderSidebar, renderLoginBranding } from "./layout.js";
 import { initRouter } from "./router.js";
 import { SyncEngine } from "./services/SyncEngine.js";
-import { db } from "./db.js";
-import { Repository } from "./services/Repository.js";
+import { dbPromise } from "./db.js";
+import { dbRepository as Repository } from "./db.js";
+import { connect as sqliteConnect } from "./db_sqlite.js";
 import { ROLES } from "./modules/users.js";
 
 // DOM Elements
@@ -34,7 +35,10 @@ function showLogin() {
 
 // 1. Check Initialization State before Auth
 async function checkAppInitialization() {
+    console.log('main.js: checkAppInitialization called.');
     try {
+        await sqliteConnect('data/database.sqlite');
+        const db = await dbPromise;
         // Check Local Data
         const localUserCount = await db.users.count();
         if (localUserCount > 0) {

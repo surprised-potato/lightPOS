@@ -1,4 +1,4 @@
-import { db } from "../db.js";
+import { dbPromise } from "../db.js";
 import { getUserProfile } from "../auth.js";
 import { checkActiveShift, calculateExpectedCash } from "./shift.js";
 
@@ -25,6 +25,7 @@ let velocityChartInstance = null;
 let tenderChartInstance = null;
 
 async function renderCashierDashboard(content, user) {
+    const db = await dbPromise;
     const todayStr = new Date().toLocaleDateString('en-CA');
     
     // Sync shifts first for accurate count
@@ -288,6 +289,7 @@ function renderManagerDashboard(content) {
 }
 
 async function refreshDashboard() {
+    const db = await dbPromise;
     try {
         const now = new Date();
         const todayStr = now.toLocaleDateString('en-CA');

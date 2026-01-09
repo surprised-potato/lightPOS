@@ -1,4 +1,4 @@
-import { Repository } from "./services/Repository.js";
+import { dbRepository as Repository } from "./db.js";
 import { SyncEngine } from "./services/SyncEngine.js";
 
 const API_URL = 'api/router.php';

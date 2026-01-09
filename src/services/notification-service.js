@@ -1,5 +1,5 @@
-import { db } from "../db.js";
-import { Repository } from "./Repository.js";
+import { dbPromise } from "../db.js";
+import { dbRepository as Repository } from "../db.js";
 import { generateUUID } from "../utils.js";
 
 export async function addNotification(type, message) {
@@ -16,10 +16,12 @@ export async function addNotification(type, message) {
 }
 
 export async function getUnreadCount() {
+    const db = await dbPromise;
     return await db.notifications.where('read').equals(0).count();
 }
 
 export async function getRecentNotifications(limit = 7, filter = 'all') {
+    const db = await dbPromise;
     if (filter === 'all') {
         const unread = await db.notifications.orderBy('timestamp').reverse().filter(n => n.read === 0).toArray();
         
@@ -45,12 +47,14 @@ export async function getRecentNotifications(limit = 7, filter = 'all') {
 }
 
 export async function markAllAsRead() {
+    const db = await dbPromise;
     const unread = await db.notifications.where('read').equals(0).toArray();
     await Promise.all(unread.map(n => Repository.upsert('notifications', { ...n, read: 1 })));
     window.dispatchEvent(new CustomEvent('notification-updated'));
 }
 
 export async function toggleNotificationRead(id, isRead) {
+    const db = await dbPromise;
     const notification = await db.notifications.get(id);
     if (notification) {
         const nextRead = isRead === undefined ? (notification.read === 1 ? 0 : 1) : (isRead ? 1 : 0);
@@ -60,6 +64,7 @@ export async function toggleNotificationRead(id, isRead) {
 }
 
 export async function deleteOldNotifications(days = 30) {
+    const db = await dbPromise;
     const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
     const oldNotifications = await db.notifications.where('timestamp').below(cutoff).toArray();
     await Promise.all(oldNotifications.map(n => Repository.remove('notifications', n.id)));

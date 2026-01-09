@@ -1,4 +1,4 @@
-import { db } from "./db.js";
+import { dbPromise } from "./db.js";
 import { checkPermission, logout, getUserProfile } from "./auth.js";
 import { checkActiveShift } from "./modules/shift.js";
 import { getRecentNotifications, markAllAsRead, toggleNotificationRead, getUnreadCount } from "./services/notification-service.js";
@@ -160,6 +160,7 @@ export function renderSidebar() {
 }
 
 export async function getStoreSettings() {
+    const db = await dbPromise;
     try {
         // Try local database first for offline-first support and immediate updates
         const localData = await db.settings.get('global');
@@ -442,6 +443,7 @@ async function updateSidebarShiftStatus(retryCount = 0) {
 }
 
 async function checkSyncFreshness() {
+    const db = await dbPromise;
     const lastSync = localStorage.getItem('last_sync_timestamp');
     if (!lastSync) return false;
 

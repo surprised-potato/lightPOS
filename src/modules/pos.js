@@ -3,7 +3,7 @@ import { checkActiveShift, requireShift, showCloseShiftModal, recordRemittance }
 import { addNotification } from "../services/notification-service.js";
 import { getSystemSettings } from "./settings.js";
 import { generateUUID } from "../utils.js";
-import { Repository } from "../services/Repository.js";
+import { dbRepository as Repository } from "../db.js";
 import { SyncEngine } from "../services/SyncEngine.js";
 
 let activeCartIndex = null;

@@ -1,5 +1,5 @@
 import { runDiagnosticExport } from './settings.js';
-import { db } from '../db.js';
+import { dbPromise } from '../db.js';
 
 /**
  * Unit test to verify that runDiagnosticExport correctly identifies 
@@ -7,6 +7,7 @@ import { db } from '../db.js';
  */
 export async function testSettingsMismatchDetection() {
     console.group("Unit Test: runDiagnosticExport - Settings Mismatch");
+    const db = await dbPromise;
     
     // 1. Mock Data: Different store names to trigger a mismatch
     const mockServerSettings = { store: { name: "Cloud POS System" } };

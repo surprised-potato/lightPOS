@@ -1,4 +1,4 @@
-import { Repository } from "./Repository.js";
+import { dbRepository as Repository } from "../db.js";
 
 export const SyncService = {
     /**

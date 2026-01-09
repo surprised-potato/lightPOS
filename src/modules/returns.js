@@ -2,7 +2,7 @@ import { checkPermission } from "../auth.js";
 import { addNotification } from "../services/notification-service.js";
 import { generateUUID } from "../utils.js";
 import { checkActiveShift, requireShift } from "./shift.js";
-import { Repository } from "../services/Repository.js";
+import { dbRepository as Repository } from "../db.js";
 import { SyncEngine } from "../services/SyncEngine.js";
 
 let selectedTransaction = null;

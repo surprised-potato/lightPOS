@@ -1,5 +1,6 @@
-import { db } from '../db.js';
-import { Repository } from './Repository.js';
+import { testSqliteRepositoryIsUsed } from '../modules/sqlite.test.js';
+import db from '../db.js';
+import { dbRepository as Repository } from '../db.js';
 import { SyncEngine } from './SyncEngine.js';
 
 /**
@@ -12,6 +13,7 @@ export const TestRunner = {
             await this.testOfflineCreation();
             await this.testConflictResolution();
             await this.testTabConcurrency();
+            await testSqliteRepositoryIsUsed();
             console.log("%c All tests passed!", "color: green; font-weight: bold;");
         } catch (error) {
             console.error("%c Test failed:", "color: red; font-weight: bold;", error);

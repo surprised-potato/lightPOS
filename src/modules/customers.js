@@ -1,8 +1,8 @@
 import { checkPermission, requestManagerApproval } from "../auth.js";
 import { generateUUID } from "../utils.js";
-import { Repository } from "../services/Repository.js";
+import { dbRepository as Repository } from "../db.js";
 import { SyncEngine } from "../services/SyncEngine.js";
-import { db } from "../db.js";
+import { dbPromise } from "../db.js";
 import { printTransactionReceipt } from "./reports.js";
 
 let customersData = [];
@@ -221,6 +221,7 @@ function openEditModal(cust) {
 }
 
 async function selectCustomer(cust) {
+    const db = await dbPromise;
     selectedCustomerId = cust.id;
     document.getElementById("customer-insights-panel").classList.remove("hidden");
     
@@ -329,6 +330,7 @@ function renderCustomerTopItems() {
 
 async function handleSaveCustomer(e) {
     e.preventDefault();
+    const db = await dbPromise;
     const id = document.getElementById("cust-id").value;
     const newPoints = parseInt(document.getElementById("cust-points").value) || 0;
 

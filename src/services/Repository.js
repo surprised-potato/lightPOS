@@ -1,4 +1,4 @@
-import { db } from '../db.js';
+import { dbPromise } from '../db.js';
 import { handleError } from '../utils.js';
 
 export const Repository = {
@@ -7,6 +7,7 @@ export const Repository = {
      * Increments _version to ensure Last-Write-Wins (LWW) consistency.
      */
     async upsert(collection, data) {
+        const db = await dbPromise;
         try {
             if (!db[collection]) {
                 throw new Error(`Repository Error: Collection '${collection}' does not exist in the local database.`);
@@ -46,16 +47,19 @@ export const Repository = {
     },
 
     async get(collection, id) {
+        const db = await dbPromise;
         if (!db[collection]) throw new Error(`Repository Error: Collection '${collection}' does not exist.`);
         return await db[collection].get(id);
     },
 
     async getAll(collection) {
+        const db = await dbPromise;
         if (!db[collection]) throw new Error(`Repository Error: Collection '${collection}' does not exist.`);
         return await db[collection].toArray();
     },
 
     async remove(collection, id) {
+        const db = await dbPromise;
         if (!db[collection]) throw new Error(`Repository Error: Collection '${collection}' does not exist.`);
         const existing = await db[collection].get(id);
         if (!existing) return;

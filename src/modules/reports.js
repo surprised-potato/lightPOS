@@ -1,9 +1,9 @@
-import { db } from "../db.js";
+import { dbPromise } from "../db.js";
 import { getSystemSettings } from "./settings.js";
 import { checkPermission, requestManagerApproval } from "../auth.js";
 import { generateUUID } from "../utils.js";
 import { addNotification } from "../services/notification-service.js";
-import { Repository } from "../services/Repository.js";
+import { dbRepository as Repository } from "../db.js";
 import { SyncEngine } from "../services/SyncEngine.js";
 
 let reportData = {};
@@ -1057,6 +1057,7 @@ export async function loadReportsView() {
 }
 
 async function generateReport() {
+    const db = await dbPromise;
     const usersBody = document.getElementById("report-users-body");
     const loadingOverlay = document.getElementById("report-loading");
 
@@ -1579,6 +1580,7 @@ async function renderTab(tabName) {
 }
 
 async function calculateSlowMoving(days, itemsCache = null) {
+    const db = await dbPromise;
     const thresholdDate = moment().subtract(days, 'days').startOf('day').toDate();
     const allItems = itemsCache || await Repository.getAll('items');
     
@@ -1739,6 +1741,7 @@ async function generateValuationHistory(startDate, endDate, allItems, allMovemen
 }
 
 async function generateInventoryLedger() {
+    const db = await dbPromise;
     const dateInput = document.getElementById("ledger-date").value;
     const tbody = document.getElementById("report-ledger-body");
     
