@@ -265,3 +265,16 @@ Legacy backups contain plain-text passwords. The new system stores MD5 hashes.
 ### Resolution
 1.  **Server-Side Hashing:** Updated `api/router.php` to inspect incoming `users` records. If `password_hash` is not a valid 32-character hex string (MD5 format), it assumes the value is plain text and hashes it before saving to SQLite.
 2.  **Deployment Fix:** Updated `deploy_to_xampp.sh` to insert the `db_initialized` key into `sync_metadata` immediately after creating the database. This prevents `sync.php` from falsely detecting an uninitialized DB and throwing 503 errors on fresh installs.
+
+## Restore Stability: 500 Internal Server Error
+
+### Problem Description
+User reported a 500 error after performing a "Merge Backup and Sync". This is likely due to SQLite locking issues (`database is locked`) or timeouts when processing large datasets record-by-record without a transaction.
+
+### Diagnosis
+Inserting records one by one in a loop is slow and can cause contention/locking issues in SQLite, especially if `SyncEngine` is also polling.
+
+### Resolution
+1.  **Transactions:** Updated `api/router.php` to wrap the import loop in a database transaction (`beginTransaction` / `commit`). This significantly improves performance and prevents locking issues during the restore process.
+2.  **Error Handling:** Added `try-catch` blocks to catch exceptions during import and return a meaningful JSON error message instead of a generic 500.
+3.  **Advisory:** For setting up a new server, users should use the **"Restore from Backup"** button (which uses the optimized `router.php`) rather than "Merge & Sync" (which relies on the client-side `SyncEngine` and `api/sync.php`).

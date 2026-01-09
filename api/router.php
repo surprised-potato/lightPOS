@@ -182,20 +182,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             };
 
-            if ($mode === 'append') {
-                $currentData = $store->getAll($file);
-                if (is_array($input)) {
+            try {
+                $store->pdo->beginTransaction();
+                if ($mode === 'append') {
+                    $currentData = $store->getAll($file);
+                    if (is_array($input)) {
+                        foreach($input as $record) {
+                            $processRecord($record);
+                            $store->upsert($file, $record);
+                        }
+                    }
+                } else {
+                    $store->wipe($file);
                     foreach($input as $record) {
                         $processRecord($record);
                         $store->upsert($file, $record);
                     }
                 }
-            } else {
-                $store->wipe($file);
-                foreach($input as $record) {
-                    $processRecord($record);
-                    $store->upsert($file, $record);
+                $store->pdo->commit();
+            } catch (Exception $e) {
+                if ($store->pdo->inTransaction()) {
+                    $store->pdo->rollBack();
                 }
+                http_response_code(500);
+                echo json_encode(["error" => "Import failed: " . $e->getMessage()]);
+                exit;
             }
         }
         echo json_encode(["success" => true]);
