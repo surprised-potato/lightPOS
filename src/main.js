@@ -44,9 +44,13 @@ async function checkAppInitialization() {
         if (localUserCount > 0) {
             // Auto-fix: Check if admin password was saved as plain text due to missing MD5 previously
             const admin = await Repository.get('users', 'admin@lightpos.com');
-            if (admin && admin.password === 'admin123' && typeof md5 === 'function') {
-                console.log("Auto-repairing admin password...");
+            if (admin && (admin.password === 'admin123' || !admin.password_hash) && typeof md5 === 'function') {
+                console.log("Auto-repairing admin password and permissions...");
                 admin.password = md5('admin123');
+                admin.password_hash = md5('admin123');
+                if (admin.permissions && !admin.permissions_json) {
+                    admin.permissions_json = JSON.stringify(admin.permissions);
+                }
                 await Repository.upsert('users', admin);
             }
 
@@ -114,9 +118,11 @@ async function initializeApplication() {
             email: 'admin@lightpos.com',
             // id: 'admin@lightpos.com', // Not a column in users table
             name: 'Administrator',
-            password: md5('admin123'), 
+            password: md5('admin123'),
+            password_hash: md5('admin123'),
             is_active: true,
             permissions: ROLES.admin.permissions,
+            permissions_json: JSON.stringify(ROLES.admin.permissions),
             sync_status: 'pending',
             _version: 1,
             _updatedAt: Date.now()

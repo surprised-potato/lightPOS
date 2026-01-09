@@ -55,6 +55,19 @@ function ensureSchema($pdo) {
         $pdo->exec("ALTER TABLE users ADD COLUMN is_active INTEGER DEFAULT 1");
         error_log("DB Migration: Added is_active column to users table.");
     }
+
+    // Fix for missing permissions_json and password_hash
+    if (!in_array('permissions_json', $userCols)) {
+        $pdo->exec("ALTER TABLE users ADD COLUMN permissions_json TEXT");
+        error_log("DB Migration: Added permissions_json column to users table.");
+    }
+    if (!in_array('password_hash', $userCols)) {
+        $pdo->exec("ALTER TABLE users ADD COLUMN password_hash TEXT");
+        error_log("DB Migration: Added password_hash column to users table.");
+    }
+
+    // Auto-repair Admin if password_hash is missing
+    $pdo->exec("UPDATE users SET password_hash = '" . md5('admin123') . "' WHERE email = 'admin@lightpos.com' AND (password_hash IS NULL OR password_hash = '')");
 }
 // --- END Schema Initialization Logic ---
 
