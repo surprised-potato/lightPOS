@@ -609,6 +609,35 @@ async function refreshProcurementData() {
             };
         });
 
+        // --- Demand Roll-up Logic ---
+        // If a Child item needs stock, convert that need to the Parent item (if exists)
+        // This ensures we order Cases (Parent) instead of Units (Child)
+        const rowMap = new Map(velocityRows.map(r => [r.id, r]));
+        
+        velocityRows.forEach(child => {
+            const childItem = items.find(i => i.id === child.id);
+            if (childItem && childItem.parent_id) {
+                const parentRow = rowMap.get(childItem.parent_id);
+                if (parentRow) {
+                    const factor = parseFloat(childItem.conv_factor) || 1;
+                    
+                    // If Child has a net requirement (deficit), transfer it to Parent
+                    if (child.netRequirement > 0) {
+                        const neededParentUnits = child.netRequirement / factor;
+                        parentRow.netRequirement += neededParentUnits;
+                        
+                        // Re-calculate Parent's suggested quantity based on new requirement
+                        parentRow.suggestedQty = Math.ceil(Math.max(parentRow.eoq, parentRow.netRequirement));
+                        
+                        // Zero out Child suggestion so we don't double order
+                        child.suggestedQty = 0;
+                        child.itemOtb = 0; // Remove from budget calculation
+                    }
+                }
+            }
+        });
+        // ----------------------------
+
         // ABC Classification
         let totalAnnualUsage = 0;
         velocityRows.forEach(r => totalAnnualUsage += r.annualUsage);

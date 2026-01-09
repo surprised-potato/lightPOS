@@ -1243,19 +1243,40 @@ async function addToCart(item, qty = 1) {
     document.getElementById("last-transaction").classList.add("hidden");
 
     // Auto-Breakdown Logic: Still useful to keep inventory accurate where possible
-    if (item.stock_level < qty && item.parent_id) {
+    if ((item.stock_level < qty) && item.parent_id) {
         const parent = allItems.find(p => p.id === item.parent_id);
         if (parent && parent.stock_level > 0) {
-            const factor = item.conv_factor || 1;
-            parent.stock_level -= 1;
-            item.stock_level += factor;
-
-            // Persist to Dexie immediately so state is saved
-            await Promise.all([Repository.upsert('items', parent), Repository.upsert('items', item)]);
-            showToast(`Auto-converted 1 ${parent.name} to ${factor} ${item.name}`);
+            const factor = parseFloat(item.conv_factor) || 1;
+            const neededQty = qty - item.stock_level;
+            // Calculate how many parents we need to break to cover the deficit
+            const parentsToBreak = Math.min(parent.stock_level, Math.ceil(neededQty / factor));
             
-            // Refresh Grid to show new stock levels
-            filterItems(document.getElementById("pos-search").value);
+            if (parentsToBreak > 0) {
+                const qtyCreated = parentsToBreak * factor;
+                parent.stock_level -= parentsToBreak;
+                item.stock_level += qtyCreated;
+
+                // Persist to Dexie immediately so state is saved
+                await Promise.all([Repository.upsert('items', parent), Repository.upsert('items', item)]);
+
+                // Log Movements for Audit
+                const user = JSON.parse(localStorage.getItem('pos_user'))?.email || 'system';
+                const timestamp = new Date().toISOString();
+                
+                await Repository.upsert('stock_movements', {
+                    id: generateUUID(), item_id: parent.id, item_name: parent.name, timestamp,
+                    type: 'Conversion', qty: -parentsToBreak, user, reason: `Auto-breakdown for ${item.name}`
+                });
+                await Repository.upsert('stock_movements', {
+                    id: generateUUID(), item_id: item.id, item_name: item.name, timestamp,
+                    type: 'Conversion', qty: qtyCreated, user, reason: `Auto-breakdown from ${parent.name}`
+                });
+
+                showToast(`Auto-converted ${parentsToBreak} ${parent.name} to ${qtyCreated} ${item.name}`);
+                
+                // Refresh Grid to show new stock levels
+                filterItems(document.getElementById("pos-search").value);
+            }
         }
     }
 

@@ -8,6 +8,7 @@ let stockInCart = [];
 let allItems = []; // Cache for item search
 let suppliersList = [];
 let historyCache = [];
+let currentMode = 'in'; // 'in' or 'out'
 
 export async function loadStockInView() {
     if (!checkPermission('stockin', 'read')) {
@@ -33,6 +34,10 @@ export async function loadStockInView() {
 async function loadPoToReceive() {
     const poJson = sessionStorage.getItem('poToReceive');
     if (poJson) {
+        // PO Receiving is always Stock In
+        currentMode = 'in';
+        updateUIMode();
+        
         try {
             const po = JSON.parse(poJson);
             const poItems = JSON.parse(po.items_json || '[]');
@@ -96,13 +101,19 @@ function render() {
     const content = document.getElementById('main-content');
     content.innerHTML = `
         <div class="p-4 md:p-6">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6">Stock In</h2>
+            <div class="flex flex-col md:flex-row justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">Stock Management</h2>
+                <div class="bg-gray-200 p-1 rounded-lg inline-flex mt-2 md:mt-0">
+                    <button id="mode-in" class="px-4 py-2 rounded-md text-sm font-bold transition-colors bg-white text-green-700 shadow-sm border border-gray-200">Stock In (+)</button>
+                    <button id="mode-out" class="px-4 py-2 rounded-md text-sm font-bold transition-colors text-gray-600 hover:text-gray-800">Stock Out (-)</button>
+                </div>
+            </div>
             
             <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
                 <!-- Left side: Item selection and cart -->
                 <div class="lg:col-span-3">
                     <div class="bg-white p-6 rounded-lg shadow-md mb-6">
-                        <h3 class="text-lg font-semibold text-gray-700 mb-4">Add Item to Stock</h3>
+                        <h3 id="card-title-add" class="text-lg font-semibold text-gray-700 mb-4">Add Item to Stock (In)</h3>
                         <form id="stockin-form" class="flex flex-col sm:flex-row items-start sm:items-end gap-4">
                             <input type="hidden" id="source-po-id">
                             <div class="flex-grow w-full relative">
@@ -115,14 +126,14 @@ function render() {
                                 <label for="item-quantity" class="block text-sm font-medium text-gray-700">Quantity</label>
                                 <input type="number" id="item-quantity" min="1" value="1" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm py-2">
                             </div>
-                            <button type="submit" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md shadow-sm">
-                                Add to Cart
+                            <button type="submit" id="btn-add-to-cart" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md shadow-sm">
+                                Add to Cart (+)
                             </button>
                         </form>
                     </div>
 
                     <div class="bg-white p-6 rounded-lg shadow-md">
-                        <h3 class="text-lg font-semibold text-gray-700 mb-4">Stock In Cart</h3>
+                        <h3 id="card-title-cart" class="text-lg font-semibold text-gray-700 mb-4">Stock In Cart</h3>
                         <div id="stock-in-cart-container">
                             <!-- Cart items will be rendered here -->
                         </div>
@@ -147,7 +158,7 @@ function render() {
                 <!-- Right side: Recent history -->
                 <div class="lg:col-span-2">
                     <div class="bg-white p-6 rounded-lg shadow-md">
-                        <h3 class="text-lg font-semibold text-gray-700 mb-4">Recent Stock-In History</h3>
+                        <h3 class="text-lg font-semibold text-gray-700 mb-4">Recent History</h3>
                         
                         <div class="flex flex-wrap gap-2 mb-4 items-end bg-gray-50 p-2 rounded border border-gray-200">
                             <div class="flex-1 min-w-[100px]">
@@ -173,6 +184,7 @@ function render() {
             </div>
         </div>
     `;
+    updateUIMode();
     renderStockInCart();
 }
 
@@ -181,6 +193,9 @@ function attachEventListeners() {
     const searchResults = document.getElementById('search-results');
     const stockinForm = document.getElementById('stockin-form');
     const cartContainer = document.getElementById('stock-in-cart-container');
+
+    document.getElementById('mode-in').addEventListener('click', () => setMode('in'));
+    document.getElementById('mode-out').addEventListener('click', () => setMode('out'));
 
     searchInput.addEventListener('input', handleSearch);
     searchInput.addEventListener('keydown', (e) => {
@@ -249,6 +264,42 @@ function attachEventListeners() {
             selectSearchItem(itemId, itemName);
         }
     });
+}
+
+function setMode(mode) {
+    if (mode === currentMode) return;
+    if (stockInCart.length > 0) {
+        if (!confirm(`Switching to Stock ${mode === 'in' ? 'In' : 'Out'} will clear the current cart. Continue?`)) return;
+        stockInCart = [];
+        renderStockInCart();
+    }
+    currentMode = mode;
+    updateUIMode();
+}
+
+function updateUIMode() {
+    const btnIn = document.getElementById('mode-in');
+    const btnOut = document.getElementById('mode-out');
+    const saveBtn = document.getElementById('save-stock-in-btn');
+    const addBtn = document.getElementById('btn-add-to-cart');
+    const titleAdd = document.getElementById('card-title-add');
+    const titleCart = document.getElementById('card-title-cart');
+
+    if (currentMode === 'in') {
+        btnIn.className = "px-4 py-2 rounded-md text-sm font-bold transition-colors bg-white text-green-700 shadow-sm border border-gray-200";
+        btnOut.className = "px-4 py-2 rounded-md text-sm font-bold transition-colors text-gray-600 hover:text-gray-800";
+        if (saveBtn) { saveBtn.className = "bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md shadow-sm"; saveBtn.textContent = "Save Stock In"; }
+        if (addBtn) { addBtn.className = "w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md shadow-sm"; addBtn.textContent = "Add to Cart (+)"; }
+        if (titleAdd) titleAdd.textContent = "Add Item to Stock (In)";
+        if (titleCart) titleCart.textContent = "Stock In Cart";
+    } else {
+        btnIn.className = "px-4 py-2 rounded-md text-sm font-bold transition-colors text-gray-600 hover:text-gray-800";
+        btnOut.className = "px-4 py-2 rounded-md text-sm font-bold transition-colors bg-white text-red-700 shadow-sm border border-gray-200";
+        if (saveBtn) { saveBtn.className = "bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md shadow-sm"; saveBtn.textContent = "Save Stock Out"; }
+        if (addBtn) { addBtn.className = "w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md shadow-sm"; addBtn.textContent = "Add to Cart (-)"; }
+        if (titleAdd) titleAdd.textContent = "Remove Item from Stock (Out)";
+        if (titleCart) titleCart.textContent = "Stock Out Cart";
+    }
 }
 
 function selectSearchItem(itemId, itemName) {
@@ -367,6 +418,8 @@ function renderStockInCart() {
     supplierSection.classList.remove('hidden');
     
     let grandTotal = 0;
+    const isOut = currentMode === 'out';
+
     const tableRows = stockInCart.map((item, index) => {
         const subtotal = item.quantity * item.cost_price;
         grandTotal += subtotal;
@@ -374,7 +427,10 @@ function renderStockInCart() {
         <tr class="border-b">
             <td class="p-2">${item.name}</td>
             <td class="p-2 text-center">
-                <input type="number" min="1" class="w-16 border rounded text-center py-1 cart-qty-input" data-index="${index}" value="${item.quantity}">
+                <div class="flex items-center justify-center gap-1">
+                    <span class="text-xs font-bold ${isOut ? 'text-red-600' : 'text-green-600'}">${isOut ? '-' : '+'}</span>
+                    <input type="number" min="1" class="w-16 border rounded text-center py-1 cart-qty-input" data-index="${index}" value="${item.quantity}">
+                </div>
             </td>
             <td class="p-2 text-right">
                 <div class="flex items-center justify-end">
@@ -458,13 +514,15 @@ async function saveStockIn() {
 
     const user = getUserProfile();
     const supplierId = document.getElementById('stockin-supplier').value;
+    const isOut = currentMode === 'out';
 
     try {
         // 1. Update local items DB
         for (const cartItem of stockInCart) {
             const item = await Repository.get('items', cartItem.id);
             if (item) {
-                item.stock_level = (item.stock_level || 0) + cartItem.quantity;
+                const change = isOut ? -cartItem.quantity : cartItem.quantity;
+                item.stock_level = (item.stock_level || 0) + change;
                 item.cost_price = cartItem.cost_price;
                 if (supplierId && !item.supplier_id) {
                     item.supplier_id = supplierId;
@@ -488,7 +546,8 @@ async function saveStockIn() {
             })),
             timestamp: new Date().toISOString(),
             item_count: stockInCart.reduce((sum, item) => sum + item.quantity, 0),
-            supplier_id_override: supplierId || null
+            supplier_id_override: supplierId || null,
+            type: currentMode // 'in' or 'out'
         };
         await Repository.upsert('stockins', historyRecord);
 
@@ -499,10 +558,10 @@ async function saveStockIn() {
                 item_id: item.item_id,
                 item_name: item.name,
                 timestamp: historyRecord.timestamp,
-                type: 'Stock-In',
-                qty: item.quantity,
+                type: isOut ? 'Stock-Out' : 'Stock-In',
+                qty: isOut ? -item.quantity : item.quantity,
                 user: user.name || user.email,
-                reason: 'Supplier Delivery'
+                reason: isOut ? 'Manual Stock Out' : 'Supplier Delivery'
             };
             await Repository.upsert('stock_movements', movement);
         }
@@ -520,7 +579,7 @@ async function saveStockIn() {
             document.getElementById('source-po-id').value = '';
         }
 
-        alert('Stock-in successful! Data is saved locally and will sync with the server.');
+        alert(`Stock-${isOut ? 'out' : 'in'} successful! Data is saved locally and will sync with the server.`);
         
         stockInCart = [];
         renderStockInCart();
@@ -531,7 +590,7 @@ async function saveStockIn() {
         alert('An error occurred while saving the stock-in. Please try again.');
     } finally {
         saveBtn.disabled = false;
-        saveBtn.textContent = 'Save Stock In';
+        saveBtn.textContent = isOut ? 'Save Stock Out' : 'Save Stock In';
     }
 }
 
@@ -573,6 +632,7 @@ async function loadStockInHistory() {
                     <thead>
                         <tr class="border-b bg-gray-50">
                             <th class="text-left p-2 font-semibold">Date</th>
+                            <th class="text-center p-2 font-semibold">Type</th>
                             <th class="text-left p-2 font-semibold">User</th>
                             <th class="text-center p-2 font-semibold">Items</th>
                             <th class="text-right p-2 font-semibold">Action</th>
@@ -582,6 +642,11 @@ async function loadStockInHistory() {
                         ${recentHistory.map(entry => `
                             <tr>
                                 <td class="p-2 whitespace-nowrap text-xs">${new Date(entry.timestamp).toLocaleString()}</td>
+                                <td class="p-2 text-center">
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase ${entry.type === 'out' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}">
+                                        ${entry.type === 'out' ? 'OUT' : 'IN'}
+                                    </span>
+                                </td>
                                 <td class="p-2">${entry.username || 'N/A'}</td>
                                 <td class="p-2 text-center">
                                     ${entry.item_count || (entry.items ? entry.items.reduce((sum, i) => sum + (i.quantity || i.qty || 0), 0) : 0)}
@@ -622,10 +687,11 @@ function showStockInDetails(id) {
     const itemRows = (entry.items || []).map(item => {
         const qty = item.quantity || item.qty || 0;
         const cost = item.cost_price || 0;
+        const isOut = entry.type === 'out';
         return `
         <tr class="border-b">
             <td class="p-2">${item.name}</td>
-            <td class="p-2 text-center">${qty}</td>
+            <td class="p-2 text-center font-bold ${isOut ? 'text-red-600' : 'text-green-600'}">${isOut ? '-' : '+'}${qty}</td>
             <td class="p-2 text-right">₱${cost.toFixed(2)}</td>
             <td class="p-2 text-right">₱${(qty * cost).toFixed(2)}</td>
         </tr>
@@ -634,12 +700,13 @@ function showStockInDetails(id) {
     modal.innerHTML = `
         <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-2xl mx-4">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="text-xl font-bold text-gray-800">Stock In Details</h3>
+                <h3 class="text-xl font-bold text-gray-800">Transaction Details</h3>
                 <button class="text-gray-500 hover:text-gray-700 text-2xl close-modal">&times;</button>
             </div>
             <div class="mb-4 text-sm text-gray-600 grid grid-cols-2 gap-2">
                 <div><strong>Date:</strong> ${new Date(entry.timestamp).toLocaleString()}</div>
                 <div><strong>User:</strong> ${entry.username || 'N/A'}</div>
+                <div><strong>Type:</strong> <span class="uppercase font-bold ${entry.type === 'out' ? 'text-red-600' : 'text-green-600'}">${entry.type === 'out' ? 'Stock Out' : 'Stock In'}</span></div>
             </div>
             <div class="max-h-96 overflow-y-auto border rounded">
                 <table class="w-full text-sm">

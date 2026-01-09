@@ -213,6 +213,7 @@ export async function loadReportsView() {
                         <button data-subtab="inv-shrinkage" class="subtab-btn border-transparent text-gray-500 hover:text-gray-700 py-2 px-4 border-b-2 text-xs font-bold transition-colors">Shrinkage</button>
                         <button data-subtab="inv-slow" class="subtab-btn border-transparent text-gray-500 hover:text-gray-700 py-2 px-4 border-b-2 text-xs font-bold transition-colors">Slow Moving</button>
                         <button data-subtab="inv-returns" class="subtab-btn border-transparent text-gray-500 hover:text-gray-700 py-2 px-4 border-b-2 text-xs font-bold transition-colors">Returns</button>
+                        <button data-subtab="inv-conversions" class="subtab-btn border-transparent text-gray-500 hover:text-gray-700 py-2 px-4 border-b-2 text-xs font-bold transition-colors">Conversions</button>
                     </div>
 
                     <div id="subpanel-inv-val" class="sub-panel">
@@ -488,6 +489,30 @@ export async function loadReportsView() {
                                     </tbody>
                                 </table>
                             </div>
+                        </div>
+                    </div>
+
+                    <div id="subpanel-inv-conversions" class="sub-panel hidden">
+                        <div class="bg-white shadow-md rounded overflow-hidden">
+                            <div class="px-6 py-4 border-b bg-gray-50 flex justify-between items-center">
+                                <h3 class="font-bold text-gray-800">Stock Conversions (Auto-Breakdown)</h3>
+                                <button class="btn-toggle-filter text-blue-500 hover:text-blue-700" data-target="conversions">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
+                                </button>
+                            </div>
+                            <div id="filter-conversions" class="hidden px-6 py-2 bg-gray-100 border-b"><input type="text" placeholder="Filter conversions..." class="filter-input w-full p-1 border rounded text-sm" data-table="conversions"></div>
+                            <table class="min-w-full table-auto">
+                                <thead>
+                                    <tr class="bg-gray-100 text-gray-600 uppercase text-[10px] leading-normal">
+                                        <th class="py-2 px-4 text-left cursor-pointer hover:bg-gray-200" data-sort="timestamp" data-table="conversions">Date</th>
+                                        <th class="py-2 px-4 text-left cursor-pointer hover:bg-gray-200" data-sort="item_name" data-table="conversions">Item</th>
+                                        <th class="py-2 px-4 text-right cursor-pointer hover:bg-gray-200" data-sort="qty" data-table="conversions">Qty Change</th>
+                                        <th class="py-2 px-4 text-left cursor-pointer hover:bg-gray-200" data-sort="reason" data-table="conversions">Details</th>
+                                        <th class="py-2 px-4 text-left cursor-pointer hover:bg-gray-200" data-sort="user" data-table="conversions">User</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="report-conversions-body" class="text-gray-600 text-xs font-light"></tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -1309,6 +1334,7 @@ async function generateReport() {
         reportData.stockIn = filteredStockIn;
         reportData.adjustments = filteredAdjustments;
         reportData.movements = filteredMovements;
+        reportData.conversions = filteredMovements.filter(m => m.type === 'Conversion');
         
         reportData.products = Object.values(productStats).map(p => {
             const itemMaster = allItems.find(i => i.id === p.id);
@@ -1568,6 +1594,7 @@ async function renderTab(tabName) {
             renderStockMovement(reportData.movements);
             renderShrinkageAnalysis(reportData.shrinkage, reportData.products);
             renderReturnsReport(reportData.returnReasons, reportData.defectiveSuppliers, reportData.returns);
+            renderConversions(reportData.conversions);
             break;
         case 'products':
             renderProductStats(reportData.products);
@@ -1866,6 +1893,7 @@ function renderTable(tableId) {
         case 'affinity': renderProductAffinity(reportData.affinity); break;
         case 'slowMoving': renderSlowMovingItems(reportData.slowMoving); break;
         case 'movements': renderStockMovement(reportData.movements); break;
+        case 'conversions': renderConversions(reportData.conversions); break;
         case 'payments': renderPaymentStats(reportData.payments); break;
         case 'audit': renderAuditLog(reportData.audit); break;
         case 'velocity': renderSalesVelocity(reportData.velocity); break;
@@ -3006,6 +3034,33 @@ function renderStockMovement(data) {
             <td class="py-2 px-4 font-medium">${m.item_name}</td>
             <td class="py-2 px-4"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${badgeClass}">${m.type}</span></td>
             <td class="py-2 px-4 text-right font-bold ${m.qty > 0 ? 'text-green-600' : 'text-red-600'}">${m.qty > 0 ? '+' : ''}${m.qty}</td>
+            <td class="py-2 px-4 text-xs text-gray-500">${m.reason || '-'}</td>
+            <td class="py-2 px-4">${m.user}</td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function renderConversions(data) {
+    const tbody = document.getElementById("report-conversions-body");
+    if (!tbody) return;
+    tbody.innerHTML = "";
+    const processed = applySortAndFilter(data, 'conversions');
+
+    if (processed.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="py-3 px-6 text-center">No conversions found.</td></tr>`;
+        return;
+    }
+
+    processed.forEach(m => {
+        const row = document.createElement("tr");
+        row.className = "border-b border-gray-200 hover:bg-gray-100";
+        const qtyClass = m.qty > 0 ? "text-green-600" : "text-red-600";
+        const sign = m.qty > 0 ? "+" : "";
+        row.innerHTML = `
+            <td class="py-2 px-4">${new Date(m.timestamp).toLocaleString()}</td>
+            <td class="py-2 px-4 font-medium">${m.item_name}</td>
+            <td class="py-2 px-4 text-right font-bold ${qtyClass}">${sign}${m.qty}</td>
             <td class="py-2 px-4 text-xs text-gray-500">${m.reason || '-'}</td>
             <td class="py-2 px-4">${m.user}</td>
         `;
