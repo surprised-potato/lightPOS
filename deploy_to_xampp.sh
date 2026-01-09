@@ -10,7 +10,7 @@ sudo rm -rf "$TARGET_DIR"
 
 echo "Copying project files..."
 sudo mkdir -p "$TARGET_DIR"
-sudo rsync -av --exclude 'data/database.sqlite' --exclude '.git' --exclude 'node_modules' ./ "$TARGET_DIR/"
+sudo rsync -av --exclude 'data/database.sqlite' --exclude 'data/restore.lock' --exclude '.git' --exclude 'node_modules' ./ "$TARGET_DIR/"
 
 echo "Setting up WebAssembly..."
 sudo cp "$TARGET_DIR/src/libs/sql.wasm" "$TARGET_DIR/src/libs/sql-wasm.wasm"
@@ -18,6 +18,8 @@ sudo cp "$TARGET_DIR/src/libs/sql.wasm" "$TARGET_DIR/src/libs/sql-wasm.wasm"
 echo "Setting permissions..."
 sudo mkdir -p "$TARGET_DIR/data"
 sudo chmod -R 777 "$TARGET_DIR/data"
+# Ensure no stale lock file exists
+sudo rm -f "$TARGET_DIR/data/restore.lock"
 
 echo "Restarting XAMPP services..."
 if [ -f "/opt/lampp/lampp" ]; then
