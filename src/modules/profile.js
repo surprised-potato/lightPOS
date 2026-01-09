@@ -171,12 +171,17 @@ async function handleChangePassword(e) {
 
         // 3. Verify Current Password (MD5)
         // Note: Assuming md5() is available globally as used in users.js
-        if (users[userIndex].password !== md5(currentPass)) {
+        // Handle potential schema mismatch (password vs password_hash) and legacy plain text
+        const storedPassword = users[userIndex].password || users[userIndex].password_hash;
+        const inputHash = md5(currentPass);
+
+        if (storedPassword !== inputHash && storedPassword !== currentPass) {
             throw new Error("Current password is incorrect.");
         }
 
         // 4. Update Password
         users[userIndex].password = md5(newPass);
+        users[userIndex].password_hash = users[userIndex].password; // Ensure compatibility with backend schema
 
         // 5. Save back
         await fetch(`${API_URL}?file=users`, {

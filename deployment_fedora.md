@@ -48,3 +48,20 @@ chmod +x deploy_to_xampp.sh
     `sudo chcon -R -t httpd_sys_rw_content_t /opt/lampp/htdocs/lightposDev`
 *   **Database Locked:** If you get 500 errors regarding the DB, ensure the `data` folder is writable:
     `sudo chmod -R 777 /opt/lampp/htdocs/lightposDev/data`
+    
+    The deployment script now automatically stops XAMPP during deployment to release file locks. If you still encounter locks during normal operation, restart XAMPP:
+    `sudo /opt/lampp/lampp restart`
+
+*   **503 Service Unavailable (Restore Loop):**
+    If the application is stuck in "Restore Mode", run the following command in your browser console (F12) or via curl to reset the server state:
+    ```javascript
+    fetch('api/router.php?action=reset_all', { method: 'POST' }).then(r => r.json()).then(console.log);
+    ```
+
+*   **Admin Permissions / Login Issues:**
+    If you cannot log in after a fresh deployment or restore, force-reset the admin account:
+    ```javascript
+    fetch('api/router.php?action=fix_admin').then(r => r.json()).then(console.log);
+    ```
+    Then clear your browser cache/storage:
+    `localStorage.clear(); window.location.reload();`

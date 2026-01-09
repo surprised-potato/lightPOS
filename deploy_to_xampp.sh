@@ -7,6 +7,12 @@ XAMPP_GROUP="daemon"
 
 echo "Deploying to: $TARGET_DIR"
 
+# Stop XAMPP to release any database locks before file operations
+echo "Stopping XAMPP to release file locks..."
+if [ -f "/opt/lampp/lampp" ]; then
+    sudo /opt/lampp/lampp stop
+fi
+
 # Ensure rsync is installed (common issue on minimal Fedora installs)
 if ! command -v rsync &> /dev/null; then
     echo "rsync not found. Attempting to install..."
@@ -98,11 +104,11 @@ if [ -f "$HTTPD_CONF" ] && ! grep -q "application/wasm" "$HTTPD_CONF"; then
     echo "AddType application/wasm .wasm" | sudo tee -a "$HTTPD_CONF" > /dev/null
 fi
 
-echo "Restarting XAMPP services..."
+echo "Starting XAMPP services..."
 if [ -f "/opt/lampp/lampp" ]; then
-    sudo /opt/lampp/lampp restart
+    sudo /opt/lampp/lampp start
 else
-    echo "XAMPP not found at /opt/lampp/lampp, skipping restart."
+    echo "XAMPP not found at /opt/lampp/lampp, skipping start."
 fi
 
 echo "Deployment complete."

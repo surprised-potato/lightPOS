@@ -278,7 +278,9 @@ function openUserModal(user = null) {
         nameInput.value = user.name;
         phoneInput.value = user.phone || "";
         activeInput.checked = user.is_active === true || user.is_active === 1 || user.is_active === '1';
-        passwordContainer.classList.add("hidden");
+        
+        passwordContainer.classList.remove("hidden");
+        document.getElementById("user-password").placeholder = "Leave blank to keep current";
 
         // Determine Role based on permissions
         let matchedRole = 'custom';
@@ -362,7 +364,7 @@ async function handleUserSubmit(e) {
     const isEdit = document.getElementById("user-email").disabled;
 
     try {
-        if (!isEdit && (!password || password.length < 6)) {
+        if ((!isEdit || password) && (!password || password.length < 6)) {
             throw new Error("Password is required and must be at least 6 characters.");
         }
         
