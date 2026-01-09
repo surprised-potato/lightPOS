@@ -70,13 +70,20 @@ export const SyncEngine = {
         console.log(`SyncEngine: Pulling changes since timestamp: ${since}`);
 
         const response = await fetch(`${SYNC_URL}?since=${since}`);
+        const text = await response.text();
+
         if (!response.ok) {
-            const errorText = await response.text();
-            console.error("SyncEngine: Pull failed. Status:", response.status, "Response:", errorText);
-            throw new Error(`Pull failed: ${response.status} ${errorText}`);
+            console.error("SyncEngine: Pull failed. Status:", response.status, "Response:", text);
+            throw new Error(`Pull failed: ${response.status} ${text}`);
         }
 
-        const data = await response.json();
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch (e) {
+            console.error("SyncEngine: JSON Parse Error. Raw response:", text);
+            throw new Error("Server returned invalid JSON. Check console for details.");
+        }
 
         if (data.status === 'needs_restore') {
             console.warn("Server database needs restore. Initiating full upload from client.");
