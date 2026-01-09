@@ -12,6 +12,9 @@ class SQLiteStore {
         // Enable WAL mode for better concurrency and set timeout for locks
         $this->pdo->exec("PRAGMA journal_mode=WAL;");
         $this->pdo->exec("PRAGMA busy_timeout = 5000;");
+        // Enable emulated prepares to handle parameter reuse and older drivers better
+        $this->pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, true);
+        error_log("SQLiteStore initialized with ATTR_EMULATE_PREPARES=true");
         $this->collections = [
             'items', 'transactions', 'users', 'customers', 'suppliers',
             'shifts', 'expenses', 'returns', 'stock_movements',

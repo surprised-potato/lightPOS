@@ -43,6 +43,23 @@ function ensureSchema($pdo) {
         }
     }
 
+    // V1.1 Migration: Add is_active to users table
+    $userCols = $pdo->query("PRAGMA table_info(users)")->fetchAll(PDO::FETCH_COLUMN, 1);
+    if (!in_array('is_active', $userCols)) {
+        $pdo->exec("ALTER TABLE users ADD COLUMN is_active INTEGER DEFAULT 1");
+        error_log("DB Migration: Added is_active column to users table.");
+    }
+
+    // Fix for missing permissions_json and password_hash
+    if (!in_array('permissions_json', $userCols)) {
+        $pdo->exec("ALTER TABLE users ADD COLUMN permissions_json TEXT");
+        error_log("DB Migration: Added permissions_json column to users table.");
+    }
+    if (!in_array('password_hash', $userCols)) {
+        $pdo->exec("ALTER TABLE users ADD COLUMN password_hash TEXT");
+        error_log("DB Migration: Added password_hash column to users table.");
+    }
+
     // Seed Default Admin if users table is empty (Deployment Initialization)
     $stmt = $pdo->query("SELECT COUNT(*) FROM users");
     if ($stmt && $stmt->fetchColumn() == 0) {
