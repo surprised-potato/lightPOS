@@ -211,6 +211,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         echo json_encode(["success" => true]);
     } elseif ($action === 'login') {
+        // Ensure we wait for locks on login too
+        $store->pdo->exec("PRAGMA busy_timeout = 5000;");
+        
         $email = $input['email'] ?? '';
         $password = $input['password'] ?? ''; 
 
@@ -261,6 +264,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             http_response_code(401);
             echo json_encode(["error" => "Invalid credentials"]);
         }
+    } elseif ($action === 'repair_users') {
+        // Utility to fix existing users with plain text passwords
+        $users = $store->getAll('users');
+        $count = 0;
+        foreach ($users as $u) {
+            // Check if password_hash is NOT a 32-char hex string (MD5)
+            if (isset($u['password_hash']) && (strlen($u['password_hash']) !== 32 || !ctype_xdigit($u['password_hash']))) {
+                $u['password_hash'] = md5($u['password_hash']);
+                $store->upsert('users', $u);
+                $count++;
+            }
+        }
+        echo json_encode(["success" => true, "message" => "Repaired $count user passwords."]);
     } elseif ($action === 'reset_all') {
         $toWipe = [
             'items', 'transactions', 'shifts', 'expenses', 'stock_movements', 

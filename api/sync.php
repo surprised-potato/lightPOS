@@ -21,6 +21,8 @@ if (!is_dir($dataDir) || !is_writable($dataDir)) {
 }
 
 $store = new SQLiteStore();
+// Set a timeout to prevent "database is locked" errors during concurrent syncs
+$store->pdo->exec("PRAGMA busy_timeout = 5000;");
 
 // Ensure Schema exists (Self-Healing)
 function ensureSchema($pdo) {
@@ -192,6 +194,13 @@ if ($method === 'POST') {
         foreach ($outbox as $change) {
             $collection = $change['collection'];
             $payload = $change['payload'];
+            
+            // Auto-hash passwords for users if they look like plain text (Fix for Login Issues)
+            if ($collection === 'users' && isset($payload['password_hash'])) {
+                if (strlen($payload['password_hash']) !== 32 || !ctype_xdigit($payload['password_hash'])) {
+                    $payload['password_hash'] = md5($payload['password_hash']);
+                }
+            }
             
             // The logic inside upsert now handles conflict resolution
             $store->upsert($collection, $payload);

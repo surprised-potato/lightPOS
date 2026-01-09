@@ -278,3 +278,18 @@ Inserting records one by one in a loop is slow and can cause contention/locking 
 1.  **Transactions:** Updated `api/router.php` to wrap the import loop in a database transaction (`beginTransaction` / `commit`). This significantly improves performance and prevents locking issues during the restore process.
 2.  **Error Handling:** Added `try-catch` blocks to catch exceptions during import and return a meaningful JSON error message instead of a generic 500.
 3.  **Advisory:** For setting up a new server, users should use the **"Restore from Backup"** button (which uses the optimized `router.php`) rather than "Merge & Sync" (which relies on the client-side `SyncEngine` and `api/sync.php`).
+
+## Deployment Stability: Database Locks & Password Hashing
+
+### Problem Description
+1.  **Database Locked:** User encountered `SQLSTATE[HY000]: General error: 5 database is locked` during sync/user creation.
+2.  **Login Issues:** Other users (non-admin) could not log in after deployment, and changing passwords failed.
+
+### Diagnosis
+1.  **Locking:** SQLite defaults to a very short timeout. Concurrent requests (Sync + User Action) caused immediate failure.
+2.  **Passwords:** Legacy data imported via `sync.php` (Push) or existing in the DB contained plain-text passwords, but the login logic expects MD5 hashes.
+
+### Resolution
+1.  **Busy Timeout:** Added `$store->pdo->exec("PRAGMA busy_timeout = 5000;");` to `api/sync.php` and `api/router.php`. This makes SQLite wait up to 5 seconds for a lock to clear before failing.
+2.  **Sync Hashing:** Updated `api/sync.php` to automatically detect and hash plain-text passwords in the `users` collection during a PUSH operation.
+3.  **Repair Utility:** Added `repair_users` action to `api/router.php` to batch-fix existing users in the database.
