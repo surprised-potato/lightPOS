@@ -226,3 +226,30 @@ Race condition between `SyncEngine` (client) and `ensureSchema` (server). The se
 ### Resolution
 1.  **Immediate:** User ran `fetch('api/router.php?action=reset_all', { method: 'POST' })` to clear the lock.
 2.  **Prevention:** Updated `deploy_to_xampp.sh` to pre-initialize the SQLite database using `sqlite3` and `schema.sql` before the web server serves requests. This bypasses the need for the server to create a lock file on first run.
+
+## Post-Restore Critical Failure: Login & Database Lock
+
+### Problem Description
+1.  **Login Failure:** After performing a "Merge Backup and Sync", the user could not log in. This is likely because the restored data overwrote the `users` table with old credentials or incompatible password hashes.
+2.  **Database Locked:** Attempting to create a new user (likely via the setup wizard or console) resulted in `SQLSTATE[HY000]: General error: 5 database is locked`. This indicates a SQLite-level lock, distinct from the application's `restore.lock`.
+
+### Diagnosis
+*   **Lock:** The restore process likely timed out or crashed, leaving a PHP process hanging with an open transaction on the SQLite database. This prevents any new writes (like creating a user).
+*   **Login:** The backup contained user data that is either unknown or incompatible with the current authentication logic.
+
+### Resolution
+1.  **Clear Lock:** Restart the XAMPP server to kill stuck processes releasing the file lock.
+    *   Command: `sudo /opt/lampp/lampp restart`
+2.  **Reset Admin:** Use the `fix_admin` endpoint to force-reset the `admin@lightpos.com` account to a known state (`admin123`).
+    *   Console Command: `fetch('api/router.php?action=fix_admin').then(r => r.json()).then(console.log);`
+
+## Data Migration: Password Field Mismatch
+
+### Problem Description
+The user reported issues logging in after restoring data from a backup. The legacy JSON data likely uses the field `password`, whereas the new SQLite schema expects `password_hash`. This mismatch causes the password to be dropped or the insert to fail during sync/restore.
+
+### Diagnosis
+Schema mismatch between legacy JSON backups (`password`) and SQLite schema (`password_hash`).
+
+### Resolution
+Updated `src/modules/settings.js` in both `handleRestoreBackup` (Full Restore) and `btnSyncBackup` (Manual Sync) to explicitly check for `users` collection items. If `password` exists but `password_hash` is missing, the value is mapped to `password_hash` and the old `password` field is removed to prevent "no such column" errors.

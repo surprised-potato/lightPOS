@@ -1107,6 +1107,14 @@ async function setupMigrationEventListeners() {
                             item.stock_level = parseFloat(item.stock_level) || 0;
                         }
 
+                        // Fix for Users: Map 'password' to 'password_hash' for SQLite compatibility
+                        if (collection === 'users') {
+                            if (item.password && !item.password_hash) {
+                                item.password_hash = item.password;
+                                delete item.password;
+                            }
+                        }
+
                         const existing = await db[collection].get(item[idField]);
                         const shouldUpdate = !existing || (item._version || 0) > (existing._version || 0) || ((item._version || 0) === (existing._version || 0) && (item._updatedAt || 0) > (existing._updatedAt || 0));
                         if (shouldUpdate) {
@@ -1742,6 +1750,14 @@ async function handleRestoreBackup(e) {
                         item.cost_price = parseFloat(item.cost_price) || 0;
                         item.selling_price = parseFloat(item.selling_price) || 0;
                         item.stock_level = parseFloat(item.stock_level) || 0;
+                    }
+
+                    // Fix for Users: Map 'password' to 'password_hash' for SQLite compatibility
+                    if (fileName === 'users') {
+                        if (item.password && !item.password_hash) {
+                            item.password_hash = item.password;
+                            delete item.password;
+                        }
                     }
                 }
             });
