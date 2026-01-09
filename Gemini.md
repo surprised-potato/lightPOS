@@ -214,3 +214,15 @@ User asked if they should delete the previous server instance and clear client-s
 ### Resolution / Instructions provided
 1.  **Client:** **Yes**, clearing IndexedDB is mandatory to prevent schema conflicts.
 2.  **Server:** Manual deletion is not strictly necessary because the script cleans up, but **backing up old data** is recommended before running the script if preservation is required.
+
+## Deployment Inquiry: 503 Restore Loop
+
+### Problem Description
+After a fresh deployment, the user encountered persistent `503 Service Unavailable` errors with the message "Server is currently restoring". This occurs because the `SyncEngine` polls the server immediately; if the DB is uninitialized, the server creates a `restore.lock` file, but the concurrent requests prevent the initialization logic from completing or clearing the lock.
+
+### Diagnosis
+Race condition between `SyncEngine` (client) and `ensureSchema` (server). The server enters "Restore Mode" (lock file created) but gets stuck there.
+
+### Resolution
+1.  **Immediate:** User ran `fetch('api/router.php?action=reset_all', { method: 'POST' })` to clear the lock.
+2.  **Prevention:** Updated `deploy_to_xampp.sh` to pre-initialize the SQLite database using `sqlite3` and `schema.sql` before the web server serves requests. This bypasses the need for the server to create a lock file on first run.

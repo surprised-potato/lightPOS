@@ -12,6 +12,10 @@ if ! command -v rsync &> /dev/null; then
     echo "rsync not found. Attempting to install..."
     sudo dnf install -y rsync
 fi
+if ! command -v sqlite3 &> /dev/null; then
+    echo "sqlite3 not found. Attempting to install..."
+    sudo dnf install -y sqlite
+fi
 
 # Check if we need to preserve the existing database (if local one is missing)
 if [ ! -f "./data/database.sqlite" ] && [ -f "$TARGET_DIR/data/database.sqlite" ]; then
@@ -59,6 +63,19 @@ if [ "$RESTORE_DB" = true ]; then
     sudo mv /tmp/lightpos_db_backup.sqlite "$TARGET_DIR/data/database.sqlite"
     sudo chown $XAMPP_USER:$XAMPP_GROUP "$TARGET_DIR/data/database.sqlite"
     sudo chmod 777 "$TARGET_DIR/data/database.sqlite"
+fi
+
+# Initialize new database if it doesn't exist (Prevents 503 Restore Mode loop)
+if [ ! -f "$TARGET_DIR/data/database.sqlite" ]; then
+    echo "Initializing new SQLite database..."
+    if command -v sqlite3 &> /dev/null && [ -f "$TARGET_DIR/schema.sql" ]; then
+        sudo sqlite3 "$TARGET_DIR/data/database.sqlite" < "$TARGET_DIR/schema.sql"
+        sudo chown $XAMPP_USER:$XAMPP_GROUP "$TARGET_DIR/data/database.sqlite"
+        sudo chmod 777 "$TARGET_DIR/data/database.sqlite"
+        echo "Database initialized from schema.sql"
+    else
+        echo "Skipping DB init (sqlite3 or schema.sql missing). Web app will initialize on first load."
+    fi
 fi
 
 echo "Configuring XAMPP settings..."
