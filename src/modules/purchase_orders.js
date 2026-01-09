@@ -460,12 +460,14 @@ async function refreshProcurementData() {
         const holdingCostRate = (globalSettings && globalSettings.procurement && globalSettings.procurement.holding_cost_rate) ? parseFloat(globalSettings.procurement.holding_cost_rate) : 20;
         const serviceLevelZ = (globalSettings && globalSettings.procurement && globalSettings.procurement.service_level) ? parseFloat(globalSettings.procurement.service_level) : 1.65;
         const defaultLeadTime = (globalSettings && globalSettings.procurement && globalSettings.procurement.default_lead_time !== undefined) ? parseFloat(globalSettings.procurement.default_lead_time) : 7;
+        const assumedStockEnabled = (globalSettings && globalSettings.procurement && globalSettings.procurement.assumed_stock_new_store) || false;
 
         // 1. Compute Live Velocity
         const itemStats = {}; // { itemId: { firstSale: Date, totalQty: 0, dailySales: { date: qty } } }
         const now = new Date();
         const lookbackWindow = new Date(now);
         lookbackWindow.setDate(lookbackWindow.getDate() - 180);
+        let globalFirstSale = new Date(); // Track oldest transaction for store age
         
         transactions.forEach(t => {
             if (t.is_voided || t._deleted) return;
@@ -473,6 +475,9 @@ async function refreshProcurementData() {
             const dateStr = txDate.toISOString().split('T')[0];
             const txItems = Array.isArray(t.items) ? t.items : [];
             
+            // Check for global store age
+            if (txDate < globalFirstSale) globalFirstSale = txDate;
+
             txItems.forEach(i => {
                 if (!itemStats[i.id]) {
                     itemStats[i.id] = { firstSale: txDate, totalQty: 0, dailySales: {} };
@@ -491,12 +496,15 @@ async function refreshProcurementData() {
             });
         });
 
+        const storeAgeDays = (now - globalFirstSale) / (1000 * 60 * 60 * 24);
+        const isYoungStore = storeAgeDays <= 30;
+
         const velocityRows = Object.entries(itemStats).map(([id, stats]) => {
             const item = items.find(i => i.id === id);
             const name = item ? item.name : id;
             const cost = item ? (parseFloat(item.cost_price) || 0) : 0;
             const minStock = item ? (parseFloat(item.min_stock) || 0) : 0;
-            const currentStock = item ? (parseFloat(item.stock_level) || 0) : 0;
+            const maxStock = item ? (parseFloat(item.max_stock) || 0) : 0;
             
             const daysSince = Math.max(1, Math.ceil((now - stats.firstSale) / (1000 * 60 * 60 * 24)));
             const effectiveDays = Math.min(180, daysSince);
@@ -520,6 +528,14 @@ async function refreshProcurementData() {
                         leadTime = parseFloat(config.lead_time_days);
                     }
                 }
+            }
+
+            // Calculate Current Stock (with Assumed Stock logic for new stores)
+            const rawStock = item ? (parseFloat(item.stock_level) || 0) : 0;
+            let currentStock = Math.max(0, rawStock);
+
+            if (assumedStockEnabled && isYoungStore && rawStock <= 0) {
+                currentStock = 0.5 * velocity * cadenceDays;
             }
 
             // OTB Calculation Components
@@ -565,16 +581,21 @@ async function refreshProcurementData() {
             // ROP (Trigger Level) - Based on Lead Time
             const riskPeriod = leadTime + reviewPeriod;
             const safetyStock = Math.ceil(serviceLevelZ * stdDev * Math.sqrt(riskPeriod));
-            const rop = Math.ceil((velocity * leadTime) + safetyStock);
+            let rop = Math.ceil((velocity * leadTime) + safetyStock);
+            if (minStock > rop) rop = minStock;
 
-            // Target Level (Order-Up-To) - Based on ROP + Cycle Stock (Cadence)
-            const cycleStock = velocity * reviewPeriod;
-            const targetLevel = Math.ceil(rop + cycleStock);
+            // Target Level (Order-Up-To)
+            let targetLevel;
+            if (maxStock > 0) {
+                targetLevel = maxStock;
+            } else {
+                targetLevel = Math.ceil(velocity * cadenceDays);
+            }
             
             const netRequirement = targetLevel - currentStock;
             let suggestedQty = 0;
             if (netRequirement > 0) {
-                suggestedQty = Math.ceil(Math.max(eoq, netRequirement));
+                suggestedQty = Math.ceil(netRequirement);
             }
 
             return {

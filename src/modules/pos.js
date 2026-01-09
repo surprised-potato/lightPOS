@@ -172,6 +172,11 @@ let cart = [];
 let lastTransactionData = null;
 let selectedCustomer = { id: "Guest", name: "Guest" };
 
+let mobilePosStream = null;
+let isPosCameraRunning = false;
+let posBarcodeDetector = null;
+let posScanDebounce = false;
+
 export async function loadPosView() {
     const content = document.getElementById("main-content");
     content.innerHTML = ""; // Clear content while checking
@@ -187,6 +192,7 @@ async function renderPosInterface(content) {
     const savedCartWidth = localStorage.getItem('pos_cart_width') || '33.33%';
     const savedCols = localStorage.getItem('pos_grid_cols') || '3';
     const savedCompact = localStorage.getItem('pos_compact_mode') || 'false';
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
     // Full height layout minus header padding
     content.innerHTML = `
@@ -201,6 +207,9 @@ async function renderPosInterface(content) {
                             autocomplete="off">
                         <svg class="w-6 h-6 absolute left-3 top-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                     </div>
+                    <button id="btn-pos-mobile-mode" class="${isMobile ? '' : 'md:hidden'} bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg shadow transition shrink-0" title="Mobile View">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                    </button>
                     <div class="flex items-center gap-2 shrink-0 ml-2">
                         <label class="text-[10px] font-bold text-gray-400 uppercase cursor-pointer select-none" for="pos-compact-mode">Compact:</label>
                         <input type="checkbox" id="pos-compact-mode" ${savedCompact === 'true' ? 'checked' : ''} class="form-checkbox h-4 w-4 text-blue-600 cursor-pointer">
@@ -301,6 +310,70 @@ async function renderPosInterface(content) {
                         <span><b class="text-blue-500">F4</b> Pay</span>
                         <span><b class="text-blue-500">F8</b> Print</span>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile POS UI -->
+        <div id="mobile-pos-ui" class="fixed inset-0 bg-gray-100 z-[60] hidden flex flex-col">
+            <!-- Header -->
+            <div class="bg-blue-700 p-4 text-white shadow-md shrink-0">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="font-bold text-xl">Mobile POS</h2>
+                    <div class="flex gap-3">
+                        <button id="btn-mobile-scan" class="bg-white text-blue-700 px-4 py-2 rounded-full font-bold text-sm flex items-center gap-2 shadow-sm active:scale-95 transition">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 16h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg>
+                            Scan
+                        </button>
+                        <button id="btn-exit-mobile-pos" class="text-white hover:bg-blue-600 p-2 rounded-full">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="flex justify-between items-end">
+                    <span class="text-blue-200 text-sm font-bold uppercase">Total Due</span>
+                    <span id="mobile-cart-total" class="text-4xl font-black leading-none">₱0.00</span>
+                </div>
+            </div>
+
+            <!-- Mobile Search -->
+            <div class="p-3 bg-white shadow-sm shrink-0 z-10 border-b">
+                <div class="relative">
+                    <input type="text" id="mobile-pos-search" placeholder="Search items..." class="w-full pl-10 p-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg" autocomplete="off">
+                    <svg class="w-6 h-6 absolute left-3 top-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    <div id="mobile-pos-search-results" class="hidden absolute w-full bg-white border mt-1 rounded-lg shadow-xl max-h-60 overflow-y-auto z-30"></div>
+                </div>
+            </div>
+
+            <!-- Cart List -->
+            <div id="mobile-pos-cart-items" class="flex-1 overflow-y-auto p-3 space-y-3 pb-24">
+                <!-- Items injected here -->
+            </div>
+
+            <!-- Footer -->
+            <div class="absolute bottom-0 left-0 right-0 p-4 bg-white border-t shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-20">
+                <button id="btn-mobile-checkout" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl text-xl shadow-lg transition transform active:scale-95 flex justify-center items-center gap-2">
+                    <span>Checkout</span>
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                </button>
+            </div>
+
+            <!-- Camera Overlay -->
+            <div id="mobile-pos-camera-overlay" class="fixed inset-0 bg-black z-[70] hidden flex flex-col">
+                <div class="relative flex-1 bg-black overflow-hidden flex items-center justify-center">
+                    <video id="mobile-pos-video" class="absolute inset-0 w-full h-full object-cover" autoplay playsinline muted></video>
+                    <div class="absolute inset-0 border-2 border-red-500 opacity-50 pointer-events-none">
+                        <div class="absolute top-1/2 left-0 right-0 h-0.5 bg-red-600 shadow-[0_0_10px_rgba(255,0,0,0.8)]"></div>
+                    </div>
+                    <button id="btn-pos-toggle-flash" class="absolute top-4 left-4 bg-gray-800 bg-opacity-50 text-white p-2 rounded-full z-20 hidden">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                    </button>
+                    <button id="btn-close-pos-camera" class="absolute top-4 right-4 bg-gray-800 bg-opacity-50 text-white p-2 rounded-full z-20">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                <div class="p-4 bg-black text-white text-center">
+                    <p class="text-sm font-bold">Point camera at barcode</p>
                 </div>
             </div>
         </div>
@@ -1042,6 +1115,7 @@ async function renderPosInterface(content) {
     });
 
     updateGridColumns(savedCols);
+    setupMobilePosListeners();
 }
 
 function initResizer() {
@@ -1053,6 +1127,189 @@ function initResizer() {
         document.body.style.cursor = 'col-resize';
         document.body.classList.add('select-none');
     });
+}
+
+function setupMobilePosListeners() {
+    const btnMobileMode = document.getElementById("btn-pos-mobile-mode");
+    const mobileUI = document.getElementById("mobile-pos-ui");
+    const btnExit = document.getElementById("btn-exit-mobile-pos");
+    const btnScan = document.getElementById("btn-mobile-scan");
+    const btnCloseCamera = document.getElementById("btn-close-pos-camera");
+    const btnCheckout = document.getElementById("btn-mobile-checkout");
+    const btnToggleFlash = document.getElementById("btn-pos-toggle-flash");
+    const mobileSearch = document.getElementById("mobile-pos-search");
+    const mobileResults = document.getElementById("mobile-pos-search-results");
+
+    btnMobileMode?.addEventListener("click", () => {
+        mobileUI.classList.remove("hidden");
+        renderCart(); // Refresh mobile cart
+    });
+
+    btnExit?.addEventListener("click", () => {
+        mobileUI.classList.add("hidden");
+        stopPosCamera();
+    });
+
+    btnScan?.addEventListener("click", startPosCamera);
+    btnCloseCamera?.addEventListener("click", stopPosCamera);
+    btnToggleFlash?.addEventListener("click", togglePosFlash);
+
+    mobileSearch?.addEventListener("input", (e) => {
+        const term = e.target.value.toLowerCase();
+        if (term.length < 1) {
+            mobileResults.classList.add("hidden");
+            return;
+        }
+        
+        const terms = term.split(/\s+/).filter(t => t.length > 0);
+        const filtered = allItems.filter(i => {
+            const name = (i.name || "").toLowerCase();
+            const barcode = (i.barcode || "").toLowerCase();
+            return terms.every(t => name.includes(t) || barcode.includes(t));
+        }).slice(0, 20);
+
+        if (filtered.length > 0) {
+            mobileResults.innerHTML = filtered.map(item => `
+                <div class="p-3 border-b hover:bg-gray-100 cursor-pointer mobile-search-item flex justify-between items-center" data-id="${item.id}">
+                    <div>
+                        <div class="font-bold text-gray-800">${item.name}</div>
+                        <div class="text-xs text-gray-500">${item.barcode || 'No Barcode'}</div>
+                    </div>
+                    <div class="font-bold text-blue-600">₱${(item.selling_price || 0).toFixed(2)}</div>
+                </div>
+            `).join('');
+            mobileResults.classList.remove("hidden");
+
+            mobileResults.querySelectorAll(".mobile-search-item").forEach(el => {
+                el.addEventListener("click", async () => {
+                    const item = allItems.find(i => i.id === el.dataset.id);
+                    if (item) {
+                        await addToCart(item, 1);
+                        mobileSearch.value = "";
+                        mobileResults.classList.add("hidden");
+                    }
+                });
+            });
+        } else {
+            mobileResults.innerHTML = `<div class="p-3 text-gray-500 text-center">No items found</div>`;
+            mobileResults.classList.remove("hidden");
+        }
+    });
+    
+    btnCheckout?.addEventListener("click", () => {
+        if (cart.length === 0) {
+            showToast("Cart is empty", true);
+            return;
+        }
+        openCheckout();
+    });
+}
+
+async function startPosCamera() {
+    if (isPosCameraRunning) return;
+    const overlay = document.getElementById("mobile-pos-camera-overlay");
+    const video = document.getElementById("mobile-pos-video");
+
+    try {
+        if ('BarcodeDetector' in window) {
+            posBarcodeDetector = new BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39'] });
+        }
+        
+        mobilePosStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        video.srcObject = mobilePosStream;
+
+        // Flash Logic
+        const track = mobilePosStream.getVideoTracks()[0];
+        const btnFlash = document.getElementById("btn-pos-toggle-flash");
+        if (track && track.getCapabilities && btnFlash) {
+            const capabilities = track.getCapabilities();
+            if (capabilities.torch) {
+                btnFlash.classList.remove("hidden");
+                try {
+                    await track.applyConstraints({ advanced: [{ torch: true }] });
+                    btnFlash.classList.remove("text-white");
+                    btnFlash.classList.add("text-yellow-400");
+                } catch (e) {
+                    console.warn("Failed to enable flash by default:", e);
+                }
+            }
+        }
+
+        overlay.classList.remove("hidden");
+        isPosCameraRunning = true;
+        posScanDebounce = false;
+        requestAnimationFrame(posScanLoop);
+    } catch (err) {
+        console.error("Camera error:", err);
+        alert("Could not access camera.");
+    }
+}
+
+function stopPosCamera() {
+    if (mobilePosStream) {
+        mobilePosStream.getTracks().forEach(t => t.stop());
+        mobilePosStream = null;
+    }
+    isPosCameraRunning = false;
+    document.getElementById("mobile-pos-camera-overlay").classList.add("hidden");
+
+    const btnFlash = document.getElementById("btn-pos-toggle-flash");
+    if (btnFlash) {
+        btnFlash.classList.add("hidden");
+        btnFlash.classList.remove("text-yellow-400");
+        btnFlash.classList.add("text-white");
+    }
+}
+
+async function posScanLoop() {
+    if (!isPosCameraRunning) return;
+    const video = document.getElementById("mobile-pos-video");
+    
+    if (posBarcodeDetector && !posScanDebounce && video.readyState === video.HAVE_ENOUGH_DATA) {
+        try {
+            const barcodes = await posBarcodeDetector.detect(video);
+            if (barcodes.length > 0) {
+                posScanDebounce = true;
+                handlePosScan(barcodes[0].rawValue);
+            }
+        } catch (e) {}
+    }
+    if (isPosCameraRunning) requestAnimationFrame(posScanLoop);
+}
+
+async function togglePosFlash() {
+    if (mobilePosStream) {
+        const track = mobilePosStream.getVideoTracks()[0];
+        if (track && track.getCapabilities) {
+            const capabilities = track.getCapabilities();
+            if (capabilities.torch) {
+                const current = track.getSettings().torch;
+                await track.applyConstraints({ advanced: [{ torch: !current }] });
+                const btn = document.getElementById("btn-pos-toggle-flash");
+                if (!current) {
+                    btn.classList.remove("text-white");
+                    btn.classList.add("text-yellow-400");
+                } else {
+                    btn.classList.add("text-white");
+                    btn.classList.remove("text-yellow-400");
+                }
+            }
+        }
+    }
+}
+
+async function handlePosScan(code) {
+    const item = barcodeMap.get(code) || allItems.find(i => i.barcode === code);
+    if (item) {
+        playBeep(880, 0.1);
+        await addToCart(item, 1);
+        showToast(`Added ${item.name}`);
+        setTimeout(() => { posScanDebounce = false; }, 1500); // Delay before next scan
+    } else {
+        playBeep(200, 0.3, 'sawtooth');
+        showToast(`Item not found: ${code}`, true);
+        setTimeout(() => { posScanDebounce = false; }, 2000);
+    }
 }
 
 function updateGridColumns(cols) {
@@ -1308,6 +1565,8 @@ function renderCart() {
     const cartContainer = document.getElementById("pos-cart-items");
     const totalEl = document.getElementById("cart-total");
     const btnCheckout = document.getElementById("btn-checkout");
+    const mobileCartContainer = document.getElementById("mobile-pos-cart-items");
+    const mobileTotalEl = document.getElementById("mobile-cart-total");
     
     if (!cartContainer) return;
     cartContainer.innerHTML = "";
@@ -1320,6 +1579,9 @@ function renderCart() {
                 <p>Cart is empty</p>
             </div>`;
         totalEl.textContent = "₱0.00";
+        if (mobileCartContainer) mobileCartContainer.innerHTML = cartContainer.innerHTML;
+        if (mobileTotalEl) mobileTotalEl.textContent = "₱0.00";
+        
         btnCheckout.disabled = true;
         return;
     }
@@ -1388,7 +1650,30 @@ function renderCart() {
         }
     });
 
+    // Render Mobile Cart
+    if (mobileCartContainer) {
+        mobileCartContainer.innerHTML = "";
+        cart.forEach((item, index) => {
+            const div = document.createElement("div");
+            div.className = "bg-white p-3 rounded-lg shadow-sm border flex justify-between items-center";
+            div.innerHTML = `
+                <div class="flex-1">
+                    <div class="font-bold text-gray-800 text-sm">${item.name}</div>
+                    <div class="text-xs text-gray-500">₱${(item.selling_price || 0).toFixed(2)} each</div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button class="w-8 h-8 rounded-full bg-gray-100 text-gray-600 font-bold flex items-center justify-center hover:bg-gray-200" onclick="document.querySelector('.cart-qty-input[data-index=\\'${index}\\']').value = ${item.qty - 1}; document.querySelector('.cart-qty-input[data-index=\\'${index}\\']').dispatchEvent(new Event('change'));">-</button>
+                    <span class="font-bold text-lg w-6 text-center">${item.qty}</span>
+                    <button class="w-8 h-8 rounded-full bg-gray-100 text-gray-600 font-bold flex items-center justify-center hover:bg-gray-200" onclick="document.querySelector('.cart-qty-input[data-index=\\'${index}\\']').value = ${item.qty + 1}; document.querySelector('.cart-qty-input[data-index=\\'${index}\\']').dispatchEvent(new Event('change'));">+</button>
+                </div>
+                <div class="ml-4 font-bold text-blue-600">₱${((item.selling_price || 0) * item.qty).toFixed(2)}</div>
+            `;
+            mobileCartContainer.appendChild(div);
+        });
+    }
+
     totalEl.textContent = `₱${total.toFixed(2)}`;
+    if (mobileTotalEl) mobileTotalEl.textContent = `₱${total.toFixed(2)}`;
     btnCheckout.disabled = false;
 }
 

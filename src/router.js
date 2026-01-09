@@ -15,6 +15,7 @@ import { loadReturnsView } from "./modules/returns.js";
 import { loadPurchaseOrdersView } from "./modules/purchase_orders.js";
 import { checkPermission } from "./auth.js";
 import { renderSidebar } from "./layout.js";
+import { loadManualView } from "./modules/manual.js";
 
 export function initRouter() {
     window.addEventListener("hashchange", handleRoute);
@@ -84,6 +85,7 @@ async function handleRoute() {
 
     switch (hash) {
         case "#dashboard": await loadDashboardView(); break;
+        case "#manual": await loadManualView(); break;
         case "#pos": await loadPosView(); break;
         case "#items": await loadItemsView(); break;
         case "#suppliers": await loadSuppliersView(); break;

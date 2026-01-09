@@ -71,6 +71,7 @@ export function renderSidebar() {
 
     const menuItems = [
         { section: "Front Office" },
+        { label: "User Manual", icon: "📘", hash: "#manual" },
         { label: "POS", icon: "🛒", hash: "#pos", permission: "pos", type: "read" },
         { label: "Returns", icon: "↩️", hash: "#returns", permission: "returns", type: "read" },
         { label: "Customers", icon: "👥", hash: "#customers", permission: "customers", type: "read" },

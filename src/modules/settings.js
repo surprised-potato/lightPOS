@@ -305,6 +305,13 @@ export async function loadSettingsView() {
                                 <input type="number" id="set-procurement-lead-time" step="1" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="7">
                                 <p class="text-[10px] text-gray-500 mt-1">Used if supplier specific lead time is missing.</p>
                             </div>
+                            <div class="mt-4">
+                                <label class="inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="set-procurement-assumed-stock" class="form-checkbox h-5 w-5 text-blue-600">
+                                    <span class="ml-2 text-sm font-bold text-gray-700">Assumed Stock for New Stores</span>
+                                </label>
+                                <p class="text-[10px] text-gray-500 mt-1 ml-7">If store data is < 30 days old, assume stock = 0.5 * Velocity * Cadence for items with ≤ 0 stock.</p>
+                            </div>
                         </div>
 
                         <div class="space-y-6">
@@ -760,6 +767,7 @@ async function loadSettings() {
                 document.getElementById("set-procurement-service-level").value = settings.procurement.service_level || 1.65;
                 const lt = settings.procurement.default_lead_time;
                 document.getElementById("set-procurement-lead-time").value = (lt !== undefined && lt !== null) ? lt : 7;
+                document.getElementById("set-procurement-assumed-stock").checked = settings.procurement.assumed_stock_new_store || false;
             }
             await renderSyncHistory();
             renderHeader(); // Ensure branding in header matches loaded settings
@@ -817,7 +825,8 @@ async function handleSave(e) {
             ordering_cost: parseFloat(document.getElementById("set-procurement-ordering-cost").value) || 50,
             holding_cost_rate: parseFloat(document.getElementById("set-procurement-holding-cost").value) || 20,
             service_level: parseFloat(document.getElementById("set-procurement-service-level").value) || 1.65,
-            default_lead_time: document.getElementById("set-procurement-lead-time").value !== "" ? parseInt(document.getElementById("set-procurement-lead-time").value) : 7
+            default_lead_time: document.getElementById("set-procurement-lead-time").value !== "" ? parseInt(document.getElementById("set-procurement-lead-time").value) : 7,
+            assumed_stock_new_store: document.getElementById("set-procurement-assumed-stock").checked
         },
         pos: {
             auto_print: document.getElementById("set-auto-print").checked
