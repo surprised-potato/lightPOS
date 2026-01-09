@@ -114,6 +114,13 @@ async function initializeApplication() {
     }
 
     try {
+        // 1. Initialize Server (Prevents 503 Loop)
+        try {
+            await fetch('api/sync.php?action=reset_all', { method: 'POST' });
+        } catch (e) {
+            console.warn("Server init warning:", e);
+        }
+
         const defaultUser = {
             email: 'admin@lightpos.com',
             // id: 'admin@lightpos.com', // Not a column in users table

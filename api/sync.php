@@ -204,14 +204,12 @@ if ($method === 'GET') {
         $initialized = $stmt->fetchColumn();
 
         if ($initialized === false) {
-            // Database is not initialized. Enter restore mode.
-            file_put_contents($restoreLockFile, '1');
+            // Database is not initialized. Return status but DO NOT LOCK.
             echo json_encode(['status' => 'needs_restore', 'serverTime' => round(microtime(true) * 1000)]);
             exit;
         }
     } catch (Exception $e) {
         // This can happen if the table doesn't exist.
-        file_put_contents($restoreLockFile, '1');
         echo json_encode(['status' => 'needs_restore', 'serverTime' => round(microtime(true) * 1000)]);
         exit;
     }
