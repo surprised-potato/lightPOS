@@ -189,7 +189,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             };
 
             try {
-                $store->pdo->beginTransaction();
+                $store->beginTransaction();
                 if ($mode === 'append') {
                     $currentData = $store->getAll($file);
                     if (is_array($input)) {
@@ -205,10 +205,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $store->upsert($file, $record);
                     }
                 }
-                $store->pdo->commit();
+                $store->commit();
             } catch (Exception $e) {
-                if ($store->pdo->inTransaction()) {
-                    $store->pdo->rollBack();
+                if ($store->inTransaction()) {
+                    $store->rollBack();
                 }
                 http_response_code(500);
                 echo json_encode(["error" => "Import failed: " . $e->getMessage()]);
@@ -291,7 +291,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'users', 'sync_metadata'
         ];
         try {
-            $store->pdo->beginTransaction();
+            $store->beginTransaction();
             foreach ($toWipe as $col) {
                 $store->wipe($col);
             }
@@ -318,10 +318,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $store->upsert('users', $defaultAdmin);
             $store->upsert('sync_metadata', ['key' => 'db_initialized', 'value' => '1']);
 
-            $store->pdo->commit();
+            $store->commit();
             echo json_encode(['status' => 'success', 'message' => 'System fully reset to factory defaults.']);
         } catch (Exception $e) {
-            $store->pdo->rollBack();
+            $store->rollBack();
             http_response_code(500);
             echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
         }
@@ -336,7 +336,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $restoreLockFile = $dataDir . 'restore.lock';
 
         try {
-            $store->pdo->beginTransaction();
+            $store->beginTransaction();
 
             // 1. Wipe all tables
             foreach ($toWipe as $col) {
@@ -358,7 +358,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // 3. Mark database as initialized
             $store->upsert('sync_metadata', ['key' => 'db_initialized', 'value' => '1']);
 
-            $store->pdo->commit();
+            $store->commit();
 
             // 4. Remove restore lock
             if (file_exists($restoreLockFile)) {
@@ -368,7 +368,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             echo json_encode(["success" => true, "message" => "Restore from client complete."]);
 
         } catch (Exception $e) {
-            $store->pdo->rollBack();
+            $store->rollBack();
             http_response_code(500);
             echo json_encode(['status' => 'error', 'message' => 'Restore failed: ' . $e->getMessage()]);
         }
@@ -413,15 +413,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'adjustments', 'stockins', 'suspended_transactions', 'sync_metadata',
                         'stock_logs', 'settings', 'notifications'
                     ];
-                    $store->pdo->beginTransaction();
+                    $store->beginTransaction();
                     foreach ($toWipe as $col) {
                         $store->wipe($col);
                     }
                     $store->pdo->exec($sql);
-                    $store->pdo->commit();
+                    $store->commit();
                     echo json_encode(["success" => true, "message" => "Restore complete."]);
                 } catch (Exception $e) {
-                    $store->pdo->rollBack();
+                    $store->rollBack();
                     http_response_code(500);
                     echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
                 }

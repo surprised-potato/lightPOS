@@ -485,3 +485,17 @@ All items in the database were marked as deleted (`_deleted = 1`). The `Inventor
 ### Correct Fix
 
 A new utility script, `api/undelete_items.php`, was created. This script executes a simple SQL query: `UPDATE items SET _deleted = 0 WHERE _deleted = 1`. Running this script restored all the items to an active state, allowing the `recalculateMetrics` function to process them correctly.
+
+## User Creation Lock & Login Failure (Current)
+
+### Problem Description
+After deploying to a Fedora server and clearing the local database, the user successfully logged in as admin. However, when attempting to create a new user via the User Management interface, the `SyncEngine` failed with multiple `500 Internal Server Error` responses. The error message was `SQLSTATE[HY000]: General error: 5 database is locked`. Subsequently, attempting to log in as the newly created user failed with `401 Unauthorized`.
+
+### Diagnosis
+1.  **Database Lock:** SQLite blocks concurrent writes. The `SyncEngine` push operation for the new user likely collided with another background process (e.g., a read operation or another sync attempt), causing the database to lock.
+2.  **Data Inconsistency:** Because the sync operation failed and the transaction was rolled back on the server, the new user record was **not** saved to the server's SQLite database.
+3.  **Login Failure:** The "Invalid credentials" error occurs because the authentication endpoint checks the server database, where the new user does not exist (despite appearing in the local UI, which reads from Dexie).
+
+### Correct Fix
+1.  **Retry Logic:** Implement a robust `executeWithRetry` mechanism in `api/SQLiteStore.php`. This wrapper will catch `SQLSTATE 5` (database locked) errors and retry the operation up to 5 times with a short delay (500ms), allowing the lock to clear.
+2.  **Transaction Handling:** Update `api/sync.php` and `api/router.php` to use the new retry-capable transaction methods (`beginTransaction`, `commit`, `rollBack`) from `SQLiteStore` instead of accessing the PDO object directly.

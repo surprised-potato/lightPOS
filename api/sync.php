@@ -124,7 +124,7 @@ if ($method === 'POST' && isset($_GET['action']) && $_GET['action'] === 'reset_a
         'users', 'sync_metadata'
     ];
     try {
-        $store->pdo->beginTransaction();
+        $store->beginTransaction();
         foreach ($toWipe as $col) {
             $store->wipe($col);
         }
@@ -155,10 +155,10 @@ if ($method === 'POST' && isset($_GET['action']) && $_GET['action'] === 'reset_a
             unlink($restoreLockFile);
         }
 
-        $store->pdo->commit();
+        $store->commit();
         echo json_encode(['status' => 'success', 'message' => 'System fully reset to factory defaults.']);
     } catch (Exception $e) {
-        $store->pdo->rollBack();
+        $store->rollBack();
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
     }
@@ -191,7 +191,7 @@ if ($method === 'POST') {
     $outbox = $input['outbox'] ?? [];
 
     try {
-        $store->pdo->beginTransaction();
+        $store->beginTransaction();
         $pushedTransactions = [];
 
         foreach ($outbox as $change) {
@@ -218,11 +218,11 @@ if ($method === 'POST') {
             $procurement->processRealtimeTriggers($pushedTransactions);
         }
 
-        $store->pdo->commit();
+        $store->commit();
         echo json_encode(['status' => 'success']);
 
     } catch (Exception $e) {
-        $store->pdo->rollBack();
+        $store->rollBack();
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
     }

@@ -135,7 +135,7 @@ class SQLiteStore {
                 ON CONFLICT($idColumn) DO UPDATE SET " . implode(', ', $updateSet);
 
         $stmt = $this->pdo->prepare($sql);
-        $stmt->execute($dbRecord);
+        $this->executeWithRetry($stmt, $dbRecord);
     }
 
     public function delete($collection, $id) {
@@ -155,7 +155,7 @@ class SQLiteStore {
         }
         
         $stmt = $this->pdo->prepare("UPDATE $collection SET _deleted = 1, _updatedAt = ?, _version = COALESCE(_version, 0) + 1 WHERE $idColumn = ?");
-        $stmt->execute([round(microtime(true) * 1000), $id]);
+        $this->executeWithRetry($stmt, [round(microtime(true) * 1000), $id]);
     }
 
     public function wipe($collection) {
@@ -163,7 +163,53 @@ class SQLiteStore {
             throw new Exception("Unknown collection: $collection");
         }
         $stmt = $this->pdo->prepare("DELETE FROM $collection");
-        $stmt->execute();
+        $this->executeWithRetry($stmt);
+    }
+
+    private function executeWithRetry($stmt, $params = []) {
+        $retries = 0;
+        while (true) {
+            try {
+                $stmt->execute($params);
+                return;
+            } catch (PDOException $e) {
+                // Check for "database is locked" error (SQLSTATE HY000, Error 5)
+                if (strpos($e->getMessage(), 'database is locked') !== false && $retries < 5) {
+                    $retries++;
+                    usleep(500000); // Wait 500ms
+                    continue;
+                }
+                throw $e;
+            }
+        }
+    }
+
+    public function beginTransaction() {
+        $retries = 0;
+        while (true) {
+            try {
+                return $this->pdo->beginTransaction();
+            } catch (PDOException $e) {
+                if (strpos($e->getMessage(), 'database is locked') !== false && $retries < 5) {
+                    $retries++;
+                    usleep(500000);
+                    continue;
+                }
+                throw $e;
+            }
+        }
+    }
+
+    public function commit() {
+        return $this->pdo->commit();
+    }
+
+    public function rollBack() {
+        return $this->pdo->rollBack();
+    }
+
+    public function inTransaction() {
+        return $this->pdo->inTransaction();
     }
 
     private function hydrate($row) {
