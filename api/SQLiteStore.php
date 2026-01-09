@@ -134,6 +134,9 @@ class SQLiteStore {
                 VALUES (" . implode(', ', $placeholders) . ")
                 ON CONFLICT($idColumn) DO UPDATE SET " . implode(', ', $updateSet);
 
+        error_log("SQLiteStore::upsert SQL: $sql");
+        error_log("SQLiteStore::upsert Params: " . json_encode($dbRecord));
+
         $stmt = $this->pdo->prepare($sql);
         $this->executeWithRetry($stmt, $dbRecord);
     }
@@ -179,7 +182,9 @@ class SQLiteStore {
                     usleep(500000); // Wait 500ms
                     continue;
                 }
-                throw $e;
+                // Enhance error message with SQL and Params for debugging
+                $debugMsg = $e->getMessage() . " | SQL: " . $stmt->queryString . " | Params: " . json_encode($params);
+                throw new Exception($debugMsg, (int)$e->getCode(), $e);
             }
         }
     }

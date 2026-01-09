@@ -190,6 +190,8 @@ if ($method === 'POST') {
     $input = json_decode(file_get_contents('php://input'), true);
     $outbox = $input['outbox'] ?? [];
 
+    error_log("Sync Push Received: " . count($outbox) . " items.");
+
     try {
         $store->beginTransaction();
         $pushedTransactions = [];
@@ -197,6 +199,8 @@ if ($method === 'POST') {
         foreach ($outbox as $change) {
             $collection = $change['collection'];
             $payload = $change['payload'];
+
+            error_log("Processing change for collection: $collection. Payload keys: " . implode(',', array_keys($payload)));
             
             // Auto-hash passwords for users if they look like plain text (Fix for Login Issues)
             if ($collection === 'users' && isset($payload['password_hash'])) {
