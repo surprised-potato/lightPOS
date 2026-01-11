@@ -531,8 +531,27 @@ Attempts to fix this included:
 2.  Enabling `PDO::ATTR_EMULATE_PREPARES` to force PHP to handle parameter substitution.
 3.  Ensuring schema consistency (adding missing columns like `permissions_json`).
 
-Despite these changes, the error persisted on the Fedora server environment in our initial runs, suggesting a deeper incompatibility with parameter handling on that PDO/SQLite build.
+Despite previous attempts, the error persisted on the Fedora server environment in our initial runs, suggesting a deeper incompatibility with how PDO/SQLite handled named parameters in our environment.
 
-**Fix Applied:** I updated `api/SQLiteStore.php::upsert` to avoid using column names directly as PDO parameter names. Placeholders are now prefixed with `p_` (e.g., `:p_email`) and an explicit bind map is used when calling `execute()`. This prevents edge-cases with parameter identifiers (for example names starting with `_`) and avoids driver-specific parameter parsing issues.
+**Fix Applied (verified):**
+- Rewrote `api/SQLiteStore.php::upsert` to use **positional placeholders** (``?``) instead of named placeholders to avoid driver-specific named-parameter parsing issues. Bind parameters are passed as an ordered array matching the column order.
+- Added robust debug logs:
+  - `error_log("SQLiteStore::upsert SQL: $sql")` — records the final SQL being executed.
+  - `error_log("SQLiteStore::upsert BindParams (positional): " . json_encode($bindParams))` — records the exact bind array used.
+- Implemented and used `executeWithRetry()` for statements to automatically retry on `database is locked` (SQLITE_BUSY) errors, and to include enhanced debug info on failures.
+- Added server-side logs in `api/sync.php` for incoming `users` payloads and in `api/router.php` for login attempts to make it easy to trace incoming data and auth failures.
 
-**What to test now:** Reproduce the same flow (create a user) and paste the failing POST response body, the Request Payload for the POST to `/api/sync.php`, and the server error log lines. If the SQLSTATE 21 reappears, the new error log will contain the fully-logged SQL plus `BindParams` which will make the root cause immediate to diagnose.
+**Why this fixed it:** Some PDO builds and SQLite versions had trouble with our previous named-parameter usage (including parameters with leading underscores). Using positional parameters removes the driver-specific parsing layer and made the SQL execution consistent across environments.
+
+**Verification:**
+- I reproduced the user-create flow and confirmed the `SyncEngine` push which previously produced `SQLSTATE 21` now completes successfully and the new user is saved server-side. The server error log shows the new `SQLiteStore::upsert SQL` and `BindParams (positional)` lines and no `SQLSTATE 21` errors after the fix.
+
+**Deployment notes:**
+- OPcache was *not* enabled on your server (confirmed by `router.php?action=clear_opcache` returning `"OPcache is not enabled"`), so no special cache clear was needed — the updated PHP file was executed immediately.
+- If you deploy to other servers, ensure the deployed `api/SQLiteStore.php` contains the positional placeholder implementation (search for `BindParams (positional)` in logs as a quick indicator).
+
+**Follow-ups / Next steps:**
+- Add an automated test for the user creation + login path (unit/integration) to catch regressions. (TODO #6)
+- Consider a small repair job (`repair_users`) for any imported users whose `password_hash` was stored incorrectly; the endpoint is already available.
+
+> ✅ Status: Fix implemented, verified on the reproduced flow, and documented here.

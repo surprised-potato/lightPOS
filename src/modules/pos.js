@@ -32,21 +32,21 @@ function playBeep(freq, dur, type = 'sine') {
 document.addEventListener("keydown", (e) => {
     const searchInput = document.getElementById("pos-search");
     const custInput = document.getElementById("pos-customer-search");
-    
+
     // Only run if POS elements are present
     if (!searchInput || !custInput) return;
 
     // Cart Navigation Mode (F3)
-    if (activeCartIndex !== null && cart.length > 0) {
+    if (activeCartIndex !== null && posCart.length > 0) {
         if (e.key === "ArrowDown") {
             e.preventDefault();
-            activeCartIndex = (activeCartIndex + 1) % cart.length;
+            activeCartIndex = (activeCartIndex + 1) % posCart.length;
             qtyBuffer = "";
             renderCart();
             return;
         } else if (e.key === "ArrowUp") {
             e.preventDefault();
-            activeCartIndex = (activeCartIndex - 1 + cart.length) % cart.length;
+            activeCartIndex = (activeCartIndex - 1 + posCart.length) % posCart.length;
             qtyBuffer = "";
             renderCart();
             return;
@@ -110,11 +110,11 @@ document.addEventListener("keydown", (e) => {
         }, 300);
     } else if (e.key === "F3") {
         e.preventDefault();
-        if (cart.length > 0) {
+        if (posCart.length > 0) {
             activeCartIndex = 0;
             qtyBuffer = "";
             renderCart();
-            // Scroll to top of cart
+            // Scroll to top of posCart
             document.getElementById("pos-cart-items").scrollTop = 0;
         }
     } else if (e.key === "F4") {
@@ -137,13 +137,13 @@ document.addEventListener("keydown", (e) => {
 let isResizing = false;
 
 /**
- * Resizing logic for the POS cart
+ * Resizing logic for the POS posCart
  */
 document.addEventListener('mousemove', (e) => {
     if (!isResizing) return;
-    const cart = document.getElementById('pos-cart-container');
-    const container = cart?.parentElement;
-    if (!cart || !container) return;
+    const posCart = document.getElementById('pos-cart-container');
+    const container = posCart?.parentElement;
+    if (!posCart || !container) return;
 
     const containerRect = container.getBoundingClientRect();
     const newWidth = containerRect.right - e.clientX;
@@ -152,7 +152,7 @@ document.addEventListener('mousemove', (e) => {
 
     if (newWidth >= minWidth && newWidth <= maxWidth) {
         const widthStr = `${newWidth}px`;
-        cart.style.width = widthStr;
+        posCart.style.width = widthStr;
         localStorage.setItem('pos_cart_width', widthStr);
     }
 });
@@ -168,7 +168,7 @@ document.addEventListener('mouseup', () => {
 let allItems = [];
 let barcodeMap = new Map(); // Fast lookup for scanner
 let allCustomers = [];
-let cart = [];
+let posCart = [];
 let lastTransactionData = null;
 let selectedCustomer = { id: "Guest", name: "Guest" };
 
@@ -180,7 +180,7 @@ let posScanDebounce = false;
 export async function loadPosView() {
     const content = document.getElementById("main-content");
     content.innerHTML = ""; // Clear content while checking
-    
+
     await checkActiveShift();
 
     requireShift(async () => {
@@ -249,7 +249,7 @@ async function renderPosInterface(content) {
                             <button id="btn-pos-history" class="text-[9px] bg-indigo-600 hover:bg-indigo-700 px-1.5 py-1 rounded font-bold" title="History">HIST</button>
                             <button id="btn-suspend-sale" class="text-[9px] bg-orange-500 hover:bg-orange-600 px-1.5 py-1 rounded font-bold" title="Hold">HOLD</button>
                             <button id="btn-pos-close-shift" class="text-[9px] bg-red-500 hover:bg-red-600 px-1.5 py-1 rounded font-bold" title="Close Shift">CLOSE</button>
-                            <button id="btn-clear-cart" class="text-[9px] bg-blue-800 hover:bg-blue-900 px-1.5 py-1 rounded font-bold" title="Clear Cart">CLR</button>
+                            <button id="btn-clear-posCart" class="text-[9px] bg-blue-800 hover:bg-blue-900 px-1.5 py-1 rounded font-bold" title="Clear Cart">CLR</button>
                         </div>
                     </div>
                 </div>
@@ -648,11 +648,11 @@ async function renderPosInterface(content) {
 
     // Load Items from Dexie
     await Promise.all([fetchItemsFromDexie(), fetchCustomersFromDexie(), SyncEngine.sync()]);
-    
-    // Render initial cart state (if persisting between views)
+
+    // Render initial posCart state (if persisting between views)
     renderCart();
     updateSuspendedCount();
-    
+
     // Event Listeners
     const searchInput = document.getElementById("pos-search");
     let searchTimeout;
@@ -715,7 +715,7 @@ async function renderPosInterface(content) {
             }
         }
     });
-    
+
     document.getElementById("btn-print-last-receipt").addEventListener("click", async () => {
         if (lastTransactionData) {
             const isReprint = !!lastTransactionData.was_printed;
@@ -723,9 +723,9 @@ async function renderPosInterface(content) {
         }
     });
 
-    document.getElementById("btn-clear-cart").addEventListener("click", () => {
-        if (cart.length > 0 && confirm("Are you sure you want to clear the current sale?")) {
-            cart = [];
+    document.getElementById("btn-clear-posCart").addEventListener("click", () => {
+        if (posCart.length > 0 && confirm("Are you sure you want to clear the current sale?")) {
+            posCart = [];
             currentSuspendedId = null;
             renderCart();
         }
@@ -741,7 +741,7 @@ async function renderPosInterface(content) {
     // History Logic
     document.getElementById("btn-pos-history").addEventListener("click", openHistoryModal);
     document.getElementById("btn-close-history").addEventListener("click", () => document.getElementById("modal-pos-history").classList.add("hidden"));
-    
+
     // Customer Search Logic
     const custInput = document.getElementById("pos-customer-search");
     const custResults = document.getElementById("pos-customer-results");
@@ -751,7 +751,7 @@ async function renderPosInterface(content) {
         custResults.innerHTML = "";
         const limit = 50; // Limit results for performance
         const displayList = list.slice(0, limit);
-        
+
         if (displayList.length > 0) {
             custResults.classList.remove("hidden");
             displayList.forEach(c => {
@@ -759,7 +759,7 @@ async function renderPosInterface(content) {
                 div.className = "p-2 hover:bg-blue-50 cursor-pointer text-sm border-b last:border-0 focus:bg-blue-100 focus:outline-none";
                 div.setAttribute("tabindex", "0");
                 div.innerHTML = `<div class="font-bold text-gray-700">${c.name}</div><div class="text-xs text-gray-500">${c.phone}</div>`;
-                
+
                 const selectAction = () => selectCustomer(c);
                 div.addEventListener("click", selectAction);
                 div.addEventListener("keydown", (e) => {
@@ -777,7 +777,7 @@ async function renderPosInterface(content) {
                         else custInput.focus();
                     }
                 });
-                
+
                 custResults.appendChild(div);
             });
             if (list.length > limit) {
@@ -791,12 +791,12 @@ async function renderPosInterface(content) {
             custResults.classList.remove("hidden");
         }
     };
-    
+
     custInput.addEventListener("focus", async () => {
         await fetchCustomersFromDexie();
         const term = custInput.value.toLowerCase();
-        const filtered = term ? allCustomers.filter(c => 
-            (c.name || "").toLowerCase().includes(term) || 
+        const filtered = term ? allCustomers.filter(c =>
+            (c.name || "").toLowerCase().includes(term) ||
             (c.phone || "").includes(term)
         ) : allCustomers;
         renderCustomerDropdown(filtered);
@@ -832,8 +832,8 @@ async function renderPosInterface(content) {
 
     custInput.addEventListener("input", (e) => {
         const term = e.target.value.toLowerCase();
-        const filtered = allCustomers.filter(c => 
-            (c.name || "").toLowerCase().includes(term) || 
+        const filtered = allCustomers.filter(c =>
+            (c.name || "").toLowerCase().includes(term) ||
             (c.phone || "").includes(term)
         );
         renderCustomerDropdown(filtered);
@@ -851,11 +851,11 @@ async function renderPosInterface(content) {
         const receiptsList = document.getElementById("shift-receipts-list");
         const denoms = [1000, 500, 200, 100, 50, 20, 10, 5, 1, 0.01];
         const labels = ["1000", "500", "200", "100", "50", "20", "10", "5", "1", "Cents"];
-        
+
         receiptsList.innerHTML = ""; // Clear receipts
         document.getElementById("precounted-bills").value = "";
         document.getElementById("precounted-coins").value = "";
-        
+
         // Fetch active shift for remittance total
         let totalRemittance = 0;
         try {
@@ -873,7 +873,7 @@ async function renderPosInterface(content) {
         cashoutInput.value = totalRemittance.toFixed(2);
         cashoutInput.readOnly = true;
         cashoutInput.classList.add("bg-gray-100", "cursor-not-allowed");
-        
+
         grid.innerHTML = denoms.map((d, i) => `
             <div class="grid grid-cols-3 gap-4 items-center py-2 border-b border-gray-200 last:border-0 hover:bg-white transition px-2 rounded">
                 <label class="text-sm font-bold text-gray-600">${labels[i]}</label>
@@ -902,7 +902,7 @@ async function renderPosInterface(content) {
             cashTotal += preBills + preCoins;
 
             document.getElementById("cash-counter-total").textContent = `₱${cashTotal.toFixed(2)}`;
-            
+
             let receiptTotal = 0;
             receiptsList.querySelectorAll(".receipt-row").forEach(row => {
                 const amt = parseFloat(row.querySelector(".receipt-amount").value) || 0;
@@ -969,7 +969,7 @@ async function renderPosInterface(content) {
         const cashTotal = parseFloat(modal.dataset.cashTotal) || 0;
         const cashout = parseFloat(modal.dataset.cashout) || 0;
         const grandTotal = parseFloat(modal.dataset.grandTotal) || 0;
-        
+
         const receipts = [];
         modal.querySelectorAll(".receipt-row").forEach(row => {
             const desc = row.querySelector(".receipt-desc").value.trim();
@@ -992,9 +992,9 @@ async function renderPosInterface(content) {
                 activeShift.total_closing_amount = grandTotal;
                 activeShift.precounted_bills = parseFloat(document.getElementById("precounted-bills").value) || 0;
                 activeShift.precounted_coins = parseFloat(document.getElementById("precounted-coins").value) || 0;
-                
+
                 await Repository.upsert('shifts', activeShift);
-                
+
                 modal.classList.add("hidden");
 
                 // Attempt sync but don't block UI if it fails
@@ -1019,9 +1019,9 @@ async function renderPosInterface(content) {
     async function printShiftReport(shift) {
         const settings = await getSystemSettings();
         const store = settings.store || { name: "LightPOS", data: "" };
-        
+
         const defaultPrint = {
-            paper_width: 76, 
+            paper_width: 76,
             show_dividers: true,
             header: { text: "", font_size: 14, font_family: "'Courier New', Courier, monospace", bold: true, italic: false },
             items: { font_size: 12, font_family: "'Courier New', Courier, monospace", bold: false, italic: false },
@@ -1037,7 +1037,7 @@ async function renderPosInterface(content) {
             body: { ...defaultPrint.body, ...(settings.print?.body || {}) },
             footer: { ...defaultPrint.footer, ...(settings.print?.footer || {}) }
         };
-        
+
         const pWidth = p.paper_width || 76;
         const showHR = p.show_dividers !== false;
 
@@ -1049,9 +1049,9 @@ async function renderPosInterface(content) {
         `;
 
         const headerText = p.header?.text || `${store.name}\n${store.data}`;
-        
+
         const printWindow = window.open('', '_blank', 'width=300,height=600');
-        
+
         const receiptsHtml = (shift.closing_receipts || []).map(r => `
             <tr>
                 <td style="font-size: 0.9em;">${r.description}</td>
@@ -1138,7 +1138,7 @@ async function renderPosInterface(content) {
     // Checkout Logic
     document.getElementById("btn-checkout").addEventListener("click", openCheckout);
     document.getElementById("btn-cancel-checkout").addEventListener("click", closeCheckout);
-    
+
     const selectPayment = document.getElementById("select-payment-method");
     selectPayment.addEventListener("change", (e) => {
         const method = e.target.value;
@@ -1166,14 +1166,14 @@ async function renderPosInterface(content) {
         const total = parseFloat(document.getElementById("modal-checkout").dataset.total) || 0;
         const change = tendered - total;
         const btnConfirm = document.getElementById("btn-confirm-pay");
-        
+
         if (change >= 0) {
             btnConfirm.disabled = false;
         } else {
             btnConfirm.disabled = true;
         }
     });
-    
+
     inputTendered.addEventListener("keydown", (e) => {
         if (e.key === "Enter") {
             e.preventDefault();
@@ -1185,7 +1185,7 @@ async function renderPosInterface(content) {
     });
 
     document.getElementById("btn-confirm-pay").addEventListener("click", processTransaction);
-    
+
     // Auto-focus search on load
     setTimeout(() => searchInput.focus(), 100);
     initResizer();
@@ -1196,7 +1196,7 @@ async function renderPosInterface(content) {
         localStorage.setItem('pos_grid_cols', cols);
         updateGridColumns(cols);
     });
-    
+
     const compactToggle = document.getElementById("pos-compact-mode");
     compactToggle.addEventListener("change", (e) => {
         localStorage.setItem('pos_compact_mode', e.target.checked);
@@ -1245,7 +1245,7 @@ function setupMobilePosListeners() {
 
     btnMobileMode?.addEventListener("click", () => {
         mobileUI.classList.remove("hidden");
-        renderCart(); // Refresh mobile cart
+        renderCart(); // Refresh mobile posCart
     });
 
     btnExit?.addEventListener("click", () => {
@@ -1263,7 +1263,7 @@ function setupMobilePosListeners() {
             mobileResults.classList.add("hidden");
             return;
         }
-        
+
         const terms = term.split(/\s+/).filter(t => t.length > 0);
         const filtered = allItems.filter(i => {
             const name = (i.name || "").toLowerCase();
@@ -1298,14 +1298,14 @@ function setupMobilePosListeners() {
             mobileResults.classList.remove("hidden");
         }
     });
-    
+
     btnCheckout?.addEventListener("click", () => {
-        if (cart.length === 0) {
+        if (posCart.length === 0) {
             showToast("Cart is empty", true);
             return;
         }
         // Open Mobile Payment Overlay
-        const total = cart.reduce((sum, item) => sum + (item.selling_price * item.qty), 0);
+        const total = posCart.reduce((sum, item) => sum + (item.selling_price * item.qty), 0);
         document.getElementById("mobile-payment-total").textContent = `₱${total.toFixed(2)}`;
         inputTendered.value = "";
         btnConfirmPay.disabled = true;
@@ -1318,14 +1318,14 @@ function setupMobilePosListeners() {
     });
 
     inputTendered?.addEventListener("input", (e) => {
-        const total = cart.reduce((sum, item) => sum + (item.selling_price * item.qty), 0);
+        const total = posCart.reduce((sum, item) => sum + (item.selling_price * item.qty), 0);
         const val = parseFloat(e.target.value) || 0;
         btnConfirmPay.disabled = val < total;
     });
 
     document.querySelectorAll(".mobile-quick-cash").forEach(btn => {
         btn.addEventListener("click", () => {
-            const total = cart.reduce((sum, item) => sum + (item.selling_price * item.qty), 0);
+            const total = posCart.reduce((sum, item) => sum + (item.selling_price * item.qty), 0);
             if (btn.dataset.amount === "exact") {
                 inputTendered.value = total;
             } else {
@@ -1354,7 +1354,7 @@ async function startPosCamera() {
         if ('BarcodeDetector' in window) {
             posBarcodeDetector = new BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39'] });
         }
-        
+
         mobilePosStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
         video.srcObject = mobilePosStream;
 
@@ -1404,7 +1404,7 @@ function stopPosCamera() {
 async function posScanLoop() {
     if (!isPosCameraRunning) return;
     const video = document.getElementById("mobile-pos-video");
-    
+
     if (posBarcodeDetector && !posScanDebounce && video.readyState === video.HAVE_ENOUGH_DATA) {
         try {
             const barcodes = await posBarcodeDetector.detect(video);
@@ -1412,7 +1412,7 @@ async function posScanLoop() {
                 posScanDebounce = true;
                 handlePosScan(barcodes[0].rawValue);
             }
-        } catch (e) {}
+        } catch (e) { }
     }
     if (isPosCameraRunning) requestAnimationFrame(posScanLoop);
 }
@@ -1442,7 +1442,7 @@ async function handlePosScan(code) {
     const item = barcodeMap.get(code) || allItems.find(i => i.barcode === code);
     if (item) {
         playBeep(880, 0.1);
-        
+
         const overlay = document.getElementById("pos-scan-success");
         if (overlay) {
             overlay.classList.remove("opacity-0");
@@ -1451,12 +1451,12 @@ async function handlePosScan(code) {
 
         await addToCart(item, 1);
         showToast(`Added ${item.name}`);
-        setTimeout(() => { 
+        setTimeout(() => {
             if (overlay) {
                 overlay.classList.remove("opacity-75");
                 overlay.classList.add("opacity-0");
             }
-            posScanDebounce = false; 
+            posScanDebounce = false;
         }, 1000); // Delay before next scan
     } else {
         playBeep(200, 0.3, 'sawtooth');
@@ -1466,12 +1466,12 @@ async function handlePosScan(code) {
             overlay.classList.add("opacity-75");
         }
         showToast(`Item not found: ${code}`, true);
-        setTimeout(() => { 
+        setTimeout(() => {
             if (overlay) {
                 overlay.classList.remove("opacity-75");
                 overlay.classList.add("opacity-0");
             }
-            posScanDebounce = false; 
+            posScanDebounce = false;
         }, 1500);
     }
 }
@@ -1479,7 +1479,7 @@ async function handlePosScan(code) {
 async function processMobileTransaction() {
     const btnConfirm = document.getElementById("btn-mobile-confirm-pay");
     const inputTendered = document.getElementById("mobile-input-tendered");
-    
+
     if (btnConfirm.hasAttribute("data-processing")) return;
     btnConfirm.setAttribute("data-processing", "true");
     btnConfirm.disabled = true;
@@ -1488,7 +1488,7 @@ async function processMobileTransaction() {
     btnConfirm.textContent = "Processing...";
 
     const settings = await getSystemSettings();
-    const total = cart.reduce((sum, item) => sum + (item.selling_price * item.qty), 0);
+    const total = posCart.reduce((sum, item) => sum + (item.selling_price * item.qty), 0);
     const tendered = parseFloat(inputTendered.value) || 0;
 
     if (tendered < total) {
@@ -1509,7 +1509,7 @@ async function processMobileTransaction() {
 
     const transaction = {
         id: generateUUID(),
-        items: JSON.parse(JSON.stringify(cart)),
+        items: JSON.parse(JSON.stringify(posCart)),
         total_amount: total,
         amount_tendered: tendered,
         change: change,
@@ -1540,7 +1540,7 @@ async function processMobileTransaction() {
         }
         SyncEngine.sync();
         lastTransactionData = transaction;
-        cart = [];
+        posCart = [];
         currentSuspendedId = null;
         renderCart();
         selectCustomer({ id: "Guest", name: "Guest" });
@@ -1566,7 +1566,8 @@ function updateGridColumns(cols) {
 
 async function fetchItemsFromDexie() {
     try {
-        allItems = await Repository.getAll('items');
+        const all = await Repository.getAll('items');
+        allItems = all; // Repository.getAll already filters _deleted: true
         // Rebuild barcode map for O(1) lookup
         barcodeMap.clear();
         allItems.forEach(item => {
@@ -1581,7 +1582,7 @@ async function fetchItemsFromDexie() {
 
 async function fetchCustomersFromDexie() {
     try {
-        allCustomers = await Repository.getAll('customers');
+        allCustomers = await Repository.getAll('customers'); // Already filters _deleted
     } catch (error) {
         console.error("Error loading customers:", error);
     }
@@ -1592,10 +1593,10 @@ function selectCustomer(customer) {
     const display = document.getElementById("selected-customer-display");
     const btnReset = document.getElementById("btn-reset-customer");
     const input = document.getElementById("pos-customer-search");
-    
+
     display.textContent = `Customer: ${customer.name}`;
     document.getElementById("pos-customer-results").classList.add("hidden");
-    
+
     if (customer.id !== "Guest") {
         input.value = customer.name;
         btnReset.classList.remove("hidden");
@@ -1623,11 +1624,11 @@ function renderGrid(items) {
 
     itemsToRender.forEach((item, index) => {
         const card = document.createElement("div");
-        card.className = isCompact 
+        card.className = isCompact
             ? "bg-white border rounded p-1.5 shadow-sm hover:shadow-md cursor-pointer transition duration-150 flex flex-col justify-between h-16 hover:border-blue-400 active:bg-blue-50 select-none relative overflow-hidden group focus:outline-none focus:ring-1 focus:ring-blue-500"
             : "bg-white border rounded-lg p-3 shadow-sm hover:shadow-md cursor-pointer transition duration-150 flex flex-col justify-between h-24 hover:border-blue-400 active:bg-blue-50 select-none relative overflow-hidden group focus:outline-none focus:ring-2 focus:ring-blue-500";
         card.setAttribute("tabindex", "0");
-        
+
         // Stock Indicator Color
         let stockColor = 'text-green-600';
         if (item.stock_level <= 0) {
@@ -1635,7 +1636,7 @@ function renderGrid(items) {
         } else if (item.stock_level <= (item.min_stock || 10)) {
             stockColor = 'text-yellow-600';
         }
-        
+
         const titleClass = isCompact ? "font-bold text-gray-800 leading-tight line-clamp-1 text-[11px]" : "font-bold text-gray-800 leading-tight line-clamp-2 text-sm mb-1";
         const barcodeClass = isCompact ? "text-[9px] text-gray-400 font-mono" : "text-xs text-gray-400 font-mono";
         const footerClass = isCompact ? "flex justify-between items-center mt-1 border-t pt-1" : "flex justify-between items-end mt-2 border-t pt-2";
@@ -1654,7 +1655,7 @@ function renderGrid(items) {
             <!-- Hover Effect Overlay -->
             <div class="absolute inset-0 bg-blue-600 bg-opacity-0 group-hover:bg-opacity-5 transition duration-150"></div>
         `;
-        
+
         // Placeholder click
         card.addEventListener("click", async () => {
             await addToCart(item, 1);
@@ -1682,7 +1683,7 @@ function renderGrid(items) {
                 handleGridNavigation(e, index, items.length);
             }
         });
-        
+
         fragment.appendChild(card);
     });
 
@@ -1720,7 +1721,7 @@ function handleGridNavigation(e, index, totalItems) {
     else return;
 
     const cards = document.querySelectorAll("#pos-grid > div[tabindex='0']");
-    
+
     if (nextIndex >= 0 && nextIndex < totalItems) {
         e.preventDefault();
         cards[nextIndex]?.focus();
@@ -1741,7 +1742,7 @@ function parseSearchTerm(val) {
 
 async function addToCart(item, qty = 1) {
     playBeep(880, 0.1); // Good beep
-    showToast(`Added ${item.name} to cart`);
+    showToast(`Added ${item.name} to posCart`);
     // Hide last transaction summary when starting a new sale
     document.getElementById("last-transaction").classList.add("hidden");
 
@@ -1753,7 +1754,7 @@ async function addToCart(item, qty = 1) {
             const neededQty = qty - item.stock_level;
             // Calculate how many parents we need to break to cover the deficit
             const parentsToBreak = Math.min(parent.stock_level, Math.ceil(neededQty / factor));
-            
+
             if (parentsToBreak > 0) {
                 const qtyCreated = parentsToBreak * factor;
                 parent.stock_level -= parentsToBreak;
@@ -1765,7 +1766,7 @@ async function addToCart(item, qty = 1) {
                 // Log Movements for Audit
                 const user = JSON.parse(localStorage.getItem('pos_user'))?.email || 'system';
                 const timestamp = new Date().toISOString();
-                
+
                 await Repository.upsert('stock_movements', {
                     id: generateUUID(), item_id: parent.id, item_name: parent.name, timestamp,
                     type: 'Conversion', qty: -parentsToBreak, user, reason: `Auto-breakdown for ${item.name}`
@@ -1776,30 +1777,30 @@ async function addToCart(item, qty = 1) {
                 });
 
                 showToast(`Auto-converted ${parentsToBreak} ${parent.name} to ${qtyCreated} ${item.name}`);
-                
+
                 // Refresh Grid to show new stock levels
                 filterItems(document.getElementById("pos-search").value);
             }
         }
     }
 
-    const existingItem = cart.find(i => i.id === item.id);
+    const existingItem = posCart.find(i => i.id === item.id);
     if (existingItem) {
         existingItem.qty += qty;
     } else {
-        cart.push({ ...item, qty: qty });
+        posCart.push({ ...item, qty: qty });
     }
     renderCart();
 }
 
 function removeFromCart(index) {
-    cart.splice(index, 1);
+    posCart.splice(index, 1);
     renderCart();
 }
 
 function updateQty(index, newQty) {
     if (newQty > 0) {
-        cart[index].qty = newQty;
+        posCart[index].qty = newQty;
     } else {
         removeFromCart(index);
         return;
@@ -1813,31 +1814,31 @@ function renderCart() {
     const btnCheckout = document.getElementById("btn-checkout");
     const mobileCartContainer = document.getElementById("mobile-pos-cart-items");
     const mobileTotalEl = document.getElementById("mobile-cart-total");
-    
+
     if (!cartContainer) return;
     cartContainer.innerHTML = "";
     let total = 0;
 
-    if (cart.length === 0) {
+    if (!posCart || posCart.length === 0) {
         cartContainer.innerHTML = `
             <div class="flex flex-col items-center justify-center h-full text-gray-400">
                 <svg class="w-16 h-16 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                 <p>Cart is empty</p>
             </div>`;
-        totalEl.textContent = "₱0.00";
+        if (totalEl) totalEl.textContent = "₱0.00";
         if (mobileCartContainer) mobileCartContainer.innerHTML = cartContainer.innerHTML;
         if (mobileTotalEl) mobileTotalEl.textContent = "₱0.00";
-        
-        btnCheckout.disabled = true;
+
+        if (btnCheckout) btnCheckout.disabled = true;
         return;
     }
 
-    cart.forEach((item, index) => {
+    posCart.forEach((item, index) => {
         const row = document.createElement("div");
         const isHighlighted = index === activeCartIndex;
         const displayQty = isHighlighted ? qtyBuffer : item.qty;
         const itemTotal = (item.selling_price || 0) * (isHighlighted && qtyBuffer !== "" ? parseInt(qtyBuffer) || 0 : item.qty);
-        
+
         total += itemTotal;
 
         row.className = `flex justify-between items-center bg-white p-2 rounded shadow-sm text-sm border-2 transition-all ${isHighlighted ? 'border-blue-500 bg-blue-50 scale-[1.02] z-10' : 'border-transparent'}`;
@@ -1854,7 +1855,7 @@ function renderCart() {
                 </button>
             </div>
         `;
-        
+
         const qtyInput = row.querySelector(".cart-qty-input");
         qtyInput.addEventListener("change", (e) => {
             updateQty(index, parseInt(e.target.value));
@@ -1864,11 +1865,11 @@ function renderCart() {
                 searchInput.focus();
             }
         });
-        
+
         // Select all text on focus for quick editing
         qtyInput.addEventListener("focus", e => e.target.select());
 
-        // Add arrow key navigation for cart quantities
+        // Add arrow key navigation for posCart quantities
         qtyInput.addEventListener("keydown", e => {
             const inputs = Array.from(document.querySelectorAll("#pos-cart-items .cart-qty-input"));
             const currentIndex = inputs.indexOf(e.target);
@@ -1889,7 +1890,7 @@ function renderCart() {
         row.querySelector(".btn-remove").addEventListener("click", () => removeFromCart(index));
 
         cartContainer.appendChild(row);
-        
+
         // Ensure highlighted item is visible
         if (isHighlighted) {
             row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -1899,7 +1900,7 @@ function renderCart() {
     // Render Mobile Cart
     if (mobileCartContainer) {
         mobileCartContainer.innerHTML = "";
-        cart.forEach((item, index) => {
+        posCart.forEach((item, index) => {
             const div = document.createElement("div");
             div.className = "bg-white p-3 rounded-lg shadow-sm border flex justify-between items-center";
             div.innerHTML = `
@@ -1926,18 +1927,18 @@ function renderCart() {
 function showToast(message, isError = false) {
     const container = document.getElementById("toast-container");
     if (!container) return;
-    
+
     const toast = document.createElement("div");
     toast.className = `${isError ? 'bg-red-600' : 'bg-green-600'} text-white px-4 py-2 rounded shadow-lg text-sm transition-all duration-300 opacity-0 transform translate-y-2`;
     toast.textContent = message;
-    
+
     container.appendChild(toast);
-    
+
     // Animate in
     requestAnimationFrame(() => {
         toast.classList.remove("opacity-0", "translate-y-2");
     });
-    
+
     // Remove after 3s
     setTimeout(() => {
         toast.classList.add("opacity-0", "translate-y-2");
@@ -1951,7 +1952,7 @@ function openCheckout() {
         return;
     }
 
-    const total = cart.reduce((sum, item) => sum + (item.selling_price * item.qty), 0);
+    const total = posCart.reduce((sum, item) => sum + (item.selling_price * item.qty), 0);
     if (total === 0) return;
 
     const modal = document.getElementById("modal-checkout");
@@ -1991,7 +1992,7 @@ async function processTransaction() {
 
     // Prevent double submission
     if (btnConfirm.hasAttribute("data-processing")) return;
-    
+
     btnConfirm.setAttribute("data-processing", "true");
     btnConfirm.disabled = true;
     inputTendered.disabled = true;
@@ -2017,10 +2018,10 @@ async function processTransaction() {
 
     const rewardRatio = settings.rewards?.ratio || 100;
     const pointsEarned = Math.floor(total / rewardRatio);
-    
+
     const transaction = {
         id: generateUUID(),
-        items: JSON.parse(JSON.stringify(cart)), // Deep copy
+        items: JSON.parse(JSON.stringify(posCart)), // Deep copy
         total_amount: total,
         amount_tendered: tendered,
         change: tendered - total,
@@ -2044,7 +2045,7 @@ async function processTransaction() {
             const current = await Repository.get('items', item.id);
             if (current) {
                 await Repository.upsert('items', { ...current, stock_level: current.stock_level - item.qty });
-                
+
                 // Record Stock Movement
                 await Repository.upsert('stock_movements', {
                     id: generateUUID(),
@@ -2072,28 +2073,28 @@ async function processTransaction() {
         SyncEngine.sync();
 
         lastTransactionData = transaction;
-        cart = [];
+        posCart = [];
         currentSuspendedId = null;
         renderCart();
         closeCheckout();
-        
+
         // Reset Customer to Guest
         selectCustomer({ id: "Guest", name: "Guest" });
         document.getElementById("pos-customer-search").value = "";
-        
+
         showToast("Transaction saved successfully!");
-        
+
         // Show Last Transaction Summary
         const lastTxDiv = document.getElementById("last-transaction");
         document.getElementById("last-change-amount").textContent = `₱${transaction.change.toFixed(2)}`;
         document.getElementById("last-total").textContent = `₱${transaction.total_amount.toFixed(2)}`;
         document.getElementById("last-tendered").textContent = `₱${transaction.amount_tendered.toFixed(2)}`;
         lastTxDiv.classList.remove("hidden");
-        
+
         if (settings.pos?.auto_print) {
             printReceipt(lastTransactionData);
         }
-        
+
         // Focus back on search input for next sale
         document.getElementById("pos-search").focus();
     } catch (error) {
@@ -2125,10 +2126,10 @@ async function openHistoryModal() {
                 <td class="p-2 text-right font-bold">₱${tx.total_amount.toFixed(2)}</td>
                 <td class="p-2 text-center flex justify-center gap-2">
                     <button class="bg-gray-100 text-gray-700 hover:bg-gray-200 px-2 py-1 rounded text-xs font-bold btn-print-tx" data-id="${tx.id}">Print</button>
-                    ${tx.is_voided 
-                        ? '<span class="text-red-600 font-bold text-xs uppercase">Voided</span>' 
-                        : `<button class="bg-red-100 text-red-600 hover:bg-red-200 px-2 py-1 rounded text-xs font-bold btn-void-tx" data-id="${tx.id}">Void</button>`
-                    }
+                    ${tx.is_voided
+                ? '<span class="text-red-600 font-bold text-xs uppercase">Voided</span>'
+                : `<button class="bg-red-100 text-red-600 hover:bg-red-200 px-2 py-1 rounded text-xs font-bold btn-void-tx" data-id="${tx.id}">Void</button>`
+            }
                 </td>
             </tr>
         `).join('');
@@ -2167,9 +2168,9 @@ async function voidTransaction(id) {
         const user = JSON.parse(localStorage.getItem('pos_user'));
 
         // 1. Update Dexie Transaction
-        await Repository.upsert('transactions', { 
+        await Repository.upsert('transactions', {
             ...tx,
-            is_voided: true, 
+            is_voided: true,
             voided_at: new Date().toISOString(),
             voided_by: user ? user.email : "System",
             void_reason: reason || "No reason provided"
@@ -2197,7 +2198,7 @@ async function voidTransaction(id) {
 }
 
 async function suspendCurrentTransaction() {
-    if (cart.length === 0) {
+    if (posCart.length === 0) {
         showToast("Cart is empty.", true);
         return;
     }
@@ -2205,18 +2206,18 @@ async function suspendCurrentTransaction() {
     const user = JSON.parse(localStorage.getItem('pos_user'));
     const suspendedTx = {
         id: currentSuspendedId || generateUUID(),
-        items: JSON.parse(JSON.stringify(cart)),
+        items: JSON.parse(JSON.stringify(posCart)),
         customer: selectedCustomer,
         user_email: user ? user.email : "Guest",
         timestamp: new Date(),
-        total: cart.reduce((sum, item) => sum + (item.selling_price * item.qty), 0),
+        total: posCart.reduce((sum, item) => sum + ((item.selling_price || 0) * item.qty), 0),
     };
 
     try {
         // 1. Save locally first (Persistence across refreshes)
         await Repository.upsert('suspended_transactions', suspendedTx);
-        
-        cart = [];
+
+        posCart = [];
         currentSuspendedId = null;
         selectedCustomer = { id: "Guest", name: "Guest" };
         renderCart();
@@ -2235,7 +2236,7 @@ async function openSuspendedModal() {
     document.getElementById("modal-suspended").classList.remove("hidden");
 
     try {
-        const suspended = await Repository.getAll('suspended_transactions');
+        const suspended = await Repository.getAll('suspended_transactions'); // Already filters _deleted
         if (suspended.length === 0) {
             container.innerHTML = `<div class="text-center p-4 text-gray-500">No suspended transactions.</div>`;
             return;
@@ -2258,7 +2259,7 @@ async function openSuspendedModal() {
                             <td class="p-2 text-xs">${new Date(tx.timestamp).toLocaleString()}</td>
                             <td class="p-2 font-medium">${tx.customer?.name || 'Guest'}</td>
                             <td class="p-2 text-[10px] text-gray-500">${tx.user_email || 'Unknown'}</td>
-                            <td class="p-2 text-right font-bold">₱${tx.total.toFixed(2)}</td>
+                            <td class="p-2 text-right font-bold">₱${(tx.total || 0).toFixed(2)}</td>
                             <td class="p-2 text-center flex justify-center gap-2">
                                 <button class="bg-blue-600 hover:bg-blue-700 text-white text-xs px-2 py-1 rounded btn-resume-suspended" data-id="${tx.id}">Resume</button>
                                 <button class="bg-red-100 text-red-600 hover:bg-red-200 text-xs px-2 py-1 rounded btn-delete-suspended" data-id="${tx.id}">Delete</button>
@@ -2270,12 +2271,16 @@ async function openSuspendedModal() {
         `;
 
         container.querySelectorAll(".btn-resume-suspended").forEach(btn => {
-            btn.addEventListener("click", () => resumeTransaction(btn.dataset.id));
+            btn.onclick = () => resumeTransaction(btn.dataset.id);
         });
         container.querySelectorAll(".btn-delete-suspended").forEach(btn => {
-            btn.addEventListener("click", () => deleteSuspendedTransaction(btn.dataset.id));
+            btn.onclick = () => deleteSuspendedTransaction(btn.dataset.id);
         });
-        document.getElementById("btn-delete-all-suspended").addEventListener("click", deleteAllSuspendedTransactions);
+
+        const btnDeleteAll = document.getElementById("btn-delete-all-suspended");
+        if (btnDeleteAll) {
+            btnDeleteAll.onclick = deleteAllSuspendedTransactions;
+        }
     } catch (error) {
         console.error("Error loading suspended transactions:", error);
         container.innerHTML = `<div class="text-center p-4 text-red-500">Error loading data.</div>`;
@@ -2287,24 +2292,29 @@ function closeSuspendedModal() {
 }
 
 async function resumeTransaction(id) {
-    if (cart.length > 0 && !confirm("Current cart is not empty. Overwrite with suspended transaction?")) {
+    if (posCart && posCart.length > 0 && !confirm("Current cart is not empty. Overwrite with suspended transaction?")) {
         return;
     }
 
     try {
+        // Try as string first, then as number if it looks like one
         let tx = await Repository.get('suspended_transactions', id);
+        if (!tx && !isNaN(id)) {
+            tx = await Repository.get('suspended_transactions', parseInt(id));
+        }
 
         if (tx) {
-            cart = tx.items;
+            posCart = Array.isArray(tx.items) ? tx.items : [];
             selectedCustomer = tx.customer || { id: "Guest", name: "Guest" };
-            currentSuspendedId = id;
-            await Repository.remove('suspended_transactions', id);
-            
+            currentSuspendedId = tx.id; // Use the actual ID from the record
+
             renderCart();
             selectCustomer(selectedCustomer);
             closeSuspendedModal();
+            await Repository.remove('suspended_transactions', tx.id);
             showToast("Transaction resumed.");
             updateSuspendedCount();
+            SyncEngine.sync(); // Trigger sync
         } else {
             showToast("Could not find transaction record.", true);
         }
@@ -2318,11 +2328,19 @@ async function deleteSuspendedTransaction(id) {
     if (!confirm("Are you sure you want to permanently delete this suspended transaction?")) return;
 
     try {
-        await Repository.remove('suspended_transactions', id);
-        
+        // Try as string first, then as number if it looks like one
+        let tx = await Repository.get('suspended_transactions', id);
+        if (!tx && !isNaN(id)) {
+            tx = await Repository.get('suspended_transactions', parseInt(id));
+        }
+
+        const finalId = tx ? tx.id : id;
+        await Repository.remove('suspended_transactions', finalId);
+
         showToast("Transaction deleted.");
         openSuspendedModal(); // Refresh list
         updateSuspendedCount();
+        SyncEngine.sync(); // Trigger sync
     } catch (error) {
         console.error("Error deleting suspended transaction:", error);
         showToast("Failed to delete transaction.", true);
@@ -2334,8 +2352,13 @@ async function deleteAllSuspendedTransactions() {
 
     try {
         const suspended = await Repository.getAll('suspended_transactions');
-        await Promise.all(suspended.map(tx => Repository.remove('suspended_transactions', tx.id)));
-        showToast("All suspended transactions deleted.");
+        if (suspended.length > 0) {
+            await Promise.all(suspended.map(tx => Repository.remove('suspended_transactions', tx.id)));
+            showToast("All suspended transactions deleted.");
+            SyncEngine.sync();
+        } else {
+            showToast("No suspended transactions to delete.");
+        }
         openSuspendedModal();
         updateSuspendedCount();
     } catch (error) {
@@ -2345,13 +2368,14 @@ async function deleteAllSuspendedTransactions() {
 }
 
 async function updateSuspendedCount() {
-    const count = (await Repository.getAll('suspended_transactions')).length;
+    const list = await Repository.getAll('suspended_transactions'); // Already filters _deleted
+    const count = list.length;
     const btn = document.getElementById("btn-view-suspended");
     if (!btn) return;
-    
+
     const existingBadge = btn.querySelector(".suspended-badge");
     if (existingBadge) existingBadge.remove();
-    
+
     if (count > 0) {
         const badge = document.createElement("span");
         badge.className = "suspended-badge ml-1 bg-white text-yellow-700 px-1.5 py-0.5 rounded-full font-bold text-[9px]";
@@ -2407,7 +2431,7 @@ async function requestQuickCustomer(tx) {
                 customer_id: customer.id,
                 customer_name: customer.name
             });
-            
+
             tx.customer_id = customer.id;
             tx.customer_name = customer.name;
 
@@ -2442,8 +2466,8 @@ async function requestQuickCustomer(tx) {
                 resultsDiv.classList.add("hidden");
                 return;
             }
-            const filtered = allCustomers.filter(c => 
-                (c.name || "").toLowerCase().includes(term) || 
+            const filtered = allCustomers.filter(c =>
+                (c.name || "").toLowerCase().includes(term) ||
                 (c.phone || "").includes(term)
             );
             resultsDiv.innerHTML = "";
@@ -2454,7 +2478,7 @@ async function requestQuickCustomer(tx) {
                     div.className = "p-2 hover:bg-blue-50 cursor-pointer text-xs border-b last:border-0 focus:bg-blue-100 focus:outline-none";
                     div.setAttribute("tabindex", "0");
                     div.innerHTML = `<strong>${c.name}</strong> - ${c.phone}`;
-                    
+
                     const selectAction = () => {
                         nameInput.value = c.name;
                         phoneInput.value = c.phone;
@@ -2534,7 +2558,7 @@ async function printReceipt(tx, isReprint = false) {
     const settings = await getSystemSettings();
     const store = settings.store || { name: "LightPOS", data: "" };
     const defaultPrint = {
-        paper_width: 76, 
+        paper_width: 76,
         show_dividers: true,
         header: { text: "", font_size: 14, font_family: "'Courier New', Courier, monospace", bold: true, italic: false },
         items: { font_size: 12, font_family: "'Courier New', Courier, monospace", bold: false, italic: false },
@@ -2550,7 +2574,7 @@ async function printReceipt(tx, isReprint = false) {
         body: { ...defaultPrint.body, ...(settings.print?.body || {}) },
         footer: { ...defaultPrint.footer, ...(settings.print?.footer || {}) }
     };
-    
+
     const pWidth = p.paper_width || 76;
     const showHR = p.show_dividers !== false;
 
@@ -2563,7 +2587,7 @@ async function printReceipt(tx, isReprint = false) {
 
     const headerText = p.header?.text || `${store.name}\n${store.data}`;
     const footerText = p.footer?.text || "Thank you for shopping!";
-    
+
     const printWindow = window.open('', '_blank', 'width=300,height=600');
     const itemsStyle = p.items ? getStyle(p.items) : getStyle(p.body);
     const itemsHtml = tx.items.map(item => `
