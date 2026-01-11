@@ -20,7 +20,7 @@ export async function checkActiveShift() {
     try {
         // Ensure we have latest data from server
         await SyncEngine.sync();
-        
+
         const shifts = await Repository.getAll('shifts');
         // Find open shift for this user
         const active = shifts.find(s => s.user_id === user.email && s.status === "open");
@@ -30,8 +30,8 @@ export async function checkActiveShift() {
             const startDate = new Date(active.start_time);
             const now = new Date();
             const isSameDay = startDate.getDate() === now.getDate() &&
-                              startDate.getMonth() === now.getMonth() &&
-                              startDate.getFullYear() === now.getFullYear();
+                startDate.getMonth() === now.getMonth() &&
+                startDate.getFullYear() === now.getFullYear();
 
             if (!isSameDay && startDate < now) {
                 // Force close stale shift
@@ -112,7 +112,7 @@ export function requireShift(callback) {
 
 export async function calculateExpectedCash(shift = currentShift, txList = null) {
     if (!shift) return 0;
-    
+
     // Query local Dexie transactions for this user since shift start
     const startTime = new Date(shift.start_time);
     const endTime = shift.end_time ? new Date(shift.end_time) : new Date();
@@ -121,9 +121,9 @@ export async function calculateExpectedCash(shift = currentShift, txList = null)
     const allTransactions = txList || await Repository.getAll('transactions');
     const transactions = allTransactions.filter(tx => {
         const txTime = new Date(tx.timestamp);
-        return txTime >= startTime && txTime <= endTime && 
-               tx.user_email === userEmail && !tx.is_voided &&
-               tx.payment_method === 'Cash';
+        return txTime >= startTime && txTime <= endTime &&
+            tx.user_email === userEmail && !tx.is_voided &&
+            tx.payment_method === 'Cash';
     });
 
     let totalSales = 0;
@@ -172,24 +172,24 @@ export async function recordRemittance(amount, reason) {
 
     if (!active.remittances) active.remittances = [];
     active.remittances.push(remittance);
-    
+
     active.cashout = (active.cashout || 0) + remittance.amount;
 
     await Repository.upsert('shifts', active);
     currentShift = active;
     SyncEngine.sync();
-    
+
     await addNotification('Remittance', `Cash remittance of ₱${remittance.amount.toFixed(2)} recorded by ${user.email}`);
-    
+
     return remittance;
 }
 
 export async function closeShift(closingCash) {
     if (!currentShift) return;
-    
+
     const expected = await calculateExpectedCash();
     const closing = parseFloat(closingCash);
-    
+
     const updatedShift = {
         ...currentShift,
         end_time: new Date(),
@@ -205,13 +205,13 @@ export async function closeShift(closingCash) {
 
     // Check for discrepancy notification threshold
     await checkShiftDiscrepancy(expected, closing);
-    
+
     const summary = {
         expected: expected,
         actual: closing,
         difference: closing - expected
     };
-    
+
     currentShift = null;
     return summary;
 }
@@ -295,14 +295,14 @@ async function fetchShifts() {
     const tbody = document.getElementById("shifts-table-body");
     const user = getCurrentUser();
     if (!user) {
-         tbody.innerHTML = `<tr><td colspan="3" class="py-3 px-6 text-center">Please login to view shifts.</td></tr>`;
-         return;
+        tbody.innerHTML = `<tr><td colspan="3" class="py-3 px-6 text-center">Please login to view shifts.</td></tr>`;
+        return;
     }
 
     try {
         const shifts = await Repository.getAll('shifts');
         const allTransactions = await Repository.getAll('transactions');
-        
+
         const startStr = document.getElementById('shift-history-start').value;
         const endStr = document.getElementById('shift-history-end').value;
         const limit = parseInt(document.getElementById('shift-history-limit').value) || 20;
@@ -318,8 +318,17 @@ async function fetchShifts() {
             endDate.setHours(23, 59, 59, 999);
             shiftList = shiftList.filter(s => {
                 const d = new Date(s.start_time);
+                // ALWAYS include open shift for current user
+                if (s.status === 'open' && s.user_id === user.email) return true;
                 return d >= startDate && d <= endDate;
             });
+        }
+
+        // Force active shift to top if exists
+        const openShiftIndex = shiftList.findIndex(s => s.status === 'open');
+        if (openShiftIndex > -1) {
+            const openShift = shiftList.splice(openShiftIndex, 1)[0];
+            shiftList.unshift(openShift);
         }
 
         shiftList = shiftList.slice(0, limit);
@@ -333,18 +342,18 @@ async function fetchShifts() {
 
         for (const data of shiftList) {
             const start = data.start_time ? new Date(data.start_time).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : "-";
-            
+
             const isClosed = data.status === 'closed';
             const expected = await calculateExpectedCash(data, allTransactions);
-            
+
             const cashout = data.cashout || 0;
             const receipts = data.closing_receipts || [];
             const totalExpenses = receipts.reduce((sum, r) => sum + (r.amount || 0), 0);
             const turnover = (data.closing_cash || 0) + totalExpenses + cashout;
-            
+
             const variance = isClosed ? turnover - expected : 0;
             const diffClass = isClosed ? (variance < 0 ? "text-red-600" : (variance > 0 ? "text-green-600" : "")) : "";
-            
+
             // Store calculated values for detail view
             data._calculated = { expected, variance, turnover };
 
@@ -360,7 +369,7 @@ async function fetchShifts() {
                 </td>
                 <td class="py-3 px-4 text-right font-bold ${diffClass}">${isClosed ? `₱${variance.toFixed(2)}` : '-'}</td>
             `;
-            
+
             row.addEventListener("click", () => selectShift(data));
             tbody.appendChild(row);
         }
@@ -372,28 +381,28 @@ async function fetchShifts() {
 
 async function selectShift(shift) {
     selectedShiftId = shift.id;
-    
+
     // Highlight row
     document.querySelectorAll("#shifts-table-body tr").forEach(row => row.classList.remove("bg-blue-50"));
     // Re-render list to apply highlight class (or just find the row, but re-rendering is safe if list is small)
     // For simplicity, we'll just re-fetch or rely on the click handler adding the class if we didn't rebuild.
     // Since we built the rows in the loop, let's just re-render the details.
-    
+
     // Actually, let's just highlight the clicked row if we passed the event, but here we passed data.
     // Let's just re-render the table to ensure consistency or find by index if we had it.
     // A simple way is to re-run fetchShifts but that's expensive.
     // Let's just render details.
-    
+
     const panel = document.getElementById("shift-details-panel");
     const content = document.getElementById("shift-details-content");
     const statusHeader = document.getElementById("shift-details-status");
-    
+
     panel.classList.remove("hidden");
-    
+
     const isClosed = shift.status === 'closed';
     // Always recalculate to ensure accuracy against transactions
     const expected = await calculateExpectedCash(shift);
-    
+
     let variance = 0;
     if (isClosed) {
         const cashout = shift.cashout || 0;
@@ -402,9 +411,9 @@ async function selectShift(shift) {
         const turnover = (shift.closing_cash || 0) + totalExpenses + cashout;
         variance = turnover - expected;
     }
-    
+
     const varianceClass = variance < 0 ? "text-red-600 bg-red-50" : (variance > 0 ? "text-green-600 bg-green-50" : "text-gray-600 bg-gray-50");
-    
+
     statusHeader.innerHTML = `
         <span class="${shift.status === 'open' ? 'bg-green-200 text-green-800' : 'bg-gray-200 text-gray-800'} px-3 py-1 rounded-full text-xs uppercase font-bold tracking-wide">${shift.status}</span>
         ${shift.forced_closed ? '<span class="ml-2 bg-red-100 text-red-600 px-2 py-1 rounded-full text-xs uppercase font-bold border border-red-200">Forced</span>' : ''}
@@ -471,7 +480,7 @@ async function selectShift(shift) {
 
 function showOpenShiftModal(onSuccess) {
     let modal = document.getElementById("modal-open-shift");
-    
+
     if (!modal) {
         const div = document.createElement("div");
         div.innerHTML = `
@@ -504,10 +513,10 @@ function showOpenShiftModal(onSuccess) {
         modal = document.getElementById("modal-open-shift");
 
         document.getElementById("btn-cancel-open-shift").addEventListener("click", () => modal.remove());
-        
+
         document.getElementById("form-open-shift").addEventListener("submit", async (e) => {
             e.preventDefault();
-            
+
             const submitBtn = e.target.querySelector('button[type="submit"]');
             submitBtn.disabled = true;
             submitBtn.textContent = "Opening...";
@@ -531,7 +540,7 @@ function showOpenShiftModal(onSuccess) {
 
 export function showCloseShiftModal(onSuccess) {
     let modal = document.getElementById("modal-close-shift");
-    
+
     if (!modal) {
         const div = document.createElement("div");
         div.innerHTML = `
@@ -573,7 +582,7 @@ export function showCloseShiftModal(onSuccess) {
         `;
         document.body.appendChild(div.firstElementChild);
         modal = document.getElementById("modal-close-shift");
-        
+
         document.getElementById("btn-cancel-close-shift").addEventListener("click", () => modal.remove());
 
         document.getElementById("form-close-shift").addEventListener("submit", async (e) => {
@@ -600,7 +609,7 @@ export function showCloseShiftModal(onSuccess) {
 
 export function showAdjustCashModal(shiftId, onSuccess) {
     let modal = document.getElementById("modal-adjust-cash");
-    
+
     if (!modal) {
         const div = document.createElement("div");
         div.innerHTML = `
@@ -628,7 +637,7 @@ export function showAdjustCashModal(shiftId, onSuccess) {
         `;
         document.body.appendChild(div.firstElementChild);
         modal = document.getElementById("modal-adjust-cash");
-        
+
         document.getElementById("btn-cancel-adjust").addEventListener("click", () => modal.remove());
 
         document.getElementById("form-adjust-cash").addEventListener("submit", async (e) => {
@@ -658,14 +667,14 @@ async function adjustCash(shiftId, amount, reason) {
     if (!(await requestManagerApproval())) return;
 
     const user = getCurrentUser();
-    
+
     const adjustment = {
         amount: parseFloat(amount),
         reason: reason,
         timestamp: new Date(),
         user: user ? user.email : 'unknown'
     };
-    
+
     // Optimistic update: Update local DB first
     const shift = await Repository.get('shifts', shiftId);
     if (shift) {
@@ -677,13 +686,13 @@ async function adjustCash(shiftId, amount, reason) {
         } else {
             shift.expected_cash = (shift.expected_cash || 0) + adjustment.amount;
         }
-        
+
         await Repository.upsert('shifts', shift);
         SyncEngine.sync();
     }
 
     await addNotification('Adjustment', `Cash adjustment of ₱${adjustment.amount} for shift ${shiftId} by ${user ? user.email : 'unknown'}`);
-    
+
     if (currentShift && currentShift.id === shiftId) {
         if (!currentShift.adjustments) currentShift.adjustments = [];
         currentShift.adjustments.push(adjustment);
@@ -698,7 +707,7 @@ export function showShiftHistoryModal(adjustments) {
     const div = document.createElement("div");
     div.id = "modal-shift-history";
     div.className = "fixed inset-0 bg-gray-900 bg-opacity-90 flex items-center justify-center z-50";
-    
+
     let rows = "";
     if (!adjustments || adjustments.length === 0) {
         rows = `<tr><td colspan="4" class="py-8 text-center text-gray-500 italic">No adjustments recorded for this shift.</td></tr>`;
@@ -766,8 +775,8 @@ export function showRemittanceHistoryModal(shift) {
     const div = document.createElement("div");
     div.id = "modal-remittance-history";
     div.className = "fixed inset-0 bg-gray-900 bg-opacity-90 flex items-center justify-center z-50";
-    
-    let rows = remittances && remittances.length > 0 
+
+    let rows = remittances && remittances.length > 0
         ? remittances.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).map(r => `
             <tr class="border-b border-gray-100 hover:bg-gray-50 transition">
                 <td class="py-3 px-4 text-xs text-gray-500">${new Date(r.timestamp).toLocaleString()}</td>
@@ -820,37 +829,79 @@ export async function showXReport() {
         return;
     }
 
-    if (!(await requestManagerApproval())) return;
+    // Calculate live metrics
+    const txs = await Repository.getAll('transactions');
+    const shiftTxs = txs.filter(t => {
+        const d = new Date(t.timestamp);
+        const start = new Date(currentShift.start_time);
+        return d >= start && t.user_email === currentShift.user_id && !t.is_voided;
+    });
+
+    // Sales by Payment Method
+    const payments = {};
+    let totalSales = 0;
+    shiftTxs.forEach(tx => {
+        const method = tx.payment_method || 'Cash';
+        payments[method] = (payments[method] || 0) + tx.total_amount;
+        totalSales += tx.total_amount;
+    });
 
     const expected = await calculateExpectedCash();
-    
-    const div = document.createElement("div");
-    div.id = "modal-x-report";
-    div.className = "fixed inset-0 bg-gray-900 bg-opacity-90 flex items-center justify-center z-50";
-    div.innerHTML = `
-        <div class="bg-white rounded-lg shadow-xl p-8 w-96">
-            <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">X-Report (Mid-Shift)</h2>
-            <div class="space-y-4">
-                <div class="flex justify-between border-b pb-2">
-                    <span class="text-gray-600">Start Time:</span>
-                    <span class="font-medium">${new Date(currentShift.start_time).toLocaleString()}</span>
-                </div>
-                <div class="flex justify-between border-b pb-2">
-                    <span class="text-gray-600">Opening Cash:</span>
-                    <span class="font-medium">₱${(currentShift.opening_cash || 0).toFixed(2)}</span>
-                </div>
-                <div class="flex justify-between border-b pb-2">
-                    <span class="text-gray-600">Expected Cash:</span>
-                    <span class="font-bold text-blue-600">₱${expected.toFixed(2)}</span>
-                </div>
+    const settings = await getSystemSettings();
+    const store = settings.store || { name: "LightPOS", data: "" };
+
+    // Printer Styles
+    const defaultPrint = {
+        paper_width: 76,
+        header: { font_size: 14, font_family: "monospace", bold: true },
+        body: { font_size: 12, font_family: "monospace" }
+    };
+    const p = { ...defaultPrint, ...(settings.print || {}) };
+    const getStyle = (s) => `font-size: ${s.font_size}px; font-family: ${s.font_family}; font-weight: ${s.bold ? 'bold' : 'normal'};`;
+
+    // Construct Report HTML
+    const printWindow = window.open('', '_blank', 'width=300,height=600');
+    printWindow.document.write(`
+        <html>
+        <head>
+            <style>
+                @page { margin: 0; }
+                body { width: ${p.paper_width}mm; padding: 5mm; margin: 0; ${getStyle(p.body)} color: #000; }
+                .text-center { text-align: center; }
+                .text-right { text-align: right; }
+                .bold { font-weight: bold; }
+                .hr { border-bottom: 1px dashed #000; margin: 5px 0; }
+                table { width: 100%; border-collapse: collapse; }
+                .header-sec { ${getStyle(p.header)} }
+            </style>
+        </head>
+        <body onload="window.print();window.close();">
+            <div class="text-center header-sec">
+                ${store.logo ? `<img src="${store.logo}" style="max-width:40mm;max-height:20mm;filter:grayscale(1)"><br>` : ''}
+                ${store.name}<br>X-REPORT (Mid-Shift)
             </div>
-            <button id="close-x-report" class="w-full mt-6 bg-gray-800 hover:bg-gray-900 text-white font-bold py-2 px-4 rounded">
-                Close
-            </button>
-        </div>
-    `;
-    document.body.appendChild(div);
-    document.getElementById("close-x-report").addEventListener("click", () => div.remove());
+            <div class="hr"></div>
+            <div>
+                User: ${currentShift.user_id}<br>
+                Start: ${new Date(currentShift.start_time).toLocaleString()}<br>
+                Generated: ${new Date().toLocaleString()}
+            </div>
+            <div class="hr"></div>
+            <div class="bold">Opening Cash: <span style="float:right">${(currentShift.opening_cash || 0).toFixed(2)}</span></div>
+            <div class="hr"></div>
+            <div class="bold">Sales Summary</div>
+            <table>
+                ${Object.entries(payments).map(([m, a]) => `<tr><td>${m}</td><td class="text-right">${a.toFixed(2)}</td></tr>`).join('')}
+            </table>
+            <div class="hr"></div>
+            <div class="bold" style="font-size:1.1em">Total Sales: <span style="float:right">${totalSales.toFixed(2)}</span></div>
+            <div class="bold" style="font-size:1.1em">Expected Cash: <span style="float:right">${expected.toFixed(2)}</span></div>
+            <div class="hr"></div>
+            <div class="text-center italic">-- End of Report --</div>
+        </body>
+        </html>
+    `);
+    printWindow.document.close();
 }
 
 function showAddRemittanceModal(onSuccess) {
@@ -930,12 +981,12 @@ async function showShiftTransactions(shift) {
     document.getElementById("close-tx-modal").addEventListener("click", () => div.remove());
 
     const tbody = document.getElementById("shift-tx-body");
-    
+
     try {
         const allTxs = await Repository.getAll('transactions');
         const start = new Date(shift.start_time);
         const end = shift.end_time ? new Date(shift.end_time) : new Date();
-        
+
         const entries = [];
 
         allTxs.forEach(tx => {
@@ -977,7 +1028,7 @@ async function showShiftTransactions(shift) {
             const isExchange = entry.is_exchange;
             const statusColor = entry.is_voided ? 'text-red-600' : (isExchange ? 'text-blue-600' : 'text-green-600');
             const statusText = entry.is_voided ? 'Voided' : (isExchange ? 'Exchange' : 'Valid');
-            
+
             return `
             <tr class="hover:bg-gray-50 transition ${entry.is_voided ? 'bg-red-50 opacity-75' : ''}">
                 <td class="py-2 px-4 text-xs text-gray-600">${entry.timestamp.toLocaleTimeString()}</td>
@@ -1025,9 +1076,9 @@ async function voidShiftTransaction(txId, shiftId) {
     try {
         const tx = await Repository.get('transactions', txId);
         if (!tx) return;
-        
+
         const user = getCurrentUser();
-        
+
         await Repository.upsert('transactions', {
             ...tx,
             is_voided: true,
@@ -1046,7 +1097,7 @@ async function voidShiftTransaction(txId, shiftId) {
         await SyncEngine.sync();
         await addNotification('Void', `Transaction ${txId} was voided by ${user ? user.email : "Manager"}`);
         alert("Transaction voided.");
-        
+
         // Refresh shift details
         const updatedShift = await Repository.get('shifts', shiftId);
         selectShift(updatedShift);
@@ -1059,9 +1110,9 @@ async function voidShiftTransaction(txId, shiftId) {
 async function printTransaction(tx, isReprint = false) {
     const settings = await getSystemSettings();
     const store = settings.store || { name: "LightPOS", data: "" };
-    
+
     const defaultPrint = {
-        paper_width: 76, 
+        paper_width: 76,
         show_dividers: true,
         header: { text: "", font_size: 14, font_family: "'Courier New', Courier, monospace", bold: true, italic: false },
         items: { font_size: 12, font_family: "'Courier New', Courier, monospace", bold: false, italic: false },
@@ -1077,7 +1128,7 @@ async function printTransaction(tx, isReprint = false) {
         body: { ...defaultPrint.body, ...(settings.print?.body || {}) },
         footer: { ...defaultPrint.footer, ...(settings.print?.footer || {}) }
     };
-    
+
     const pWidth = p.paper_width || 76;
     const showHR = p.show_dividers !== false;
 
@@ -1089,11 +1140,11 @@ async function printTransaction(tx, isReprint = false) {
     `;
 
     const headerText = p.header?.text || `${store.name}\n${store.data}`;
-    
+
     // Simplified print logic for history
     const printWindow = window.open('', '_blank', 'width=300,height=600');
     const itemsStyle = p.items ? getStyle(p.items) : getStyle(p.body);
-    
+
     const itemsHtml = tx.items.map(item => `
         <tr style="${itemsStyle}">
             <td colspan="2" style="padding-top: 5px;">${item.name}</td>
@@ -1103,7 +1154,7 @@ async function printTransaction(tx, isReprint = false) {
             <td style="text-align: right;">${(item.qty * item.selling_price).toFixed(2)}</td>
         </tr>
     `).join('');
-    
+
     printWindow.document.write(`<html>
     <head>
         <style>
@@ -1133,7 +1184,7 @@ async function printTransaction(tx, isReprint = false) {
         ${showHR ? '<div class="hr"></div>' : ''}
         <div class="body-sec">
             Tx: ${tx.id.slice(-6)}<br>
-            ${isReprint?'*** REPRINT ***<br>':''}
+            ${isReprint ? '*** REPRINT ***<br>' : ''}
         </div>
         ${showHR ? '<div class="hr"></div>' : ''}
         <table>${itemsHtml}</table>
