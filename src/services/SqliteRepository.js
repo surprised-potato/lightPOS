@@ -31,7 +31,7 @@ export const SqliteRepository = {
             const id = data[idField];
 
             const existing = await this.get(collection, id);
-            
+
             const newVersion = (existing?._version || 0) + 1;
 
             const updatedDoc = {
@@ -44,7 +44,7 @@ export const SqliteRepository = {
             const columns = Object.keys(updatedDoc);
             const values = Object.values(updatedDoc);
             const placeholders = columns.map(() => '?').join(', ');
-            
+
             // For upsert, we need to handle both insert and update
             // The ON CONFLICT clause requires SQLite 3.24.0+
             const updateSet = columns.map(col => `${col} = excluded.${col}`).join(', ');
@@ -54,7 +54,7 @@ export const SqliteRepository = {
                 VALUES (${placeholders})
                 ON CONFLICT(${idField}) DO UPDATE SET ${updateSet}
             `;
-            
+
             run(query, values);
 
             console.log(`Upsert on ${collection} with id ${id}`);
@@ -66,14 +66,22 @@ export const SqliteRepository = {
         }
     },
 
-    async get(collection, id) {
+    async get(collection, id, includeDeleted = false) {
         const idField = getPrimaryKey(collection);
-        const query = `SELECT * FROM ${collection} WHERE ${idField} = ?`;
+        let query = `SELECT * FROM ${collection} WHERE ${idField} = ?`;
+        if (!includeDeleted) {
+            query += ` AND (_deleted = 0 OR _deleted IS NULL OR _deleted = '0' OR _deleted = 'false') AND (_deleted != 1 AND _deleted != '1' AND _deleted != 'true')`;
+        }
         return get(query, [id]);
     },
 
-    async getAll(collection) {
-        const query = `SELECT * FROM ${collection}`;
+    async getAll(collection, includeDeleted = false) {
+        let query = `SELECT * FROM ${collection}`;
+        if (!includeDeleted) {
+            // Check if _deleted column exists to avoid errors on tables without it
+            // Robust check for 1, '1', 'true'
+            query += ` WHERE (_deleted = 0 OR _deleted IS NULL OR _deleted = '0' OR _deleted = 'false') AND (_deleted != 1 AND _deleted != '1' AND _deleted != 'true')`;
+        }
         return getAll(query);
     },
 
@@ -81,9 +89,9 @@ export const SqliteRepository = {
         const existing = await this.get(collection, id);
         if (!existing) return;
 
-        await this.upsert(collection, { 
-            ...existing, 
-            _deleted: true 
+        await this.upsert(collection, {
+            ...existing,
+            _deleted: true
         });
     },
 
@@ -138,7 +146,7 @@ export const SqliteRepository = {
                 results = results.filter(filter);
             }
         }
-        
+
         if (queryObj.each) {
             results.forEach(queryObj.each);
             return;

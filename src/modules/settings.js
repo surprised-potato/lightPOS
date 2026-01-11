@@ -17,34 +17,34 @@ const DEFAULT_SETTINGS = {
     rewards: { ratio: 100 },
     shift: { threshold: 0 },
     pos: { auto_print: false },
-    print: { 
-        paper_width: 76, 
+    print: {
+        paper_width: 76,
         show_dividers: true,
-        header: { 
-            text: "", 
-            font_size: 14, 
-            font_family: "'Courier New', Courier, monospace", 
-            bold: true, 
-            italic: false 
+        header: {
+            text: "",
+            font_size: 14,
+            font_family: "'Courier New', Courier, monospace",
+            bold: true,
+            italic: false
         },
-        body: { 
-            font_size: 12, 
-            font_family: "'Courier New', Courier, monospace", 
-            bold: false, 
-            italic: false 
+        body: {
+            font_size: 12,
+            font_family: "'Courier New', Courier, monospace",
+            bold: false,
+            italic: false
         },
-        items: { 
-            font_size: 12, 
-            font_family: "'Courier New', Courier, monospace", 
-            bold: false, 
-            italic: false 
+        items: {
+            font_size: 12,
+            font_family: "'Courier New', Courier, monospace",
+            bold: false,
+            italic: false
         },
-        footer: { 
-            text: "Thank you for shopping!", 
-            font_size: 10, 
-            font_family: "'Courier New', Courier, monospace", 
-            bold: false, 
-            italic: true 
+        footer: {
+            text: "Thank you for shopping!",
+            font_size: 10,
+            font_family: "'Courier New', Courier, monospace",
+            bold: false,
+            italic: true
         }
     }
 };
@@ -65,6 +65,7 @@ export async function loadSettingsView() {
                     <button data-tab="tax" class="settings-tab-btn border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Tax Settings</button>
                     <button data-tab="rewards" class="settings-tab-btn border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Rewards & Loyalty</button>
                     <button data-tab="advanced" class="settings-tab-btn border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Advanced</button>
+                    <button data-tab="ai" class="settings-tab-btn border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">AI Settings</button>
                     <button data-tab="sync" class="settings-tab-btn border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Sync History</button>
                     ${canMigrate ? '<button data-tab="migration" class="settings-tab-btn border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Data Migration</button>' : ''}
                 </nav>
@@ -339,6 +340,36 @@ export async function loadSettingsView() {
             </div>
         </div>
 
+                <!-- AI Settings Tab -->
+                <div id="settings-tab-ai" class="settings-panel hidden space-y-6">
+                    <div class="bg-white p-6 rounded-lg shadow-sm border">
+                        <h3 class="text-lg font-bold mb-4">AI Configuration</h3>
+                        <p class="text-sm text-gray-600 mb-4">Configure the local LLM server connection (e.g., LM Studio).</p>
+                        
+                        <div class="max-w-md space-y-4">
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-2">Server URL</label>
+                                <input type="text" id="set-ai-url" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="http://localhost:1234/v1">
+                                <p class="text-[10px] text-gray-500 mt-1">The base URL for the OpenAI-compatible API (e.g. http://localhost:1234/v1).</p>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-2">Model</label>
+                                <div class="flex gap-2">
+                                    <select id="set-ai-model" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                                        <option value="">Select a model...</option>
+                                    </select>
+                                    <button type="button" id="btn-refresh-models" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition text-sm whitespace-nowrap">
+                                        Refresh Models
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div id="ai-connection-status" class="hidden p-3 rounded text-sm font-bold"></div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Migration Tab -->
                 ${canMigrate ? `
                 <div id="settings-tab-migration" class="settings-panel hidden space-y-6">
@@ -608,6 +639,101 @@ function setupEventListeners() {
     if (checkPermission("migrate", "write")) {
         setupMigrationEventListeners();
     }
+
+    // AI Settings Listeners
+    document.getElementById('btn-refresh-models')?.addEventListener('click', async () => {
+        const btn = document.getElementById('btn-refresh-models');
+        const urlInput = document.getElementById('set-ai-url');
+        const select = document.getElementById('set-ai-model');
+        const statusDiv = document.getElementById('ai-connection-status');
+
+        const originalText = btn.textContent;
+        btn.textContent = "Connecting...";
+        btn.disabled = true;
+        statusDiv.classList.add('hidden');
+
+        const cleanUrl = (input) => input.replace(/\/+$/, '');
+        let baseUrl = cleanUrl(urlInput.value);
+
+        const fetchModels = async (url) => {
+            try {
+                const res = await fetch(`${url}/models`);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                return { success: true, data };
+            } catch (e) {
+                return { success: false, error: e };
+            }
+        };
+
+        try {
+            // Attempt 1: As provided
+            let result = await fetchModels(baseUrl);
+
+            // Attempt 2: If failed or API returned error (some local servers return 200 with {error: ...}), 
+            // and URL doesn't end in /v1, try appending /v1
+            if ((!result.success || result.data.error) && !baseUrl.endsWith('/v1')) {
+                console.log("Initial connection failed or returned error, trying with /v1 suffix...");
+                const v1Url = `${baseUrl}/v1`;
+                const resultV1 = await fetchModels(v1Url);
+
+                if (resultV1.success && !resultV1.data.error) {
+                    result = resultV1;
+                    baseUrl = v1Url; // Update base for saving
+                    urlInput.value = v1Url; // Auto-correct user input
+                    console.log("Success with /v1 suffix. Updated URL.");
+                }
+            }
+
+            if (!result.success) throw result.error;
+            if (result.data.error) throw new Error(result.data.error);
+
+            const data = result.data;
+            console.log("AI Models Response:", data);
+
+            let models = [];
+            if (Array.isArray(data)) {
+                models = data;
+            } else if (Array.isArray(data.data)) {
+                models = data.data;
+            } else if (Array.isArray(data.models)) {
+                models = data.models;
+            } else {
+                console.warn("Could not find model array in response:", data);
+            }
+
+            if (models.length === 0) {
+                throw new Error("No models found in response. Check Server URL.");
+            }
+
+            select.innerHTML = '<option value="">Select a model...</option>';
+            models.forEach(m => {
+                const option = document.createElement('option');
+                option.value = m.id;
+                option.textContent = m.id;
+                select.appendChild(option);
+            });
+
+            statusDiv.textContent = `Connected! Found ${models.length} models.`;
+            statusDiv.className = "p-3 rounded text-sm font-bold bg-green-100 text-green-700";
+            statusDiv.classList.remove('hidden');
+
+            // Cache models
+            const aiSettings = JSON.parse(localStorage.getItem('ai_settings') || '{}');
+            aiSettings.cachedModels = models;
+            aiSettings.url = baseUrl; // Save the working URL
+            localStorage.setItem('ai_settings', JSON.stringify(aiSettings));
+
+        } catch (error) {
+            console.error("AI Connect Error:", error);
+            statusDiv.textContent = `Connection Failed: ${error.message}`;
+            statusDiv.className = "p-3 rounded text-sm font-bold bg-red-100 text-red-700";
+            statusDiv.classList.remove('hidden');
+        } finally {
+            btn.textContent = originalText;
+            btn.disabled = false;
+        }
+    });
 }
 
 function displayTestRunnerModal(tests) {
@@ -617,7 +743,7 @@ function displayTestRunnerModal(tests) {
     modal = document.createElement('div');
     modal.id = 'modal-test-runner';
     modal.className = 'fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-[100]';
-    
+
     const testsHtml = tests.map((test, index) => `
         <div class="p-4 border-b last:border-0 bg-white" id="test-row-${index}">
             <div class="flex justify-between items-center">
@@ -710,7 +836,7 @@ async function loadSettings() {
 
         const localData = await Repository.get('settings', 'global');
         let settings = localData;
-        
+
         if (settings) {
             if (settings.store) {
                 document.getElementById("set-store-name").value = settings.store.name || "";
@@ -736,7 +862,7 @@ async function loadSettings() {
                 const p = settings.print;
                 document.getElementById("set-print-width").value = p.paper_width || 76;
                 document.getElementById("set-print-show-dividers").checked = p.show_dividers !== false;
-                
+
                 document.getElementById("set-print-header-text").value = p.header?.text || "";
                 document.getElementById("set-print-header-size").value = p.header?.font_size || 14;
                 document.getElementById("set-print-header-font").value = p.header?.font_family || "'Courier New', Courier, monospace";
@@ -772,6 +898,26 @@ async function loadSettings() {
             await renderSyncHistory();
             renderHeader(); // Ensure branding in header matches loaded settings
         }
+
+        // Load AI Settings from localStorage
+        const aiSettings = JSON.parse(localStorage.getItem('ai_settings') || '{}');
+        if (aiSettings) {
+            if (aiSettings.url) document.getElementById('set-ai-url').value = aiSettings.url;
+
+            // Restore cached models if available, otherwise just set the value (which might be empty if options aren't loaded)
+            if (aiSettings.cachedModels && Array.isArray(aiSettings.cachedModels)) {
+                const select = document.getElementById('set-ai-model');
+                select.innerHTML = '<option value="">Select a model...</option>';
+                aiSettings.cachedModels.forEach(m => {
+                    const option = document.createElement('option');
+                    option.value = m.id;
+                    option.textContent = m.id;
+                    select.appendChild(option);
+                });
+            }
+
+            if (aiSettings.model) document.getElementById('set-ai-model').value = aiSettings.model;
+        }
     } catch (error) {
         console.error("Error loading settings:", error);
     }
@@ -783,7 +929,7 @@ async function renderSyncHistory() {
     if (!tbody) return;
 
     const history = await db.sync_metadata.filter(m => m.key.startsWith('sync_history_')).toArray();
-    
+
     if (history.length === 0) {
         tbody.innerHTML = `<tr><td colspan="2" class="p-4 text-center text-gray-400 italic">No sync history recorded yet.</td></tr>`;
         return;
@@ -803,7 +949,7 @@ async function renderSyncHistory() {
 
 async function handleSave(e) {
     e.preventDefault();
-    
+
     const settings = {
         store: {
             name: document.getElementById("set-store-name").value.trim(),
@@ -863,12 +1009,27 @@ async function handleSave(e) {
         }
     };
 
+    // Save AI Settings to localStorage
+    const aiUrl = document.getElementById('set-ai-url').value;
+    const aiModel = document.getElementById('set-ai-model').value;
+    // We also want to preserve the cached models list so we don't have to re-fetch on reload
+    const currentCachedModels = [];
+    document.querySelectorAll('#set-ai-model option').forEach(opt => {
+        if (opt.value) currentCachedModels.push({ id: opt.value });
+    });
+
+    localStorage.setItem('ai_settings', JSON.stringify({
+        url: aiUrl,
+        model: aiModel,
+        cachedModels: currentCachedModels.length > 0 ? currentCachedModels : undefined
+    }));
+
     try {
         // Fetch existing to maintain versioning for the SyncEngine
         const existing = await Repository.get('settings', 'global');
-        
+
         // Save locally first
-        await Repository.upsert('settings', { 
+        await Repository.upsert('settings', {
             id: 'global',
             ...settings,
             _version: (existing?._version || 0) + 1,
@@ -906,7 +1067,7 @@ export async function checkShiftDiscrepancy(expected, actual) {
         const settings = await getSystemSettings();
         const threshold = parseFloat(settings?.shift?.threshold) || 0;
         const diff = actual - expected;
-        
+
         if (Math.abs(diff) > threshold) {
             await addNotification('Discrepancy', `Shift closed with a discrepancy of ₱${diff.toFixed(2)} (Threshold: ₱${threshold.toFixed(2)})`);
         }
@@ -930,7 +1091,7 @@ async function setupMigrationEventListeners() {
     if (!dropZone) return;
 
     dropZone.addEventListener("click", () => fileInput.click());
-    
+
     fileInput.addEventListener("change", (e) => {
         if (e.target.files.length > 0) {
             fileNameDisplay.textContent = e.target.files[0].name;
@@ -978,7 +1139,7 @@ async function setupMigrationEventListeners() {
         if (!file) return;
         const text = await file.text();
         const rows = parseGenericCSV(text);
-        
+
         let count = 0;
         for (const row of rows) {
             const name = row.item_name;
@@ -1038,7 +1199,7 @@ async function setupMigrationEventListeners() {
         if (!file) return;
         const text = await file.text();
         const rows = parseGenericCSV(text);
-        
+
         let count = 0;
         for (const row of rows) {
             const name = row.company_name || row.agency_name;
@@ -1081,7 +1242,7 @@ async function setupMigrationEventListeners() {
         try {
             const text = await file.text();
             const backupData = JSON.parse(text);
-            
+
             let dataToProcess = backupData;
             if (backupData.serverData && typeof backupData.serverData === 'object' && !backupData.items) {
                 dataToProcess = backupData.serverData;
@@ -1095,11 +1256,11 @@ async function setupMigrationEventListeners() {
             for (const [collection, items] of collections) {
                 if (!Array.isArray(items) || !db[collection]) continue;
                 const idField = db[collection].schema.primKey.name;
-                
+
                 await db.transaction('rw', [db[collection], db.outbox], async () => {
                     for (const item of items) {
                         if (!item || typeof item !== 'object' || !item[idField]) continue;
-                        
+
                         // Fix for "toFixed" errors: Ensure numeric fields are valid numbers
                         if (collection === 'items') {
                             item.cost_price = parseFloat(item.cost_price) || 0;
@@ -1143,11 +1304,11 @@ async function setupMigrationEventListeners() {
 
         btnImport.disabled = true;
         document.getElementById("import-progress").classList.remove("hidden");
-        
+
         try {
             const text = await file.text();
             let data;
-            
+
             if (file.name.endsWith(".json")) {
                 data = JSON.parse(text);
             } else if (file.name.endsWith(".csv")) {
@@ -1155,7 +1316,7 @@ async function setupMigrationEventListeners() {
             } else {
                 throw new Error("Unsupported file format. Please upload JSON or CSV.");
             }
-            
+
             if (!Array.isArray(data)) {
                 throw new Error("Invalid format: Data must be an array of items.");
             }
@@ -1197,7 +1358,7 @@ async function setupMigrationEventListeners() {
 
     document.getElementById("btn-reset-app")?.addEventListener("click", async () => {
         if (!confirm("DANGER: This will wipe ALL DATA (Server & Local) and reset the application to its initial state.\n\nAre you sure?")) return;
-        
+
         const confirmation = prompt("FINAL WARNING: This action is irreversible.\n\nType 'RESET' to confirm full system reset:");
         if (confirmation === "RESET") {
             try {
@@ -1266,7 +1427,7 @@ async function processImport(items) {
     const progressText = document.getElementById("progress-text");
     progressBar.style.width = "10%";
     progressText.textContent = "Preparing data...";
-    
+
     progressBar.style.width = "40%";
     progressText.textContent = "Processing data...";
     const newItems = items.map(item => ({
@@ -1280,14 +1441,14 @@ async function processImport(items) {
     }));
     progressBar.style.width = "70%";
     progressText.textContent = "Saving to local database...";
-    
+
     for (const item of newItems) {
         await Repository.upsert('items', item);
     }
 
     progressText.textContent = "Syncing...";
     SyncEngine.sync();
-    
+
     progressBar.style.width = "100%";
     progressText.textContent = "Import Complete!";
 }
@@ -1298,7 +1459,7 @@ async function analyzeSync() {
     const tbody = document.getElementById("sync-diff-body");
     const btnAnalyze = document.getElementById("btn-analyze-sync");
     const btnSyncAll = document.getElementById("btn-sync-all-diffs");
-    
+
     // UI Elements for counts
     const countServerEl = document.getElementById("count-server");
     const countLocalEl = document.getElementById("count-local");
@@ -1311,8 +1472,8 @@ async function analyzeSync() {
     if (btnSyncAll) btnSyncAll.classList.add("hidden");
 
     const collections = [
-        'items', 'transactions', 'customers', 'suppliers', 'expenses', 
-        'shifts', 'returns', 'stock_movements', 'stock_logs', 
+        'items', 'transactions', 'customers', 'suppliers', 'expenses',
+        'shifts', 'returns', 'stock_movements', 'stock_logs',
         'adjustments', 'stockins', 'suspended_transactions', 'users'
     ];
 
@@ -1324,14 +1485,14 @@ async function analyzeSync() {
         let totalServer = 0;
         let totalLocal = 0;
         let hasDiff = false;
-        
+
         tbody.innerHTML = "";
 
         const renderRow = (label, items, btnText, btnClass, actionFn) => {
             const count = items.length;
             const tr = document.createElement("tr");
             const detailsId = `details-${Math.random().toString(36).substr(2, 9)}`;
-            
+
             tr.innerHTML = `
                 <td class="p-3 text-sm font-medium text-gray-900">
                     <div class="flex flex-col">
@@ -1346,7 +1507,7 @@ async function analyzeSync() {
                     <button type="button" class="text-xs px-3 py-1 rounded text-white font-bold ${btnClass} hover:opacity-90 transition">${btnText}</button>
                 </td>
             `;
-            
+
             tr.querySelector("button.text-white").addEventListener("click", async (e) => {
                 e.target.disabled = true; e.target.textContent = "Processing...";
                 await actionFn(); analyzeSync();
@@ -1356,7 +1517,7 @@ async function analyzeSync() {
             const trDetails = document.createElement("tr");
             trDetails.id = detailsId;
             trDetails.className = "hidden bg-gray-50";
-            
+
             const preview = items.slice(0, 100).map(i => {
                 const name = i.name || i.description || i.title || (i.timestamp ? new Date(i.timestamp).toLocaleString() : null) || i.id;
                 return `<div class="text-xs text-gray-600 font-mono border-b border-gray-200 py-1 flex justify-between">
@@ -1364,7 +1525,7 @@ async function analyzeSync() {
                     <span class="text-gray-400 text-[10px]">${i.id}</span>
                 </div>`;
             }).join('');
-            
+
             const moreCount = items.length - 100;
             const moreText = moreCount > 0 ? `<div class="text-xs text-gray-500 italic py-1 text-center">...and ${moreCount} more</div>` : '';
 
@@ -1394,7 +1555,7 @@ async function analyzeSync() {
 
             const onlyInServer = sData.filter(i => !lMap.has(i[idField]));
             const onlyInLocal = lData.filter(i => !sMap.has(i[idField]));
-            
+
             const conflicts = sData.filter(s => {
                 const l = lMap.get(s[idField]);
                 if (!l) return false;
@@ -1445,7 +1606,7 @@ async function analyzeSync() {
 
         countServerEl.textContent = totalServer;
         countLocalEl.textContent = totalLocal;
-        
+
         // Update labels to reflect aggregate
         if (countServerEl.previousElementSibling) countServerEl.previousElementSibling.textContent = "TOTAL SERVER RECORDS";
         if (countLocalEl.previousElementSibling) countLocalEl.previousElementSibling.textContent = "TOTAL LOCAL RECORDS";
@@ -1479,10 +1640,10 @@ async function syncAllDiffs() {
         const serverRes = await fetch(`${API_URL}?since=0&_t=${Date.now()}`, { headers: { 'Cache-Control': 'no-cache' } });
         const response = await serverRes.json();
         const serverDeltas = response.deltas || {};
-        
+
         const collections = [
-            'items', 'transactions', 'customers', 'suppliers', 'expenses', 
-            'shifts', 'returns', 'stock_movements', 'stock_logs', 
+            'items', 'transactions', 'customers', 'suppliers', 'expenses',
+            'shifts', 'returns', 'stock_movements', 'stock_logs',
             'adjustments', 'stockins', 'suspended_transactions', 'users'
         ];
 
@@ -1491,7 +1652,7 @@ async function syncAllDiffs() {
             const sData = serverDeltas[collection] || [];
             const lData = await db[collection].toArray();
             const idField = db[collection].schema.primKey.name;
-            
+
             const sMap = new Map(sData.map(i => [i[idField], i]));
             const lMap = new Map(lData.map(i => [i[idField], i]));
 
@@ -1533,7 +1694,7 @@ async function syncAllDiffs() {
                     _version: (item._version || 0) + 1
                 }));
                 await db[collection].bulkPut(toUpload);
-                
+
                 const outboxEntries = toUpload.map(item => ({
                     collection: collection,
                     docId: item[idField],
@@ -1563,7 +1724,7 @@ async function downloadServerBackup() {
         'expenses', 'returns', 'shifts', 'stock_movements', 'stock_logs',
         'adjustments', 'stockins', 'suspended_transactions', 'notifications', 'users'
     ];
-    
+
     const backupData = {};
     const btn = document.getElementById("btn-download-backup-server");
     const originalText = btn.innerHTML;
@@ -1588,7 +1749,7 @@ async function downloadServerBackup() {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        
+
         alert("Backup downloaded successfully.");
     } catch (error) {
         console.error("Backup failed:", error);
@@ -1605,7 +1766,7 @@ async function downloadLocalBackup() {
         'expenses', 'returns', 'shifts', 'stock_movements', 'stock_logs',
         'adjustments', 'stockins', 'suspended_transactions', 'notifications', 'users'
     ];
-    
+
     const backupData = {};
     const btn = document.getElementById("btn-download-backup-local");
     const originalText = btn.innerHTML;
@@ -1629,7 +1790,7 @@ async function downloadLocalBackup() {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        
+
         alert("Local backup downloaded successfully.");
     } catch (error) {
         console.error("Local backup failed:", error);
@@ -1700,7 +1861,7 @@ async function handleRestoreBackup(e) {
     }
 
     let summary = `Backup Analysis:\n\nCollections: ${totalCollections}\nTotal Items: ${totalItems}\n\nDetails:\n${details}`;
-    
+
     if (isDryRun) {
         summary += `\n[DRY RUN MODE]: No data will be written to the server. This is a simulation to check file integrity.\n\nProceed with simulation?`;
     } else {
@@ -1729,7 +1890,7 @@ async function handleRestoreBackup(e) {
 
     try {
         const serverTime = Date.now();
-        
+
         // Use calculated total from analysis step
         const totalItemsToRestore = totalItems;
 
@@ -1739,12 +1900,12 @@ async function handleRestoreBackup(e) {
         // Upload collection by collection to avoid hitting server POST size limits (e.g. 76MB)
         for (const [fileName, data] of collections) {
             if (!Array.isArray(data)) continue;
-            
+
             // Update timestamps to ensure the sync engine sees this as "new" data
             data.forEach(item => {
                 if (item && typeof item === 'object') {
                     item._updatedAt = serverTime;
-                    
+
                     // Fix for "toFixed" errors: Ensure numeric fields are valid numbers
                     if (fileName === 'items') {
                         item.cost_price = parseFloat(item.cost_price) || 0;
@@ -1771,7 +1932,7 @@ async function handleRestoreBackup(e) {
             for (let i = 0; i < totalItems; i += CHUNK_SIZE) {
                 const chunk = data.slice(i, i + CHUNK_SIZE);
                 const mode = (i === 0) ? 'overwrite' : 'append';
-                
+
                 const currentChunkSize = chunk.length;
                 itemsRestoredSoFar += currentChunkSize;
                 const percent = totalItemsToRestore > 0 ? Math.round((itemsRestoredSoFar / totalItemsToRestore) * 100) : 100;
@@ -1853,11 +2014,11 @@ export async function runDiagnosticExport() {
     }
 
     const entities = [
-        'items', 'transactions', 'suppliers', 'customers', 
+        'items', 'transactions', 'suppliers', 'customers',
         'expenses', 'returns', 'shifts', 'stock_movements', 'stock_logs',
         'adjustments', 'stockins', 'suspended_transactions', 'notifications', 'users'
     ];
-    
+
     try {
         const report = {
             timestamp: new Date().toISOString(),
@@ -1881,7 +2042,7 @@ export async function runDiagnosticExport() {
         // 1. Settings comparison
         const sSetRes = await fetch(`${ADMIN_API_URL}?file=sync_metadata`);
         let sSet = sSetRes.ok ? await sSetRes.json() : null;
-        
+
         // Unwrap sync envelope if present
         if (sSet && sSet.deltas && sSet.deltas.settings) {
             sSet = sSet.deltas.settings;
@@ -1910,7 +2071,7 @@ export async function runDiagnosticExport() {
 
             const sRes = await fetch(`${ADMIN_API_URL}?file=${entity}`);
             let sData = sRes.ok ? await sRes.json() : [];
-            
+
             // Unwrap sync envelope if present
             if (sData && !Array.isArray(sData) && sData.deltas && sData.deltas[entity]) {
                 sData = sData.deltas[entity];
@@ -1925,7 +2086,7 @@ export async function runDiagnosticExport() {
             const idField = db[entity].schema.primKey.name;
             const sMap = new Map(sData.map(i => [i[idField], i]));
             const lMap = new Map(lData.map(i => [i[idField], i]));
-            
+
             const onlyInServer = sData.filter(i => !lMap.has(i[idField])).map(i => i[idField]);
             const onlyInLocal = lData.filter(i => !sMap.has(i[idField])).map(i => i[idField]);
             const contentMismatch = sData.filter(s => {

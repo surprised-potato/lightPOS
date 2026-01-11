@@ -8,7 +8,7 @@ export function renderSidebar() {
     renderHeader();
 
     const sidebar = document.getElementById("sidebar-container");
-    
+
     if (!sidebar) {
         return;
     }
@@ -18,7 +18,7 @@ export function renderSidebar() {
     if (currentRawHash.startsWith("#_")) {
         try {
             currentHash = "#" + atob(currentRawHash.substring(2));
-        } catch (e) {}
+        } catch (e) { }
     }
 
     const isCollapsed = localStorage.getItem('sidebar_collapsed') === 'true';
@@ -35,10 +35,10 @@ export function renderSidebar() {
 
     let html = `
         <button id="btn-toggle-sidebar" class="absolute -right-3 top-12 bg-white border border-gray-200 rounded-full p-1 shadow-md z-20 text-gray-400 hover:text-blue-600 transition-all duration-300 focus:outline-none" title="${isCollapsed ? 'Expand' : 'Collapse'}">
-            ${isCollapsed ? 
-                '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>' : 
-                '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>'
-            }
+            ${isCollapsed ?
+            '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>' :
+            '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>'
+        }
         </button>
         <div class="flex flex-col h-full py-2 overflow-y-auto overflow-x-hidden">
     `;
@@ -78,19 +78,20 @@ export function renderSidebar() {
         { label: "Dashboard", icon: "📊", hash: "#dashboard", permission: "reports", type: "read" },
         { label: "Shifts", icon: "⏱️", hash: "#shifts", permission: "shifts", type: "read" },
         { label: "Profile", icon: "👤", hash: "#profile" },
-        
+
         { section: "Inventory" },
         { label: "Items", icon: "📦", hash: "#items", permission: "items", type: "read" },
         { label: "Suppliers", icon: "🏭", hash: "#suppliers", permission: "suppliers", type: "read" },
         { label: "Purchase Orders", icon: "🧾", hash: "#purchase-orders", permission: "purchase_orders", type: "read" },
         { label: "Stock In", icon: "🚛", hash: "#stockin", permission: "stockin", type: "read" },
         { label: "Stock Count", icon: "📋", hash: "#stock-count", permission: "stock-count", type: "read" },
-        
+
         { section: "Back Office" },
         { label: "Expenses", icon: "💸", hash: "#expenses", permission: "expenses", type: "read" },
-        { label: "Reports", icon: "📈", hash: "#reports", permission: "reports", type: "read" },
+        { label: "Reports v2", icon: "📈", hash: "#reports", permission: "reports", type: "read" },
         { label: "Users", icon: "👤", hash: "#users", permission: "users", type: "read" },
         { label: "Settings", icon: "⚙️", hash: "#settings", permission: "settings", type: "read" },
+        { label: "AI Tools", icon: "🤖", hash: "#ai-tools" },
     ];
 
     html += `
@@ -126,7 +127,7 @@ export function renderSidebar() {
             if (!item.permission || checkPermission(item.permission, item.type)) {
                 const activeClass = currentHash === item.hash ? "bg-blue-100 text-blue-700" : "text-gray-600 hover:bg-gray-100 hover:text-gray-900";
                 const warningBadge = (item.hash === "#settings") ? '<span id="sync-warning-dot" class="hidden absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>' : '';
-                
+
                 if (isCollapsed) {
                     html += `<a href="${obfuscate(item.hash)}" class="relative flex justify-center py-3 my-1 mx-2 rounded-lg transition-colors duration-150 ${activeClass}" title="${item.label}"><span class="text-xl">${item.icon}</span>${warningBadge}</a>`;
                 } else {
@@ -394,7 +395,7 @@ async function updateNotificationUI() {
                 <div class="flex justify-between items-start mb-1">
                     <span class="text-[10px] font-bold uppercase ${n.type === 'Void' ? 'text-red-500' : n.type === 'Adjustment' ? 'text-yellow-600' : 'text-blue-600'}">${n.type}</span>
                     <div class="flex items-center gap-2">
-                        <span class="text-[9px] text-gray-400">${new Date(n.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                        <span class="text-[9px] text-gray-400">${new Date(n.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
                 </div>
                 <p class="text-xs ${n.read ? 'text-gray-500' : 'text-gray-700 font-medium'} leading-tight">${n.message}</p>
@@ -417,7 +418,7 @@ async function updateSidebarShiftStatus(retryCount = 0) {
     const text = document.getElementById("sidebar-shift-text");
     const isCollapsed = localStorage.getItem('sidebar_collapsed') === 'true';
     const dotSize = isCollapsed ? "w-3 h-3" : "w-4 h-4";
-    
+
     if (!dot || !text) {
         if (retryCount < 5) {
             setTimeout(() => updateSidebarShiftStatus(retryCount + 1), 500);
@@ -453,7 +454,7 @@ async function checkSyncFreshness() {
     try {
         if (!db.isOpen()) await db.open();
         const history = await db.sync_metadata.filter(m => m.key.startsWith('sync_history_')).toArray();
-        
+
         // If no history yet, don't show warning
         if (history.length === 0) return false;
 
@@ -474,7 +475,7 @@ async function checkSyncFreshness() {
 async function updateSidebarSyncWarning() {
     const dot = document.getElementById("sync-warning-dot");
     if (!dot) return;
-    
+
     const isStale = await checkSyncFreshness();
     if (isStale) dot.classList.remove("hidden");
     else dot.classList.add("hidden");

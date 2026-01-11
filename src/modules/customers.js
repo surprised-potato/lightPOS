@@ -3,7 +3,7 @@ import { generateUUID } from "../utils.js";
 import { dbRepository as Repository } from "../db.js";
 import { SyncEngine } from "../services/SyncEngine.js";
 import { dbPromise } from "../db.js";
-import { printTransactionReceipt } from "./reports.js";
+import { printTransactionReceipt } from "./receiptUtils.js";
 
 let customersData = [];
 let selectedCustomerId = null;
@@ -11,7 +11,7 @@ let customerTransactions = [];
 
 export async function loadCustomersView() {
     const content = document.getElementById("main-content");
-    const canWrite = checkPermission("customers", "write"); 
+    const canWrite = checkPermission("customers", "write");
 
     content.innerHTML = `
         <div class="max-w-6xl mx-auto">
@@ -149,11 +149,11 @@ export async function loadCustomersView() {
     });
 
     document.getElementById("form-add-customer").addEventListener("submit", handleSaveCustomer);
-    
+
     document.getElementById("search-customers").addEventListener("input", (e) => {
         const term = e.target.value.toLowerCase();
-        const filtered = customersData.filter(c => 
-            c.name.toLowerCase().includes(term) || 
+        const filtered = customersData.filter(c =>
+            c.name.toLowerCase().includes(term) ||
             c.phone.includes(term) ||
             (c.account_number && c.account_number.toLowerCase().includes(term))
         );
@@ -197,7 +197,7 @@ function renderCustomers(customers) {
                 <button class="text-blue-500 hover:text-blue-700 edit-btn ${canWrite ? '' : 'hidden'}" data-id="${cust.id}">Edit</button>
             </td>
         `;
-        
+
         row.addEventListener("click", (e) => {
             if (e.target.closest(".edit-btn")) return;
             selectCustomer(cust);
@@ -224,7 +224,7 @@ async function selectCustomer(cust) {
     const db = await dbPromise;
     selectedCustomerId = cust.id;
     document.getElementById("customer-insights-panel").classList.remove("hidden");
-    
+
     // Highlight selected row
     document.querySelectorAll("#customers-table-body tr").forEach(row => {
         row.classList.remove("bg-blue-50");
@@ -238,7 +238,7 @@ async function selectCustomer(cust) {
         .where('customer_id').equals(cust.id)
         .and(t => !t._deleted && !t.is_voided)
         .toArray();
-    
+
     customerTransactions.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
     renderCustomerStats(cust);
@@ -250,7 +250,7 @@ function renderCustomerStats(cust) {
     const tbody = document.getElementById("customer-stats-body");
     const totalSpent = customerTransactions.reduce((sum, t) => sum + (t.total_amount || 0), 0);
     const avgSpend = customerTransactions.length > 0 ? totalSpent / customerTransactions.length : 0;
-    
+
     let frequency = "N/A";
     if (customerTransactions.length > 1) {
         const dates = customerTransactions.map(t => new Date(t.timestamp)).sort((a, b) => a - b);
@@ -276,7 +276,7 @@ function renderCustomerStats(cust) {
 
 function renderCustomerHistory() {
     const tbody = document.getElementById("customer-history-body");
-    
+
     tbody.innerHTML = customerTransactions.map(tx => `
         <tr class="border-b hover:bg-gray-50">
             <td class="py-2 px-4">${new Date(tx.timestamp).toLocaleDateString()}</td>
@@ -304,7 +304,7 @@ function renderCustomerHistory() {
 function renderCustomerTopItems() {
     const tbody = document.getElementById("customer-top-items-body");
     const itemMap = {};
-    
+
     customerTransactions.forEach(tx => {
         tx.items.forEach(item => {
             itemMap[item.name] = (itemMap[item.name] || 0) + item.qty;

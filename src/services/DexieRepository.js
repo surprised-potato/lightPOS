@@ -17,7 +17,7 @@ export const DexieRepository = {
 
             // 1. Get existing record to determine the next version
             const existing = await db[collection].get(id);
-            
+
             // 2. Increment version
             const newVersion = (existing?._version || 0) + 1;
 
@@ -46,28 +46,57 @@ export const DexieRepository = {
         }
     },
 
-    async get(collection, id) {
+    async get(collection, id, includeDeleted = false) {
         const db = await dbPromise;
         if (!db[collection]) throw new Error(`Repository Error: Collection '${collection}' does not exist.`);
-        return await db[collection].get(id);
+        const item = await db[collection].get(id);
+        if (!item) return null;
+
+        const isDeleted = item._deleted === true || item._deleted === 1 || item._deleted === "1" || item._deleted === "true";
+        return (includeDeleted || !isDeleted) ? item : null;
     },
 
-    async getAll(collection) {
+    async getAll(collection, includeDeleted = false) {
         const db = await dbPromise;
-        if (!db[collection]) throw new Error(`Repository Error: Collection '${collection}' does not exist.`);
-        return await db[collection].toArray();
+        try {
+            if (!db[collection]) throw new Error(`Repository Error: Collection '${collection}' does not exist.`);
+            const all = await db[collection].toArray();
+
+            const filtered = includeDeleted ? all : all.filter(item => {
+                // Robust check for _deleted (handles boolean, numbers 0/1, and strings "0"/"1")
+                const isDeleted = item._deleted === true || item._deleted === 1 || item._deleted === "1" || item._deleted === "true";
+                return !isDeleted;
+            });
+
+            if (!includeDeleted && all.length !== filtered.length) {
+                console.log(`[Repository] getAll(${collection}): Filtered ${all.length - filtered.length} deleted items.`);
+            }
+            return filtered;
+        } catch (error) {
+            handleError(error, `Repository.getAll(${collection})`);
+            return [];
+        }
     },
 
     async remove(collection, id) {
         const db = await dbPromise;
         if (!db[collection]) throw new Error(`Repository Error: Collection '${collection}' does not exist.`);
-        const existing = await db[collection].get(id);
-        if (!existing) return;
+
+        let existing = await db[collection].get(id);
+        // ID Type Mismatch Safeguard
+        if (!existing && !isNaN(id)) {
+            existing = await db[collection].get(parseInt(id));
+        }
+
+        if (!existing) {
+            console.warn(`[Repository] remove(${collection}): Record with ID ${id} not found.`);
+            return;
+        }
 
         // Soft delete: increment version and set _deleted flag
-        await this.upsert(collection, { 
-            ...existing, 
-            _deleted: true 
+        await this.upsert(collection, {
+            ...existing,
+            _deleted: true
         });
     },
 
@@ -112,7 +141,7 @@ export const DexieRepository = {
                             break;
                     }
                 } else {
-                     result = result.where(queryObj.where);
+                    result = result.where(queryObj.where);
                 }
             }
         }

@@ -5,7 +5,7 @@ import { loadCustomersView } from "./modules/customers.js";
 import { loadStockInView } from "./modules/stockin.js";
 import { loadStockCountView } from "./modules/stock-count.js";
 import { loadPosView } from "./modules/pos.js";
-import { loadReportsView } from "./modules/reports.js";
+import { loadReportsView } from "./modules/Reportsv2.js";
 import { loadExpensesView } from "./modules/expenses.js";
 import { loadUsersView } from "./modules/users.js";
 import { loadProfileView } from "./modules/profile.js";
@@ -16,8 +16,11 @@ import { loadPurchaseOrdersView } from "./modules/purchase_orders.js";
 import { checkPermission } from "./auth.js";
 import { renderSidebar } from "./layout.js";
 import { loadManualView } from "./modules/manual.js";
+import { loadAIToolsView } from "./modules/ai-tools.js";
 
+// Router v2.1 - Reports V2 Enabled
 export function initRouter() {
+    console.log("Initializing Router v2.1...");
     window.addEventListener("hashchange", handleRoute);
     handleRoute();
 }
@@ -43,7 +46,7 @@ async function handleRoute() {
         content.parentNode.replaceChild(newContent, content);
         content = newContent;
     }
-    
+
     // Permission Guard: Prevent unauthorized access via manual URL entry
     const routeGuards = {
         "#dashboard": { module: "reports", type: "read" },
@@ -99,6 +102,7 @@ async function handleRoute() {
         case "#shifts": await loadShiftsView(); break;
         case "#returns": await loadReturnsView(); break;
         case "#settings": await loadSettingsView(); break;
+        case "#ai-tools": await loadAIToolsView(); break;
         case "#purchase-orders": await loadPurchaseOrdersView(); break;
         default:
             content.innerHTML = `<div class="p-6"><h2>404 - Page Not Found</h2></div>`;
