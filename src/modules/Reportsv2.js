@@ -49,7 +49,7 @@ const REPORTS_CONFIG = {
     ],
     financials: [
         { id: 'fin-summary', title: 'Sales Summary', desc: 'Revenue breakdown by payment method and net profit metrics.', icon: 'M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z', implemented: true },
-        { id: 'fin-users', title: 'User Sales', desc: 'Track sales contribution and transaction count per user.', icon: 'M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z', implemented: false },
+        { id: 'fin-shift-history', title: 'Shift History', desc: 'View comprehensive history of all shifts, sales, and variances.', icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z', implemented: true },
         { id: 'fin-shift-reports', title: 'Closing Reports', desc: 'Full end-of-shift reconciliation and expense tracking.', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', implemented: true },
         { id: 'fin-cashflow', title: 'Cashflow Trend', desc: 'Daily bar chart comparing cash inflows and outflows.', icon: 'M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z', implemented: false }
     ],
@@ -293,13 +293,15 @@ async function generateReport(reportId) {
                 </div>
              `;
         }
-    } else if (reportId === 'fin-shift-reports') {
+    } else if (reportId === 'fin-shift-reports' || reportId === 'fin-shift-history') {
         const shifts = await db.shifts.toArray();
+        const transactions = await db.transactions.toArray(); // Needed for sales calc
 
         generalReportWorker.postMessage({
             type: 'GENERATE_SHIFTS',
             payload: {
                 shifts,
+                transactions,
                 startDate: startStr,
                 endDate: endStr
             }
@@ -447,10 +449,14 @@ function renderShiftReports(data) {
 
     // Render Metrics (Fixed Top)
     metricsContainer.innerHTML = `
-        <div class="grid grid-cols-3 gap-6 p-6">
+        <div class="grid grid-cols-4 gap-6 p-6">
             <div class="p-4 bg-blue-50 rounded-lg border border-blue-100 flex flex-col justify-center">
                 <div class="text-xs text-blue-500 uppercase font-bold tracking-wider">Total Shifts</div>
                 <div class="text-3xl font-bold text-blue-800 mt-1">${summary.totalShifts}</div>
+            </div>
+            <div class="p-4 bg-purple-50 rounded-lg border border-purple-100 flex flex-col justify-center">
+                <div class="text-xs text-purple-500 uppercase font-bold tracking-wider">Total Sales</div>
+                <div class="text-3xl font-bold text-purple-800 mt-1">₱${(summary.totalSales || 0).toFixed(2)}</div>
             </div>
             <div class="p-4 bg-green-50 rounded-lg border border-green-100 flex flex-col justify-center">
                 <div class="text-xs text-green-500 uppercase font-bold tracking-wider">Total Cashout</div>
@@ -472,6 +478,7 @@ function renderShiftReports(data) {
                         <th class="py-2 px-4 border-b text-left text-xs font-semibold text-gray-600 uppercase">Started</th>
                         <th class="py-2 px-4 border-b text-left text-xs font-semibold text-gray-600 uppercase">User</th>
                          <th class="py-2 px-4 border-b text-center text-xs font-semibold text-gray-600 uppercase">Status</th>
+                        <th class="py-2 px-4 border-b text-right text-xs font-semibold text-gray-600 uppercase">Sales</th>
                         <th class="py-2 px-4 border-b text-right text-xs font-semibold text-gray-600 uppercase">Expected</th>
                         <th class="py-2 px-4 border-b text-right text-xs font-semibold text-gray-600 uppercase">Actual</th>
                         <th class="py-2 px-4 border-b text-right text-xs font-semibold text-gray-600 uppercase">Variance</th>
@@ -488,7 +495,8 @@ function renderShiftReports(data) {
                              <td class="py-3 px-4 text-center">
                                 <span class="px-2 py-1 rounded-full text-xs font-bold ${s.status === 'closed' ? 'bg-gray-100 text-gray-600' : 'bg-green-100 text-green-600'}">${s.status}</span>
                             </td>
-                            <td class="py-3 px-4 text-right font-mono text-gray-600">₱${(s.expected_cash || 0).toFixed(2)}</td>
+                            <td class="py-3 px-4 text-right font-mono font-bold text-blue-600">₱${(s.total_sales || 0).toFixed(2)}</td>
+                            <td class="py-3 px-4 text-right font-mono text-gray-500">₱${(s.expected_cash || 0).toFixed(2)}</td>
                             <td class="py-3 px-4 text-right font-mono font-bold">₱${(s.closing_cash || 0).toFixed(2)}</td>
                             <td class="py-3 px-4 text-right font-bold ${s.variance < 0 ? 'text-red-600' : (s.variance > 0 ? 'text-green-600' : 'text-gray-400')}">
                                 ${s.variance > 0 ? '+' : ''}${s.variance.toFixed(2)}

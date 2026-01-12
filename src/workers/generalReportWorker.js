@@ -81,7 +81,7 @@ function generateSalesSummary(payload) {
 }
 
 function generateShiftReports(payload) {
-    const { shifts, startDate, endDate } = payload;
+    const { shifts, transactions, startDate, endDate } = payload; // transactions added
     const start = new Date(startDate);
     const end = new Date(endDate);
 
@@ -94,48 +94,56 @@ function generateShiftReports(payload) {
     // Sort by Date Descending
     filteredShifts.sort((a, b) => new Date(b.start_time) - new Date(a.start_time));
 
+    // Optimize Transaction Lookup: Organize by User? Or just iterate?
+    // Since we scan shifts, for each shift we need its transactions.
+    // Iterating all transactions for each shift is O(S * T). S=30, T=1000 => 30k ops. Fine.
+    // If T=100k, S=100 => 10M ops. Maybe aggregate first.
+    // Let's pre-sort transactions by timestamp?
+    // Or just group transactions by user and then filter by time.
+
+    // Simple filter for now.
+
     // Calculate Aggregates
     const totalShifts = filteredShifts.length;
     let totalVariance = 0;
     let totalCashout = 0;
+    let totalSalesGlobal = 0;
 
     filteredShifts.forEach(s => {
-        if (s.status === 'closed') {
-            // Variance logic matching shift.js
-            const expected = s.expected_cash || 0;
-            // Note: In shift.js, expected is calculated dynamically based on transactions. 
-            // Here we rely on the stored 'expected_cash' snapshot if available, 
-            // or we might receive it pre-calculated if the main thread does it.
-            // For report historical accuracy, we should probably rely on the snapshot in the shift record.
+        const sStart = new Date(s.start_time);
+        const sEnd = s.end_time ? new Date(s.end_time) : new Date(); // If open, until now
 
+        // Calculate Sales for this shift
+        let shiftSales = 0;
+        if (transactions && transactions.length) {
+            transactions.forEach(tx => {
+                const tDate = new Date(tx.timestamp);
+                if (tx.user_email === s.user_id && tDate >= sStart && tDate <= sEnd && !tx.is_voided) {
+                    shiftSales += parseFloat(tx.total_amount || 0);
+                }
+            });
+        }
+        s._calculatedSales = shiftSales;
+        totalSalesGlobal += shiftSales;
+
+        if (s.status === 'closed') {
+            const expected = s.expected_cash || 0;
             const closing = s.closing_cash || 0;
             const cashout = s.cashout || 0;
             const receipts = s.closing_receipts || [];
             const expenses = receipts.reduce((sum, r) => sum + (r.amount || 0), 0);
 
-            // Re-verify logic from shift.js:
-            // updatedShift.closing_cash = closing;
-            // updatedShift.expected_cash = expected;
-            // summary.difference = closing - expected;
+            // Variance Logic
+            // In shift.js: turnover = closing + expenses + cashout
+            // Variance = turnover - expected
+            // Note: expected SHOULD include sales already.
 
-            // Wait, in shift.js render loop:
-            // turnover = closing + expenses + cashout;
-            // variance = turnover - expected;
-            // This suggests 'closing_cash' in DB is just the drawer count.
-            // But 'expected_cash' usually includes opening + sales - cashouts + adjustments.
-
-            // Let's stick to the stored snapshot variance if possible, or calculate it.
-            // If the shift record has 'variance', use it. If not, calculate.
-            // Looking at shift.js, it doesn't seem to store 'variance' explicitly in the root object, 
-            // but return it in the summary.
-
-            // Calculation:
             const turnover = closing + expenses + cashout;
             const variance = turnover - expected;
 
             totalVariance += variance;
             totalCashout += cashout;
-            s._calculatedVariance = variance; // Attach for display
+            s._calculatedVariance = variance;
             s._calculatedTurnover = turnover;
         } else {
             s._calculatedVariance = 0;
@@ -154,6 +162,7 @@ function generateShiftReports(payload) {
             closing_cash: s.closing_cash,
             expected_cash: s.expected_cash,
             cashout: s.cashout,
+            total_sales: s._calculatedSales, // Returned
             adjustment_count: (s.adjustments || []).length,
             variance: s._calculatedVariance,
             turnover: s._calculatedTurnover,
@@ -163,7 +172,8 @@ function generateShiftReports(payload) {
         summary: {
             totalShifts,
             totalVariance,
-            totalCashout
+            totalCashout,
+            totalSales: totalSalesGlobal
         }
     };
 }
